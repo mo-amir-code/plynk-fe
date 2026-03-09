@@ -11,9 +11,9 @@ export function CTA() {
           <p className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-8 sm:mb-10 max-w-2xl mx-auto">
             Build your personal widget-based profile and share everything with one link. Join 50k+ creators already using mokU.
           </p>
-          <button className="btn-primary px-8 sm:px-10 py-4 sm:py-5 bg-primary text-white rounded-xl sm:rounded-2xl text-lg sm:text-xl font-bold shadow-2xl shadow-primary/40">
+          <a href="/auth/signup" className="inline-block btn-primary px-8 sm:px-10 py-4 sm:py-5 bg-primary text-white rounded-xl sm:rounded-2xl text-lg sm:text-xl font-bold shadow-2xl shadow-primary/40">
             Claim your link now
-          </button>
+          </a>
         </div>
       </div>
     </section>

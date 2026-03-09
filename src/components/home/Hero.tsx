@@ -23,9 +23,9 @@ export function Hero() {
             mokU is the definitive platform for creators and professionals to curate their digital presence. Build dynamic, interactive link hubs seamlessly.
           </p>
           <div className="animate-fade-up delay-300 flex flex-wrap gap-3 sm:gap-4">
-            <button className="btn-primary px-7 sm:px-8 py-3.5 sm:py-4 bg-primary text-white rounded-xl text-base sm:text-lg font-bold shadow-xl shadow-primary/30">
+            <a href="/auth/signup" className="inline-block btn-primary px-7 sm:px-8 py-3.5 sm:py-4 bg-primary text-white rounded-xl text-base sm:text-lg font-bold shadow-xl shadow-primary/30">
               Get Started
-            </button>
+            </a>
             <button className="px-7 sm:px-8 py-3.5 sm:py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl text-base sm:text-lg font-bold hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200">
               View Demo
             </button>

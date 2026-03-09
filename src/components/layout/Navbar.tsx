@@ -44,12 +44,12 @@ export function Navbar() {
         </div>
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-3">
-          <button className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors duration-200 rounded-lg hover:bg-primary/5">
+          <a href="/auth/signin" className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors duration-200 rounded-lg hover:bg-primary/5">
             Log in
-          </button>
-          <button className="btn-primary px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20">
+          </a>
+          <a href="/auth/signup" className="btn-primary px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20">
             Sign up free
-          </button>
+          </a>
         </div>
         {/* Mobile hamburger */}
         <button
@@ -72,12 +72,12 @@ export function Navbar() {
             </a>
           ))}
           <div className="flex gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <button className="flex-1 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-primary hover:text-primary transition-all">
+            <a href="/auth/signin" className="flex-1 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-primary hover:text-primary transition-all text-center">
               Log in
-            </button>
-            <button className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-bold">
+            </a>
+            <a href="/auth/signup" className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-bold text-center">
               Sign up free
-            </button>
+            </a>
           </div>
         </div>
       </div>
