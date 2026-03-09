@@ -6,7 +6,7 @@
 @theme {
   --color-primary: #ec5b13;
   --color-background-light: #f8f6f6;
-  --color-background-dark: #221610;
+  --color-background-dark: #020617;
   --font-display: "Public Sans", sans-serif;
 }
 
@@ -27,7 +27,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 .dark .glass {
-  background: rgba(34, 22, 16, 0.7);
+  background: rgba(2, 6, 23, 0.7);
   border: 1px solid rgba(236, 91, 19, 0.1);
 }
 

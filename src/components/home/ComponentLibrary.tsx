@@ -1,3 +1,5 @@
+import { SocialWidget } from '@/components/widgets/SocialWidget';
+
 export function ComponentLibrary() {
   return (
     <section className="py-16 sm:py-24 bg-slate-50 dark:bg-slate-900/30">
@@ -24,20 +26,25 @@ export function ComponentLibrary() {
           </div>
 
           {/* Twitter */}
-          <div className="reveal card-hover bg-white dark:bg-slate-800 rounded-[2.5rem] p-8 flex flex-col items-center justify-center gap-4 border border-slate-100 dark:border-slate-700 shadow-sm delay-200 min-h-[180px]">
-            <div className="size-14 rounded-full bg-slate-900 dark:bg-slate-100 flex items-center justify-center shadow-lg">
-              <span className="material-symbols-outlined text-3xl text-white dark:text-slate-900">close</span>
-            </div>
-            <span className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest">Twitter</span>
-          </div>
+          <SocialWidget
+            platform="Twitter"
+            icon="close"
+            containerClass="reveal delay-200 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 min-h-[180px] hover:shadow-xl"
+            overlayClass="bg-slate-900/5 dark:bg-slate-100/5"
+            textClass="group-hover:text-primary"
+          />
 
           {/* Dribbble */}
-          <div className="reveal card-hover bg-white dark:bg-slate-800 rounded-[2.5rem] p-8 flex flex-col items-center justify-center gap-4 border border-slate-100 dark:border-slate-700 shadow-sm delay-300 min-h-[180px]">
-            <div className="size-14 rounded-full bg-[#ea4c89] flex items-center justify-center shadow-lg">
-              <span className="material-symbols-outlined text-3xl text-white">sports_basketball</span>
-            </div>
-            <span className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest">Dribbble</span>
-          </div>
+          <SocialWidget
+            platform="Dribbble"
+            icon="sports_basketball"
+            containerClass="reveal delay-300 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 min-h-[180px] hover:shadow-xl"
+            overlayClass="bg-[#ea4c89]/5"
+            arrowClass="text-[#ea4c89]/60"
+            iconContainerClass="bg-[#ea4c89]"
+            iconColorClass="text-white"
+            textClass="group-hover:text-[#ea4c89]"
+          />
 
           {/* Spotify-style Now Playing */}
           <div className="reveal col-span-2 bg-white dark:bg-slate-800 rounded-[2.5rem] p-6 flex items-center gap-6 border border-slate-100 dark:border-slate-700 shadow-sm delay-400">
@@ -64,12 +71,17 @@ export function ComponentLibrary() {
           </div>
 
           {/* Instagram */}
-          <div className="reveal card-hover bg-white dark:bg-slate-800 rounded-[2.5rem] p-8 flex flex-col items-center justify-center gap-4 border border-slate-100 dark:border-slate-700 shadow-sm delay-500 min-h-[180px]">
-            <div className="size-14 rounded-full flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}>
-              <span className="material-symbols-outlined text-3xl text-white">photo_camera</span>
-            </div>
-            <span className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest">Instagram</span>
-          </div>
+          <SocialWidget
+            platform="Instagram"
+            icon="photo_camera"
+            containerClass="reveal delay-500 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 min-h-[180px] hover:shadow-xl"
+            overlayClass="bg-pink-500/5"
+            arrowClass="text-pink-400"
+            iconContainerClass=""
+            iconColorClass="text-white"
+            iconCustomStyle={{ background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}
+            textClass="group-hover:text-pink-500"
+          />
         </div>
       </div>
     </section>
