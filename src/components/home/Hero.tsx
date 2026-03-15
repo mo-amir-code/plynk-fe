@@ -1,3 +1,5 @@
+import { PlatformIcon } from "@/components/dashboard/widgets/PlatformIcon";
+
 export function Hero() {
   return (
     <header className="relative overflow-hidden pt-14 pb-20 md:pt-24 md:pb-32">
@@ -16,7 +18,7 @@ export function Hero() {
             Now with AI-Powered Layouts
           </div>
           <h1 className="animate-fade-up delay-100 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.08] tracking-tight text-slate-900 dark:text-slate-100">
-            Your Digital Identity,<br/>
+            Your Digital Identity,<br />
             <span className="gradient-text">Architected with Widgets</span>
           </h1>
           <p className="animate-fade-up delay-200 text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
@@ -64,7 +66,7 @@ export function Hero() {
             {/* Twitter/X Card - 1x1 */}
             <div className="col-span-1 row-span-1 aspect-square sm:aspect-auto bg-white dark:bg-slate-800 rounded-[2rem] sm:rounded-[2.5rem] flex flex-col items-center justify-center shadow-xl border border-slate-100 dark:border-slate-700 transition-transform duration-500 hover:scale-105 cursor-pointer">
               <div className="size-10 sm:size-12 rounded-full bg-slate-900 dark:bg-slate-100 flex items-center justify-center mb-1.5 sm:mb-2 shadow-md">
-                <span className="material-symbols-outlined text-[20px] sm:text-[24px] text-white dark:text-slate-900 leading-none">close</span>
+                <PlatformIcon platform="twitter" className="text-[20px] sm:text-[24px] text-white dark:text-slate-900" />
               </div>
               <span className="text-[8px] sm:text-[10px] md:text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest">Twitter</span>
             </div>
@@ -72,7 +74,7 @@ export function Hero() {
             {/* Dribbble Card - 1x1 */}
             <div className="col-span-1 row-span-1 aspect-square sm:aspect-auto bg-white dark:bg-slate-800 rounded-[2rem] sm:rounded-[2.5rem] flex flex-col items-center justify-center shadow-xl border border-slate-100 dark:border-slate-700 transition-transform duration-500 hover:scale-105 cursor-pointer">
               <div className="size-10 sm:size-12 rounded-full bg-[#ea4c89] flex items-center justify-center mb-1.5 sm:mb-2 shadow-md">
-                <span className="material-symbols-outlined text-[20px] sm:text-[24px] text-white leading-none">sports_basketball</span>
+                <PlatformIcon platform="dribbble" className="text-[20px] sm:text-[24px] text-white" />
               </div>
               <span className="text-[8px] sm:text-[10px] md:text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest">Dribbble</span>
             </div>
@@ -80,7 +82,7 @@ export function Hero() {
             {/* LinkedIn Card - 1x1 */}
             <div className="col-span-1 row-span-1 aspect-square sm:aspect-auto bg-white dark:bg-slate-800 rounded-[2rem] sm:rounded-[2.5rem] flex flex-col items-center justify-center shadow-xl border border-slate-100 dark:border-slate-700 transition-transform duration-500 hover:scale-105 cursor-pointer">
               <div className="size-10 sm:size-12 rounded-full bg-[#0a66c2] flex items-center justify-center mb-1.5 sm:mb-2 shadow-md">
-                <span className="material-symbols-outlined text-[20px] sm:text-[24px] text-white leading-none">work</span>
+                <PlatformIcon platform="linkedin" className="text-[20px] sm:text-[24px] text-white" />
               </div>
               <span className="text-[8px] sm:text-[10px] md:text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest">LinkedIn</span>
             </div>
@@ -88,7 +90,7 @@ export function Hero() {
             {/* Instagram Card - 1x1 */}
             <div className="col-span-1 row-span-1 aspect-square sm:aspect-auto bg-white dark:bg-slate-800 rounded-[2rem] sm:rounded-[2.5rem] flex flex-col items-center justify-center shadow-xl border border-slate-100 dark:border-slate-700 transition-transform duration-500 hover:scale-105 cursor-pointer">
               <div className="size-10 sm:size-12 rounded-full flex items-center justify-center mb-1.5 sm:mb-2 shadow-md" style={{ background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}>
-                <span className="material-symbols-outlined text-[20px] sm:text-[24px] text-white leading-none">photo_camera</span>
+                <PlatformIcon platform="instagram" className="text-[20px] sm:text-[24px] text-white" />
               </div>
               <span className="text-[8px] sm:text-[10px] md:text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest">Instagram</span>
             </div>
@@ -122,7 +124,7 @@ export function Hero() {
                 <p className="text-[8px] sm:text-[10px] md:text-xs text-slate-500 truncate mt-0.5">M83 • Hurry Up, We&apos;re Dreaming</p>
               </div>
               <div className="hidden sm:flex items-end gap-0.5 sm:gap-1 h-6 sm:h-8 mr-2 shrink-0">
-                {[3,7,4,8,5].map((h, i) => (
+                {[3, 7, 4, 8, 5].map((h, i) => (
                   <div key={i} className="w-1 sm:w-1.5 bg-[#1db954]/80 rounded-full animate-[bounce_1.5s_infinite]" style={{ height: `${h * 12}%`, animationDelay: `${i * 0.15}s` }} />
                 ))}
               </div>
