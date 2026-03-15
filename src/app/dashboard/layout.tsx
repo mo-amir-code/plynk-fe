@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { MobileNav } from "@/components/dashboard/MobileNav";
+import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({
   children,
@@ -10,6 +11,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-slate-100">
@@ -35,8 +37,8 @@ export default function DashboardLayout({
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          <div className="max-w-5xl mx-auto w-full h-full">
+        <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+          <div className={`w-full h-full ${pathname === '/dashboard/your-identity' ? '' : 'max-w-5xl mx-auto p-4 sm:p-6 lg:p-8'}`}>
             {children}
           </div>
         </div>

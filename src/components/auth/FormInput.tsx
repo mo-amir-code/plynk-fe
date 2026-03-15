@@ -34,8 +34,8 @@ export function FormInput({
       </label>
       <div className="relative">
         {icon && (
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
-            <span className="material-symbols-outlined text-lg leading-none">{icon}</span>
+          <div className="absolute left-3.5 top-0 bottom-0 flex items-center justify-center pointer-events-none text-slate-400 dark:text-slate-500">
+            <span className="material-symbols-outlined text-lg">{icon}</span>
           </div>
         )}
         <input
@@ -55,10 +55,10 @@ export function FormInput({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 transition-colors"
+            className="absolute right-3.5 top-0 bottom-0 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 transition-colors"
             aria-label="Toggle password visibility"
           >
-            <span className="material-symbols-outlined text-lg leading-none">
+            <span className="material-symbols-outlined text-lg">
               {showPassword ? "visibility" : "visibility_off"}
             </span>
           </button>

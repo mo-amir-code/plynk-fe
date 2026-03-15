@@ -9,6 +9,8 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 export function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [localError, setLocalError] = useState("");
 
   const { login, isLoading, error } = useAuthStore();
@@ -16,16 +18,25 @@ export function SignInForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError("");
+    setEmailError("");
+    setPasswordError("");
 
-    if (!email || !password) {
-      setLocalError("Please fill in all fields");
-      return;
+    let hasError = false;
+
+    if (!email) {
+      setEmailError("Email address is required");
+      hasError = true;
+    } else if (!email.includes("@")) {
+      setEmailError("Please enter a valid email address");
+      hasError = true;
     }
 
-    if (!email.includes("@")) {
-      setLocalError("Please enter a valid email address");
-      return;
+    if (!password) {
+      setPasswordError("Password is required");
+      hasError = true;
     }
+
+    if (hasError) return;
 
     try {
       await login(email, password);
@@ -55,15 +66,18 @@ export function SignInForm() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5 mb-6">
+        <form onSubmit={handleSubmit} className="space-y-5 mb-6" noValidate>
           <FormInput
             label="Email Address"
             type="email"
             placeholder="name@example.com"
             value={email}
-            onChange={setEmail}
+            onChange={(val) => {
+              setEmail(val);
+              if (emailError) setEmailError("");
+            }}
             icon="mail"
-            error={localError.includes("email") ? localError : ""}
+            error={emailError}
           />
 
           <FormInput
@@ -71,10 +85,13 @@ export function SignInForm() {
             type="password"
             placeholder="••••••••"
             value={password}
-            onChange={setPassword}
+            onChange={(val) => {
+              setPassword(val);
+              if (passwordError) setPasswordError("");
+            }}
             icon="lock"
             showPasswordToggle
-            error={localError.includes("password") ? localError : ""}
+            error={passwordError}
           />
 
           {/* Remember & Forgot */}

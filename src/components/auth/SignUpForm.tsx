@@ -13,47 +13,70 @@ export function SignUpForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [fullNameError, setFullNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [localError, setLocalError] = useState("");
 
   const { signup, isLoading, error } = useAuthStore();
 
   const validateForm = (): boolean => {
-    if (!fullName || !email || !username || !password || !confirmPassword) {
-      setLocalError("Please fill in all fields");
-      return false;
+    setFullNameError("");
+    setEmailError("");
+    setUsernameError("");
+    setPasswordError("");
+    setConfirmPasswordError("");
+
+    let hasError = false;
+
+    if (!fullName) {
+      setFullNameError("Full name is required");
+      hasError = true;
+    } else if (fullName.length < 2) {
+      setFullNameError("Full name must be at least 2 characters");
+      hasError = true;
     }
 
-    if (fullName.length < 2) {
-      setLocalError("Full name must be at least 2 characters");
-      return false;
+    if (!email) {
+      setEmailError("Email address is required");
+      hasError = true;
+    } else if (!email.includes("@")) {
+      setEmailError("Please enter a valid email address");
+      hasError = true;
     }
 
-    if (!email.includes("@")) {
-      setLocalError("Please enter a valid email address");
-      return false;
+    if (!username) {
+      setUsernameError("Username is required");
+      hasError = true;
+    } else if (username.length < 3) {
+      setUsernameError("Username must be at least 3 characters");
+      hasError = true;
     }
 
-    if (username.length < 3) {
-      setLocalError("Username must be at least 3 characters");
-      return false;
+    if (!password) {
+      setPasswordError("Password is required");
+      hasError = true;
+    } else if (password.length < 8) {
+      setPasswordError("Password must be at least 8 characters");
+      hasError = true;
     }
 
-    if (password.length < 8) {
-      setLocalError("Password must be at least 8 characters");
-      return false;
-    }
-
-    if (password !== confirmPassword) {
-      setLocalError("Passwords do not match");
-      return false;
+    if (!confirmPassword) {
+      setConfirmPasswordError("Please confirm your password");
+      hasError = true;
+    } else if (password !== confirmPassword) {
+      setConfirmPasswordError("Passwords do not match");
+      hasError = true;
     }
 
     if (!agreeToTerms) {
       setLocalError("You must agree to the Terms and Privacy Policy");
-      return false;
+      hasError = true;
     }
 
-    return true;
+    return !hasError;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,14 +115,18 @@ export function SignUpForm() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 mb-6">
+        <form onSubmit={handleSubmit} className="space-y-4 mb-6" noValidate>
           <FormInput
             label="Full Name"
             type="text"
             placeholder="Alex Rivera"
             value={fullName}
-            onChange={setFullName}
+            onChange={(val) => {
+              setFullName(val);
+              if (fullNameError) setFullNameError("");
+            }}
             icon="person"
+            error={fullNameError}
           />
 
           <FormInput
@@ -107,8 +134,12 @@ export function SignUpForm() {
             type="email"
             placeholder="alex@example.com"
             value={email}
-            onChange={setEmail}
+            onChange={(val) => {
+              setEmail(val);
+              if (emailError) setEmailError("");
+            }}
             icon="mail"
+            error={emailError}
           />
 
           <FormInput
@@ -116,8 +147,12 @@ export function SignUpForm() {
             type="text"
             placeholder="alexrivera"
             value={username}
-            onChange={setUsername}
+            onChange={(val) => {
+              setUsername(val);
+              if (usernameError) setUsernameError("");
+            }}
             icon="account_circle"
+            error={usernameError}
           />
 
           <FormInput
@@ -125,9 +160,13 @@ export function SignUpForm() {
             type="password"
             placeholder="••••••••"
             value={password}
-            onChange={setPassword}
+            onChange={(val) => {
+              setPassword(val);
+              if (passwordError) setPasswordError("");
+            }}
             icon="lock"
             showPasswordToggle
+            error={passwordError}
           />
 
           <FormInput
@@ -135,9 +174,13 @@ export function SignUpForm() {
             type="password"
             placeholder="••••••••"
             value={confirmPassword}
-            onChange={setConfirmPassword}
+            onChange={(val) => {
+              setConfirmPassword(val);
+              if (confirmPasswordError) setConfirmPasswordError("");
+            }}
             icon="lock"
             showPasswordToggle
+            error={confirmPasswordError}
           />
 
           {/* Terms Agreement */}
@@ -145,7 +188,12 @@ export function SignUpForm() {
             <input
               type="checkbox"
               checked={agreeToTerms}
-              onChange={(e) => setAgreeToTerms(e.target.checked)}
+              onChange={(e) => {
+                setAgreeToTerms(e.target.checked);
+                if (localError === "You must agree to the Terms and Privacy Policy") {
+                  setLocalError("");
+                }
+              }}
               className="w-4 h-4 mt-0.5 rounded accent-primary cursor-pointer flex-shrink-0"
             />
             <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">

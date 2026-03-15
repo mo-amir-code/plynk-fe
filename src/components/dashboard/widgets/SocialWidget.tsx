@@ -115,6 +115,9 @@ interface Props {
   disableLink?: boolean;
   showEditButton?: boolean;
   onEditClick?: () => void;
+  onDeleteClick?: () => void;
+  frostIntensity?: number;
+  surfaceTint?: number;
 }
 
 export function DashboardSocialWidget({
@@ -131,6 +134,9 @@ export function DashboardSocialWidget({
   disableLink,
   showEditButton,
   onEditClick,
+  onDeleteClick,
+  frostIntensity = 24,
+  surfaceTint = 65,
 }: Props) {
   const { type, customName, handle, startCol, startRow, colSize, rowSize } = data;
   const cfg = PLATFORM_CONFIG[type];
@@ -160,7 +166,7 @@ export function DashboardSocialWidget({
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className={`group relative block overflow-hidden rounded-2xl sm:rounded-3xl lg:rounded-4xl transition-all duration-500 transform-gpu sm:hover:scale-105 sm:hover:-translate-y-1 shadow-lg sm:shadow-xl sm:hover:shadow-2xl w-full h-full ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+      className={`group relative block overflow-hidden rounded-2xl sm:rounded-3xl lg:rounded-4xl transition-all duration-200 transform-gpu shadow-lg sm:shadow-xl sm:hover:shadow-2xl sm:hover:ring-2 sm:hover:ring-white/60 dark:sm:hover:ring-white/30 w-full h-full ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
         } ${isDragging ? "opacity-60 scale-95" : ""} ${isResizing ? "ring-2 ring-primary/60" : ""}`}
       style={{
         gridColumn: `${startCol} / span ${colSize}`,
@@ -174,8 +180,21 @@ export function DashboardSocialWidget({
         willChange: motionOffset ? "transform" : undefined,
       }}
     >
+      {/* Deepest layer: Glass Backdrop */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backdropFilter: frostIntensity > 0 ? `blur(${frostIntensity}px)` : "none",
+          WebkitBackdropFilter: frostIntensity > 0 ? `blur(${frostIntensity}px)` : "none",
+          backgroundColor: "rgba(255, 255, 255, 0.03)",
+        }}
+      />
+
       {/* Gradient background */}
-      <div className={`absolute inset-0 bg-linear-to-br ${cfg.gradient}`} />
+      <div 
+        className={`absolute inset-0 bg-linear-to-br ${cfg.gradient} transition-opacity duration-200 pointer-events-none`} 
+        style={{ opacity: surfaceTint / 100 }}
+      />
 
       {/* Overlay on hover for depth — desktop only */}
       <div className="absolute inset-0 bg-black/0 sm:group-hover:bg-black/10 transition-colors duration-500 z-5" />
@@ -200,6 +219,20 @@ export function DashboardSocialWidget({
           className="absolute top-2 left-2 z-40 size-8 rounded-full bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center"
         >
           <span className="material-symbols-outlined text-[16px] leading-none">edit</span>
+        </button>
+      )}
+      {showEditButton && (
+        <button
+          type="button"
+          aria-label={`Delete ${displayName}`}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onDeleteClick?.();
+          }}
+          className="absolute top-2 right-2 z-40 size-8 rounded-full bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center"
+        >
+          <span className="material-symbols-outlined text-[16px] leading-none">delete</span>
         </button>
       )}
 

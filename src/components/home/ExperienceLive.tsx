@@ -9,8 +9,8 @@ export function ExperienceLive() {
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-slate-100 mb-3">Experience it live</h2>
           <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">Uncompromising design, engineered for maximum conversion. This is your future mokU profile.</p>
         </div>
-        <div className="reveal-scale bg-white dark:bg-slate-800 rounded-[2rem] sm:rounded-[3rem] p-1 shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <div className="bg-background-light dark:bg-background-dark rounded-[1.8rem] sm:rounded-[2.8rem] overflow-hidden">
+        <div className="reveal-scale bg-white dark:bg-slate-700 rounded-[2rem] sm:rounded-[3rem] p-[0.5px] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="bg-background-light dark:bg-background-dark/80 rounded-[1.8rem] sm:rounded-[2.8rem] overflow-hidden">
             <div className="relative p-6 sm:p-12">
               <div className="max-w-4xl mx-auto">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
