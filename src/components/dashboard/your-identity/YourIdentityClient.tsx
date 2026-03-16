@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { X, Palette, Check, RefreshCcw, Save, Eye, Pencil, Shield, Globe, Lock } from "lucide-react";
 import {
   DashboardSocialWidget,
   DashboardSocialWidgetData,
 } from "@/components/dashboard/widgets/SocialWidget";
 import { AddWidgetModal, AddWidgetOption } from "./AddWidgetModal";
 import { EditWidgetModal } from "./EditWidgetModal";
+import useAuthStore from "@/stores/authStore";
+import { getMyPage, syncPage } from "../../../../actions/page";
+import { SuccessModal } from "./SuccessModal";
 
 export type Wallpaper = {
   id: string;
@@ -218,6 +223,8 @@ function useSquareCellSize(gridCols: number, gapPx: number) {
 }
 
 export function YourIdentityClient() {
+  const { user } = useAuthStore();
+  const userId = user?.id || "guest";
   const { ref, cellPx } = useSquareCellSize(GRID_COLS, GAP_PX);
   const mobileGridRef = useRef<HTMLDivElement>(null);
   const [isPreview, setIsPreview] = useState(false);
@@ -254,6 +261,139 @@ export function YourIdentityClient() {
   const [activeFont, setActiveFont] = useState("modern");
   const [isThemeStudioOpen, setIsThemeStudioOpen] = useState(true);
   const [wasThemeStudioOpen, setWasThemeStudioOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isPublished, setIsPublished] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 1. Initial state load from localStorage
+  useEffect(() => {
+    const loadInitialState = async () => {
+      // First try to load from API
+      const apiPage = await getMyPage() as any;
+      
+      if (apiPage) {
+        const pageData = apiPage;
+        
+        // 1. Theme Sync
+        if (pageData.theme?.styleConfig) {
+          const cfg = pageData.theme.styleConfig;
+          if (cfg.activeWallpaper) setActiveWallpaper(cfg.activeWallpaper);
+          if (cfg.frostIntensity !== undefined) setFrostIntensity(cfg.frostIntensity);
+          if (cfg.surfaceTint !== undefined) setSurfaceTint(cfg.surfaceTint);
+          if (cfg.activeFont) setActiveFont(cfg.activeFont);
+        }
+
+        // 1.5 State check
+        if (pageData.isPublished !== undefined) setIsPublished(pageData.isPublished);
+
+        // 2. Widgets Sync
+        if (Array.isArray(pageData.widgets) && pageData.widgets.length > 0) {
+          const mappedWidgets = pageData.widgets.map((w: any) => ({
+            id: w.id,
+            type: w.type.toLowerCase(),
+            handle: w.config?.data?.handle || "",
+            customName: w.config?.data?.customName || "",
+            startCol: w.x + 1,
+            startRow: w.y + 1,
+            colSize: w.width,
+            rowSize: w.height,
+          }));
+          setWidgets(mappedWidgets);
+        } else {
+          setWidgets(initialWidgets);
+        }
+      } else {
+        // Fallback to localStorage if no API data or not logged in
+        const themeKey = `moku_theme_${userId}`;
+        const widgetsKey = `moku_widgets_${userId}`;
+        
+        const savedTheme = localStorage.getItem(themeKey);
+        const savedWidgets = localStorage.getItem(widgetsKey);
+
+        if (savedTheme) {
+          try {
+            const parsed = JSON.parse(savedTheme);
+            if (parsed.activeWallpaper) setActiveWallpaper(parsed.activeWallpaper);
+            if (parsed.frostIntensity !== undefined) setFrostIntensity(parsed.frostIntensity);
+            if (parsed.surfaceTint !== undefined) setSurfaceTint(parsed.surfaceTint);
+            if (parsed.activeFont) setActiveFont(parsed.activeFont);
+          } catch (e) {}
+        }
+        
+        if (savedWidgets) {
+          try {
+            const parsed = JSON.parse(savedWidgets);
+            if (Array.isArray(parsed) && parsed.length > 0) setWidgets(parsed);
+            else setWidgets(initialWidgets);
+          } catch (e) {}
+        } else {
+          setWidgets(initialWidgets);
+        }
+      }
+      setIsInitialized(true);
+    };
+
+    loadInitialState();
+  }, [userId]);
+
+  // 2. Auto-save to localStorage and debounce API simulation
+  useEffect(() => {
+    if (!isInitialized || !userId) return;
+
+    const themeConfig = {
+      activeWallpaper,
+      frostIntensity,
+      surfaceTint,
+      activeFont,
+    };
+
+    const themeKey = `moku_theme_${userId}`;
+    const widgetsKey = `moku_widgets_${userId}`;
+
+    localStorage.setItem(themeKey, JSON.stringify(themeConfig));
+    localStorage.setItem(widgetsKey, JSON.stringify(widgets));
+
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    
+    // Set status to idle if no changes for a bit, OR keep showing 'saved'
+    // Let's set it to saving as soon as a change is detected (and timeout starts)
+    setSyncStatus("saving");
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      const syncData = {
+        themeConfig,
+        isPublished, // Maintain current status during autosave
+        widgets: widgets.map(w => ({
+          type: w.type.toUpperCase(),
+          x: w.startCol - 1,
+          y: w.startRow - 1,
+          width: w.colSize,
+          height: w.rowSize,
+          config: {
+            data: {
+              handle: w.handle,
+              customName: w.customName,
+            }
+          }
+        }))
+      };
+
+      try {
+        await syncPage(syncData);
+        setSyncStatus("saved");
+        console.log("✅ Sync: Successfully saved to DB");
+      } catch (error) {
+        setSyncStatus("error");
+        console.error("❌ Sync: Failed to save to DB", error);
+      }
+    }, 2000);
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [widgets, activeWallpaper, frostIntensity, surfaceTint, activeFont, isInitialized, isPublished]);
 
   useEffect(() => {
     if (!isPreview) return;
@@ -264,7 +404,7 @@ export function YourIdentityClient() {
     setEditingWidgetId(null);
   }, [isPreview]);
 
-  // Row height = cell size so that colSize == rowSize → same physical px
+  // Row height = cell size so that colSize == rowSize → perfect square
   const rowHeight = cellPx;
   const totalRows = Math.max(
     ...widgets.map((w) => w.startRow + w.rowSize - 1),
@@ -768,7 +908,55 @@ export function YourIdentityClient() {
   const submitWidgets = async () => {
     setIsSubmitting(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      // 1. Separate Theme Payload (Page + Styling options)
+      const themePayload = {
+        page: {
+          background: activeWallpaper,
+          font: activeFont
+        },
+        widget: {
+          frostIntensity: frostIntensity,
+          surfaceTint: surfaceTint,
+          // Placeholder for base widget overrides
+        },
+        widgets: {
+          // Placeholder for specific widget type overrides
+        }
+      };
+
+      // 2. Separate Layout + Data Payload (No styling included!)
+      const widgetsPayload = widgets.map(w => ({
+        id: w.id,
+        type: w.type,
+        x: w.startCol,
+        y: w.startRow,
+        width: w.colSize,
+        height: w.rowSize,
+        config: {
+          handle: w.handle,
+          style: w.style, // If this is considered a structural variant for the widget rather than global
+        }
+      }));
+
+      const syncData = {
+        themeConfig: themePayload,
+        isPublished: true, // Crucial: Explicitly publish on Submit
+        widgets: widgetsPayload
+      };
+
+      await syncPage(syncData);
+
+      setSyncStatus("saved");
+      setIsPublished(true);
+      setIsSuccessModalOpen(true);
+      console.group('Submitting Moku Page State');
+      console.log('1️⃣ THEME_JSON (style_config) ->', themePayload);
+      console.log('2️⃣ PUBLIC_STATUS ->', true);
+      console.log('3️⃣ WIDGETS_JSON (layout + data)->', widgetsPayload);
+      console.groupEnd();
+    } catch (err) {
+      setSyncStatus("error");
+      toast.error("Failed to publish your page");
     } finally {
       setIsSubmitting(false);
     }
@@ -779,9 +967,48 @@ export function YourIdentityClient() {
 
   return (
     <div 
-      className="min-h-[calc(100vh-0px)] transition-all duration-500 relative flex flex-col items-center overflow-x-hidden"
+      className={`min-h-screen transition-all duration-700 relative flex flex-col items-center overflow-x-hidden ${isInitialized ? 'opacity-100' : 'opacity-0'}`}
       style={{ background: activeBackground, fontFamily: currentFont }}
     >
+      {/* Premium Cloud Sync Status Indicator - Relocated to Top Right */}
+      <div className={`fixed top-10 right-8 z-60 pointer-events-none transition-all duration-500 ease-in-out flex flex-row items-center gap-3 ${
+        isPreview ? "opacity-0 scale-90 translate-x-4" : 
+        syncStatus === "saving" ? "opacity-100 translate-x-0" : 
+        syncStatus === "saved" ? "opacity-90 translate-x-0" : 
+        syncStatus === "error" ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
+      }`}>
+        {/* Privacy Status Badge */}
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-xl transition-all duration-700 bg-white/95 dark:bg-slate-900/90 ${
+          isPublished 
+            ? "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-emerald-500/10" 
+            : "border-amber-500/30 text-amber-600 dark:text-amber-400 shadow-amber-500/10"
+        }`}>
+          <div className={`size-2 rounded-full ${isPublished ? "bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.6)]" : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]"}`} />
+          <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+            {isPublished ? "Live on Moku" : "Private Draft"}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-900/80 dark:bg-black/60 backdrop-blur-xl border border-white/10 shadow-xl">
+          <div className="relative flex items-center justify-center">
+            {syncStatus === "saving" && (
+              <div className="size-3.5 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+            )}
+            {syncStatus === "saved" && (
+              <span className="material-symbols-outlined text-[16px] text-emerald-400">cloud_done</span>
+            )}
+            {syncStatus === "error" && (
+              <span className="material-symbols-outlined text-[16px] text-red-400">cloud_off</span>
+            )}
+          </div>
+          <span className="text-[11px] font-bold tracking-wide text-white/90 drop-shadow-sm">
+            {syncStatus === "saving" && "Syncing..."}
+            {syncStatus === "saved" && "Synced"}
+            {syncStatus === "error" && "Offline"}
+          </span>
+        </div>
+      </div>
+
       <div 
         className={`w-full max-w-[800px] px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-32 flex flex-col flex-1 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isThemeStudioOpen ? 'lg:-translate-x-[180px]' : 'translate-x-0'
@@ -976,9 +1203,7 @@ export function YourIdentityClient() {
               : "text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10"
           }`}
         >
-          <span className="material-symbols-outlined text-[18px] leading-none">
-            {isPreview ? "edit" : "visibility"}
-          </span>
+          {isPreview ? <Pencil size={18} /> : <Eye size={18} />}
           {isPreview ? "Edit Mode" : "Preview"}
         </button>
 
@@ -986,24 +1211,32 @@ export function YourIdentityClient() {
           type="button"
           onClick={submitWidgets}
           disabled={isSubmitting || isPreview}
-          className={`cursor-pointer inline-flex items-center gap-2 rounded-full bg-blue-500 text-white px-5 py-2.5 text-xs sm:text-sm font-bold shadow-lg shadow-blue-500/30 transition-all ml-1 ${isSubmitting || isPreview ? 'opacity-40 cursor-not-allowed hidden sm:flex' : 'hover:scale-105 hover:bg-blue-600 active:scale-95'}`}
+          className={`cursor-pointer inline-flex items-center gap-2 rounded-full bg-blue-500 text-white px-5 py-2.5 text-xs sm:text-sm font-black shadow-lg shadow-blue-500/30 transition-all ml-1 ${isSubmitting || isPreview ? 'opacity-40 cursor-not-allowed hidden sm:flex' : 'hover:scale-105 hover:bg-blue-600 active:scale-95'}`}
         >
-          <span className="material-symbols-outlined text-[18px] leading-none">check_circle</span>
+          {isSubmitting ? <RefreshCcw size={16} className="animate-spin" /> : <Check size={18} strokeWidth={3} />}
           {isSubmitting ? "Submitting..." : "Submit"}
         </button>
       </div>
 
       {/* Theme Studio Floating Panel */}
       {isThemeStudioOpen && (
-        <div className="fixed top-24 right-6 w-[340px] bg-white dark:bg-slate-900 rounded-[24px] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] z-50 flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-right-4 duration-300" style={{ fontFamily: 'Manrope, sans-serif' }}>
+        <div className="fixed top-24 right-6 w-[340px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[24px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.6)] z-50 flex flex-col overflow-hidden border border-slate-100 dark:border-white/5 animate-in fade-in slide-in-from-right-full duration-500 ease-out" style={{ fontFamily: 'Manrope, sans-serif' }}>
           {/* Header */}
-          <div className="px-6 py-5 flex items-start justify-between border-b border-slate-50 dark:border-slate-800/50">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Theme Studio</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Customize your vibe</p>
+          <div className="px-6 py-5 flex items-center justify-between border-b border-slate-100/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500">
+                <Palette size={18} />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Theme Studio</h2>
+                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-black mt-1">Customize Vibe</p>
+              </div>
             </div>
-            <button onClick={() => setIsThemeStudioOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 outline-none p-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-              <span className="material-symbols-outlined text-[20px]">close</span>
+            <button 
+              onClick={() => setIsThemeStudioOpen(false)} 
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 outline-none size-8 flex items-center justify-center shrink-0 rounded-full hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 shadow-sm hover:shadow-md"
+            >
+              <X size={16} strokeWidth={3} />
             </button>
           </div>
 
@@ -1078,7 +1311,7 @@ export function YourIdentityClient() {
 
             {/* Typography */}
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-200 fill-mode-both">
-              <h3 className="text-[11px] font-bold tracking-[0.1em] text-slate-800 dark:text-slate-300 uppercase mb-4 flex items-center gap-3">
+              <h3 className="text-[11px] font-bold tracking-widest text-slate-800 dark:text-slate-300 uppercase mb-4 flex items-center gap-3">
                 Typography
                 <div className="h-px bg-slate-100 dark:bg-slate-800 flex-1"></div>
               </h3>
@@ -1098,30 +1331,71 @@ export function YourIdentityClient() {
                     <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
                       activeFont === font.id ? 'bg-blue-500 border-blue-500 transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
                     }`}>
-                      {activeFont === font.id && <span className="material-symbols-outlined text-white text-[14px]">check</span>}
+                      {activeFont === font.id && <Check size={12} className="text-white" />}
                     </div>
                   </button>
                 ))}
               </div>
             </div>
-          </div>
 
-          {/* Footer */}
-          <div className="p-5 border-t border-slate-50 dark:border-slate-800/50 flex gap-3">
-            <button 
-              className="cursor-pointer flex-1 py-3 rounded-[14px] bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-[13px] transition-colors active:scale-95"
-              onClick={() => {
-                setActiveWallpaper("wp1");
-                setFrostIntensity(24);
-                setSurfaceTint(65);
-                setActiveFont("modern");
-              }}
-            >
-              Reset
-            </button>
-            <button className="cursor-pointer flex-[2] py-3 rounded-[14px] bg-blue-500 hover:bg-blue-600 text-white font-bold text-[13px] transition-colors shadow-sm shadow-blue-500/25 active:scale-95">
-              Save Changes
-            </button>
+            {/* Privacy & Publication */}
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-300 fill-mode-both">
+              <h3 className="text-[11px] font-bold tracking-widest text-slate-800 dark:text-slate-300 uppercase mb-5 flex items-center gap-3">
+                Privacy & Publication
+                <div className="h-px bg-slate-100 dark:bg-slate-800 flex-1"></div>
+              </h3>
+
+              <div className="bg-slate-50 dark:bg-white/5 rounded-[20px] p-5 border border-slate-100 dark:border-white/5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl ${isPublished ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                      {isPublished ? <Globe size={18} /> : <Lock size={18} />}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                        {isPublished ? "Page is Public" : "Private Draft"}
+                      </h4>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed font-medium">
+                        {isPublished 
+                          ? "Anyone with your link can see your profile." 
+                          : "Only you can see your profile page."}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      setIsPublished(!isPublished);
+                      toast.success(isPublished ? "Page set to Private Draft" : "Page Published Live!", {
+                        icon: isPublished ? <Lock className="text-amber-500" size={16} /> : <Check className="text-emerald-500" size={16} />
+                      });
+                    }}
+                    className={`relative w-10 h-6 shrink-0 rounded-full transition-colors duration-300 outline-none focus:ring-2 focus:ring-blue-500/50 ${
+                      isPublished ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'
+                    }`}
+                  >
+                    <div className={`absolute top-1 left-1 size-4 rounded-full bg-white shadow-sm transition-all duration-300 ease-in-out ${
+                      isPublished ? 'translate-x-4' : 'translate-x-0'
+                    }`} />
+                  </button>
+                </div>
+                
+                {isPublished && (
+                  <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(`moku.com/${user?.username}`);
+                        toast.success("Public link copied!");
+                      }}
+                      className="w-full py-2.5 rounded-[12px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[11px] font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-sm cursor-pointer"
+                    >
+                      <Save size={12} />
+                      Copy Public Link
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1150,6 +1424,11 @@ export function YourIdentityClient() {
           onSave={saveWidgetEdits}
         />
       )}
+      <SuccessModal 
+        isOpen={isSuccessModalOpen} 
+        onClose={() => setIsSuccessModalOpen(false)} 
+        username={user?.username || "username"} 
+      />
     </div>
   );
 }

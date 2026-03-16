@@ -4,7 +4,7 @@ import { devtools, persist } from "zustand/middleware";
 interface AuthUser {
   id: string;
   email: string;
-  username?: string;
+  username?: string | null;
   fullName?: string;
 }
 
@@ -16,7 +16,7 @@ interface AuthState {
 
   // Auth actions
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, fullName: string, username: string) => Promise<void>;
+  signup: (email: string, password: string, fullName: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
   setUser: (user: AuthUser | null) => void;
@@ -59,7 +59,7 @@ const useAuthStore = create<AuthState>()(
           }
         },
 
-        signup: async (email: string, password: string, fullName: string, username: string) => {
+        signup: async (email: string, password: string, fullName: string) => {
           set({ isLoading: true, error: null });
           try {
             // Simulate API call
@@ -69,7 +69,7 @@ const useAuthStore = create<AuthState>()(
             const mockUser: AuthUser = {
               id: "1",
               email,
-              username,
+              username: "", // To be claimed during onboarding
               fullName,
             };
 

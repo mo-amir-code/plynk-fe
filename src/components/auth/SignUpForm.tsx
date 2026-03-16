@@ -2,30 +2,32 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import useAuthStore from "@/stores/authStore";
+import { useRouter } from "next/navigation";
 import { FormInput } from "@/components/auth/FormInput";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { authSignup } from "../../../actions/auth";
+import useAuthStore from "@/stores/authStore";
+import { toast } from "sonner";
 
 export function SignUpForm() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [fullNameError, setFullNameError] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [localError, setLocalError] = useState("");
+  const [isFormLoading, setIsFormLoading] = useState(false);
 
-  const { signup, isLoading, error } = useAuthStore();
+  const { setUser } = useAuthStore();
 
   const validateForm = (): boolean => {
     setFullNameError("");
     setEmailError("");
-    setUsernameError("");
     setPasswordError("");
     setConfirmPasswordError("");
 
@@ -44,14 +46,6 @@ export function SignUpForm() {
       hasError = true;
     } else if (!email.includes("@")) {
       setEmailError("Please enter a valid email address");
-      hasError = true;
-    }
-
-    if (!username) {
-      setUsernameError("Username is required");
-      hasError = true;
-    } else if (username.length < 3) {
-      setUsernameError("Username must be at least 3 characters");
       hasError = true;
     }
 
@@ -87,12 +81,20 @@ export function SignUpForm() {
       return;
     }
 
+    setIsFormLoading(true);
     try {
-      await signup(email, password, fullName, username);
+      const user = await authSignup({ email, password, fullName });
+      setUser(user);
+      toast.success("Account created successfully!");
       // Redirect to onboarding or dashboard
-      window.location.href = "/onboarding";
-    } catch (err) {
-      setLocalError(error || "Signup failed. Please try again.");
+      router.push("/onboarding");
+      router.refresh();
+    } catch (err: any) {
+      const msg = err.message || "Signup failed. Please try again.";
+      setLocalError(msg);
+      toast.error(msg);
+    } finally {
+      setIsFormLoading(false);
     }
   };
 
@@ -101,7 +103,7 @@ export function SignUpForm() {
       <div className="animate-fade-up">
         {/* Header */}
         <div className="mb-8 sm:mb-10 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/20 to-primary/5 px-4 py-2 rounded-full mb-6 border border-primary/20 hover:border-primary/40 transition-colors group">
+          <Link href="/" className="inline-flex items-center gap-2 bg-linear-to-r from-primary/20 to-primary/5 px-4 py-2 rounded-full mb-6 border border-primary/20 hover:border-primary/40 transition-colors group">
             <span className="material-symbols-outlined text-lg leading-none text-primary">arrow_back</span>
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Back to Home</span>
           </Link>
@@ -143,19 +145,6 @@ export function SignUpForm() {
           />
 
           <FormInput
-            label="Username"
-            type="text"
-            placeholder="alexrivera"
-            value={username}
-            onChange={(val) => {
-              setUsername(val);
-              if (usernameError) setUsernameError("");
-            }}
-            icon="account_circle"
-            error={usernameError}
-          />
-
-          <FormInput
             label="Password"
             type="password"
             placeholder="••••••••"
@@ -194,7 +183,7 @@ export function SignUpForm() {
                   setLocalError("");
                 }
               }}
-              className="w-4 h-4 mt-0.5 rounded accent-primary cursor-pointer flex-shrink-0"
+              className="w-4 h-4 mt-0.5 rounded accent-primary cursor-pointer shrink-0"
             />
             <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
               By signing up, you agree to our{" "}
@@ -209,13 +198,13 @@ export function SignUpForm() {
           </label>
 
           {/* Error Message */}
-          {(localError || error) && (
+          {localError && (
             <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-start gap-3">
-              <span className="material-symbols-outlined text-lg leading-none text-red-600 dark:text-red-400 flex-shrink-0">
+              <span className="material-symbols-outlined text-lg leading-none text-red-600 dark:text-red-400 shrink-0">
                 error
               </span>
               <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                {localError || error}
+                {localError}
               </p>
             </div>
           )}
@@ -223,10 +212,10 @@ export function SignUpForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isLoading}
-            className="w-full btn-primary px-5 py-3.5 bg-primary text-white rounded-xl text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+            disabled={isFormLoading}
+            className="w-full btn-primary px-5 py-3.5 bg-primary text-white rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-primary/20 disabled:hover:translate-y-0"
           >
-            {isLoading ? (
+            {isFormLoading ? (
               <>
                 <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Creating account...
@@ -250,7 +239,7 @@ export function SignUpForm() {
         </div>
 
         {/* OAuth Button */}
-        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-semibold text-slate-900 dark:text-slate-100">
+        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-semibold text-slate-900 dark:text-slate-100 cursor-pointer">
           <i className="devicon-google-plain text-lg" />
           <span className="text-sm">Continue with Google</span>
         </button>

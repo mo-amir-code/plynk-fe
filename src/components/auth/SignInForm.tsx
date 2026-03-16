@@ -2,48 +2,52 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import useAuthStore from "@/stores/authStore";
+import { useRouter } from "next/navigation";
 import { FormInput } from "@/components/auth/FormInput";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { authLogin } from "../../../actions/auth";
+import { toast } from "sonner";
 
 export function SignInForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState("");
+  const router = useRouter();
 
-  const { login, isLoading, error } = useAuthStore();
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!formData.email.includes("@")) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError("");
-    setEmailError("");
-    setPasswordError("");
+    if (!validate()) return;
 
-    let hasError = false;
-
-    if (!email) {
-      setEmailError("Email address is required");
-      hasError = true;
-    } else if (!email.includes("@")) {
-      setEmailError("Please enter a valid email address");
-      hasError = true;
-    }
-
-    if (!password) {
-      setPasswordError("Password is required");
-      hasError = true;
-    }
-
-    if (hasError) return;
-
+    setIsLoading(true);
     try {
-      await login(email, password);
-      // Redirect to dashboard (would be next/navigation in real app)
-      window.location.href = "/dashboard";
-    } catch (err) {
-      setLocalError(error || "Login failed. Please try again.");
+      await authLogin(formData);
+      toast.success("Login successful");
+      router.push("/dashboard");
+      router.refresh();
+    } catch (error: any) {
+      const msg = error.message || "Invalid credentials";
+      setLocalError(msg);
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -71,27 +75,27 @@ export function SignInForm() {
             label="Email Address"
             type="email"
             placeholder="name@example.com"
-            value={email}
+            value={formData.email}
             onChange={(val) => {
-              setEmail(val);
-              if (emailError) setEmailError("");
+              setFormData((prev) => ({ ...prev, email: val }));
+              if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
             }}
             icon="mail"
-            error={emailError}
+            error={errors.email}
           />
 
           <FormInput
             label="Password"
             type="password"
             placeholder="••••••••"
-            value={password}
+            value={formData.password}
             onChange={(val) => {
-              setPassword(val);
-              if (passwordError) setPasswordError("");
+              setFormData((prev) => ({ ...prev, password: val }));
+              if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
             }}
             icon="lock"
             showPasswordToggle
-            error={passwordError}
+            error={errors.password}
           />
 
           {/* Remember & Forgot */}
@@ -115,13 +119,13 @@ export function SignInForm() {
           </div>
 
           {/* Error Message */}
-          {(localError || error) && (
+          {localError && (
             <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-start gap-3">
               <span className="material-symbols-outlined text-lg leading-none text-red-600 dark:text-red-400 flex-shrink-0">
                 error
               </span>
               <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                {localError || error}
+                {localError}
               </p>
             </div>
           )}
@@ -130,7 +134,7 @@ export function SignInForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full btn-primary px-5 py-3.5 bg-primary text-white rounded-xl text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+            className="w-full btn-primary px-5 py-3.5 bg-primary text-white rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-primary/20 disabled:hover:translate-y-0"
           >
             {isLoading ? (
               <>
@@ -156,7 +160,7 @@ export function SignInForm() {
         </div>
 
         {/* OAuth Button */}
-        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-semibold text-slate-900 dark:text-slate-100">
+        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-semibold text-slate-900 dark:text-slate-100 cursor-pointer">
           <i className="devicon-google-plain text-lg" />
           <span className="text-sm">Continue with Google</span>
         </button>

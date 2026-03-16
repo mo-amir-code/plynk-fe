@@ -1,5 +1,5 @@
-import React from "react";
 import { PlatformIcon } from "./PlatformIcon";
+import { Pencil, Trash2 } from "lucide-react";
 
 export type SocialPlatform =
   | "instagram"
@@ -216,9 +216,9 @@ export function DashboardSocialWidget({
             event.stopPropagation();
             onEditClick?.();
           }}
-          className="absolute top-2 left-2 z-40 size-8 rounded-full bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center"
+          className="cursor-pointer absolute top-2 left-2 z-40 size-6 rounded-full bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-sm flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
         >
-          <span className="material-symbols-outlined text-[16px] leading-none">edit</span>
+          <Pencil size={10} strokeWidth={2.5} />
         </button>
       )}
       {showEditButton && (
@@ -230,9 +230,9 @@ export function DashboardSocialWidget({
             event.stopPropagation();
             onDeleteClick?.();
           }}
-          className="absolute top-2 right-2 z-40 size-8 rounded-full bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center"
+          className="cursor-pointer absolute top-2 right-2 z-40 size-6 rounded-full bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-sm flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
         >
-          <span className="material-symbols-outlined text-[16px] leading-none">delete</span>
+          <Trash2 size={10} strokeWidth={2.5} />
         </button>
       )}
 
@@ -259,22 +259,22 @@ export function DashboardSocialWidget({
           </div>
         </div>
       ) : (
-        // Desktop layout - centered icon with hover text reveal
-        <div className={`relative z-10 w-full h-full flex flex-col items-center justify-center transition-transform duration-500 ${desktopHoverLiftClass}`}>
-          {/* Icon container */}
+        // Desktop layout - centered icon with stable internal reveal
+        <div className="relative z-10 w-full h-full flex items-center justify-center">
+          {/* Icon container - Stationary for stability */}
           <div
-            className={`${containerSize} rounded-full bg-white/20 flex items-center justify-center shadow-lg sm:shadow-xl sm:group-hover:shadow-2xl sm:group-hover:bg-white/30 transition-all duration-500 border border-white/30 sm:group-hover:border-white/50`}
+            className={`${containerSize} rounded-full bg-white/20 flex items-center justify-center shadow-lg sm:shadow-xl sm:group-hover:shadow-2xl sm:group-hover:bg-white/30 transition-all duration-500 border border-white/30 sm:group-hover:border-white/50 sm:group-hover:scale-105`}
           >
             <PlatformIcon platform={type} className={`${iconTextSize} text-white drop-shadow-lg`} />
           </div>
-
-          {/* Text content - hidden by default, shown on hover (desktop only) */}
-          <div className="absolute inset-x-3 bottom-3 z-20 flex flex-col items-center justify-center rounded-2xl bg-black/25 backdrop-blur-sm border border-white/15 py-2.5 sm:py-3 gap-0.5 opacity-0 sm:group-hover:opacity-100 translate-y-4 sm:group-hover:translate-y-0 transition-all duration-500 px-3 text-center">
-            <span className={`font-black text-white leading-tight truncate max-w-full drop-shadow-lg ${area >= 4 ? "text-sm sm:text-base" : "text-xs sm:text-sm"
+ 
+          {/* Text content - Stable reveal slide-up (Stationary parent) */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center justify-center rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 py-1.5 px-4 gap-0 opacity-0 sm:group-hover:opacity-100 translate-y-2 sm:group-hover:translate-y-0 transition-all duration-500 text-center min-w-[120px] max-w-[85%] pointer-events-none shadow-2xl">
+            <span className={`font-bold text-white leading-tight truncate max-w-full drop-shadow-lg ${area >= 4 ? "text-xs sm:text-sm" : "text-[10px] sm:text-xs"
               }`}>
               {displayName}
             </span>
-            <span className={`text-white/80 font-semibold truncate max-w-full drop-shadow-md ${area >= 4 ? "text-xs sm:text-xs" : "text-[10px] sm:text-xs"
+            <span className={`text-white/60 font-medium truncate max-w-full drop-shadow-md ${area >= 4 ? "text-[10px] sm:text-[11px]" : "text-[8px] sm:text-[10px]"
               }`}>
               @{handle}
             </span>

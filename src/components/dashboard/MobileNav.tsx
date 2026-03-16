@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import useAuthStore from "@/stores/authStore";
+import { authLogout } from "../../../actions/auth";
 
 const navItems = [
   { name: "Your Identity", href: "/dashboard/your-identity", icon: "person" },
@@ -12,6 +14,8 @@ const navItems = [
 
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
 
@@ -31,6 +35,17 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
+  const handleLogout = async () => {
+    try {
+      await authLogout();
+      logout();
+      router.push("/auth/signin");
+      onClose();
+    } catch (error) {
+       console.error("Logout failed", error);
+    }
+  };
+
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
     if (next === "dark") {
@@ -41,6 +56,15 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
     localStorage.setItem("theme", next);
     setTheme(next);
   };
+
+  const initials = user?.fullName
+  ? user.fullName
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
+  : "??";
 
   return (
     <>
@@ -118,13 +142,16 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
           )}
           <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800">
             <div className="size-9 rounded-full bg-gradient-to-tr from-primary to-orange-400 flex items-center justify-center text-white font-bold text-sm shadow-md">
-              JD
+              {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">John Doe</p>
+              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{user?.fullName || "User"}</p>
               <p className="text-xs text-slate-500 dark:text-slate-400">Pro Plan</p>
             </div>
-            <button className="material-symbols-outlined text-slate-400 hover:text-primary transition-colors text-xl cursor-pointer">
+            <button 
+              onClick={handleLogout}
+              className="material-symbols-outlined text-slate-400 hover:text-primary transition-colors text-xl cursor-pointer"
+            >
               logout
             </button>
           </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { FormInput } from "@/components/auth/FormInput";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { toast } from "sonner";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -30,8 +31,11 @@ export function ForgotPasswordForm() {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1200));
       setSubmitted(true);
-    } catch (err) {
-      setError("Failed to send reset link. Please try again.");
+      toast.success("Password reset link sent!");
+    } catch (err: any) {
+      const msg = err.message || "Failed to send reset link. Please try again.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -42,7 +46,7 @@ export function ForgotPasswordForm() {
       <div className="animate-fade-up">
         {/* Header */}
         <div className="mb-8 sm:mb-10 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/20 to-primary/5 px-4 py-2 rounded-full mb-6 border border-primary/20 hover:border-primary/40 transition-colors group">
+          <Link href="/" className="inline-flex items-center gap-2 bg-linear-to-r from-primary/20 to-primary/5 px-4 py-2 rounded-full mb-6 border border-primary/20 hover:border-primary/40 transition-colors group">
             <span className="material-symbols-outlined text-lg leading-none text-primary">arrow_back</span>
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Back to Home</span>
           </Link>
@@ -104,7 +108,7 @@ export function ForgotPasswordForm() {
               {/* Error Message */}
               {error && !error.includes("Please enter") && (
                 <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-start gap-3">
-                  <span className="material-symbols-outlined text-lg leading-none text-red-600 dark:text-red-400 flex-shrink-0">
+                  <span className="material-symbols-outlined text-lg leading-none text-red-600 dark:text-red-400 shrink-0">
                     error
                   </span>
                   <p className="text-sm text-red-700 dark:text-red-300 font-medium">
@@ -117,7 +121,7 @@ export function ForgotPasswordForm() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full btn-primary px-5 py-3.5 bg-primary text-white rounded-xl text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+                className="w-full btn-primary px-5 py-3.5 bg-primary text-white rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-primary/20 disabled:hover:translate-y-0"
               >
                 {isLoading ? (
                   <>
@@ -151,7 +155,7 @@ export function ForgotPasswordForm() {
             {/* Success Actions */}
             <div className="space-y-4 mb-8">
               <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 flex items-start gap-3">
-                <span className="material-symbols-outlined text-lg leading-none text-blue-600 dark:text-blue-400 flex-shrink-0">
+                <span className="material-symbols-outlined text-lg leading-none text-blue-600 dark:text-blue-400 shrink-0">
                   info
                 </span>
                 <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">

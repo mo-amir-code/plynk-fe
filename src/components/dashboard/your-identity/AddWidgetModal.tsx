@@ -1,4 +1,7 @@
+'use client';
+
 import { SocialPlatform } from "@/components/dashboard/widgets/SocialWidget";
+import { useEffect, useRef, useState } from "react";
 
 export type AddWidgetOption = {
   type: SocialPlatform;
@@ -33,13 +36,53 @@ export function AddWidgetModal({
   searchQuery,
   setSearchQuery,
 }: AddWidgetModalProps) {
-  if (!isOpen) return null;
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+        setSelectedIndex(0);
+      }, 50);
+    }
+  }, [isOpen]);
 
   const filteredOptions = ADD_WIDGET_OPTIONS.filter((option) => {
     const search = searchQuery.trim().toLowerCase();
     if (!search) return true;
     return option.label.toLowerCase().includes(search) || option.hint.toLowerCase().includes(search);
   });
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchQuery]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const cols = window.innerWidth >= 640 ? 2 : 1;
+    const maxIndex = filteredOptions.length - 1;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => Math.min(prev + cols, maxIndex));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => Math.max(prev - cols, 0));
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      setSelectedIndex((prev) => Math.min(prev + 1, maxIndex));
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      setSelectedIndex((prev) => Math.max(prev - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (filteredOptions[selectedIndex]) {
+        onAdd(filteredOptions[selectedIndex]);
+      }
+    }
+  };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -65,11 +108,13 @@ export function AddWidgetModal({
         </div>
 
         <div className="mb-4">
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-2">
+          <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-2 focus-within:ring-2 focus-within:ring-primary/50 transition-shadow">
             <span className="material-symbols-outlined text-[18px] text-slate-400">search</span>
             <input
+              ref={searchInputRef}
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Search widgets"
               className="w-full bg-transparent outline-none text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
             />
@@ -77,12 +122,16 @@ export function AddWidgetModal({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[54vh] overflow-auto pr-1">
-          {filteredOptions.map((option) => (
+          {filteredOptions.map((option, index) => (
             <button
               key={option.type}
               type="button"
               onClick={() => onAdd(option)}
-              className="text-left rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 hover:border-primary/60 hover:bg-primary/5 transition-colors"
+              onMouseEnter={() => setSelectedIndex(index)}
+              className={`text-left rounded-2xl border transition-colors px-4 py-3 ${selectedIndex === index
+                  ? 'border-primary/60 bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/30'
+                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-primary/40'
+                }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>

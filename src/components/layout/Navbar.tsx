@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { navLinks } from "@/data/site-data";
+import { checkAuthStatus } from "../../../actions/auth";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 function useScrolledNav() {
   const [scrolled, setScrolled] = useState(false);
@@ -16,6 +19,12 @@ function useScrolledNav() {
 export function Navbar() {
   const scrolled = useScrolledNav();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isAuth, setIsAuth] = useState(false);
+  
+  useEffect(() => {
+    // Check if the user is authenticated via httpOnly cookies using server action
+    checkAuthStatus().then((status) => setIsAuth(status));
+  }, []);
 
   return (
     <nav
@@ -44,12 +53,21 @@ export function Navbar() {
         </div>
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-3">
-          <a href="/auth/signin" className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors duration-200 rounded-lg hover:bg-primary/5">
-            Log in
-          </a>
-          <a href="/auth/signup" className="btn-primary px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20">
-            Sign up free
-          </a>
+          {!isAuth ? (
+            <>
+              <Link href="/auth/signin" className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors duration-200 rounded-lg hover:bg-primary/5">
+                Log in
+              </Link>
+              <Link href="/auth/signup" className="btn-primary px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20">
+                Sign up free
+              </Link>
+            </>
+          ) : (
+             <Link href="/dashboard" className="btn-primary flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-sm font-bold shadow-lg transition-all duration-200">
+                Go to Dashboard
+                <ArrowRight className="size-4" />
+             </Link>
+          )}
         </div>
         {/* Mobile hamburger */}
         <button
@@ -71,13 +89,22 @@ export function Navbar() {
               {item}
             </a>
           ))}
-          <div className="flex gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <a href="/auth/signin" className="flex-1 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-primary hover:text-primary transition-all text-center">
-              Log in
-            </a>
-            <a href="/auth/signup" className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-bold text-center">
-              Sign up free
-            </a>
+          <div className="flex flex-col gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            {!isAuth ? (
+              <div className="flex gap-3">
+                <Link href="/auth/signin" className="flex-1 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-primary hover:text-primary transition-all text-center">
+                  Log in
+                </Link>
+                <Link href="/auth/signup" className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-bold text-center">
+                  Sign up free
+                </Link>
+              </div>
+            ) : (
+              <Link href="/dashboard" className="w-full flex justify-center items-center gap-2 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-sm font-bold shadow-md">
+                Go to Dashboard
+                <ArrowRight className="size-4" />
+              </Link>
+            )}
           </div>
         </div>
       </div>
