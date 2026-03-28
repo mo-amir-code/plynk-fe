@@ -20,7 +20,6 @@ export function SignUpForm() {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
-  const [localError, setLocalError] = useState("");
   const [isFormLoading, setIsFormLoading] = useState(false);
 
   const { setUser } = useAuthStore();
@@ -66,7 +65,7 @@ export function SignUpForm() {
     }
 
     if (!agreeToTerms) {
-      setLocalError("You must agree to the Terms and Privacy Policy");
+      toast.error("You must agree to the Terms and Privacy Policy");
       hasError = true;
     }
 
@@ -75,7 +74,6 @@ export function SignUpForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLocalError("");
 
     if (!validateForm()) {
       return;
@@ -83,7 +81,7 @@ export function SignUpForm() {
 
     setIsFormLoading(true);
     try {
-      const user = await authSignup({ email, password, fullName });
+      const user = await authSignup({ email, password, fullName, tnc: agreeToTerms });
       setUser(user);
       toast.success("Account created successfully!");
       // Redirect to onboarding or dashboard
@@ -91,7 +89,6 @@ export function SignUpForm() {
       router.refresh();
     } catch (err: any) {
       const msg = err.message || "Signup failed. Please try again.";
-      setLocalError(msg);
       toast.error(msg);
     } finally {
       setIsFormLoading(false);
@@ -179,9 +176,6 @@ export function SignUpForm() {
               checked={agreeToTerms}
               onChange={(e) => {
                 setAgreeToTerms(e.target.checked);
-                if (localError === "You must agree to the Terms and Privacy Policy") {
-                  setLocalError("");
-                }
               }}
               className="w-4 h-4 mt-0.5 rounded accent-primary cursor-pointer shrink-0"
             />
@@ -196,18 +190,6 @@ export function SignUpForm() {
               </Link>
             </span>
           </label>
-
-          {/* Error Message */}
-          {localError && (
-            <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-start gap-3">
-              <span className="material-symbols-outlined text-lg leading-none text-red-600 dark:text-red-400 shrink-0">
-                error
-              </span>
-              <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                {localError}
-              </p>
-            </div>
-          )}
 
           {/* Submit Button */}
           <button

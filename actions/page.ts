@@ -10,7 +10,7 @@ export async function getMyPage() {
   }
 }
 
-export async function createPage(data: { slug: string; title: string }) {
+export async function createPage(data: { themeId: string; title: string }) {
   return await api.post("/page", data);
 }
 
@@ -34,9 +34,9 @@ export async function syncPage(data: { themeConfig?: any; widgets?: any[]; isPub
   return await api.post("/page/sync", data);
 }
 
-export async function getPageBySlug(slug: string) {
+export async function getPageByUsername(username: string) {
   try {
-    return await api.get(`/page/${slug}`);
+    return await api.get(`/page/${username}`);
   } catch (error) {
     return null;
   }

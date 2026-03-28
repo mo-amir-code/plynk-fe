@@ -1,4 +1,4 @@
-import { getPageBySlug } from "../../../actions/page";
+import { getPageByUsername } from "../../../actions/page";
 import { PublicPageClient } from "@/components/public/PublicPageClient";
 import { notFound } from "next/navigation";
 
@@ -11,7 +11,7 @@ export default async function PublicPage({ params }: PageProps) {
   
   if (!slug) return notFound();
 
-  const page = await getPageBySlug(slug);
+  const page = await getPageByUsername(slug);
 
   if (!page) {
     return notFound();
