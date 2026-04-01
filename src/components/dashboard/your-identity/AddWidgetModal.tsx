@@ -1,6 +1,6 @@
 'use client';
 
-import { SocialPlatform } from "@/components/dashboard/widgets/SocialWidget";
+import { SocialPlatform, WIDGET_TYPE_CONFIG, SOCIAL_PLATFORMS } from "@/components/dashboard/widgets/widget-config";
 import { useEffect, useRef, useState } from "react";
 
 export type AddWidgetOption = {
@@ -10,16 +10,12 @@ export type AddWidgetOption = {
   defaultHandle: string;
 };
 
-export const ADD_WIDGET_OPTIONS: AddWidgetOption[] = [
-  { type: "instagram", label: "Instagram", hint: "Photos & reels", defaultHandle: "yourname" },
-  { type: "facebook", label: "Facebook", hint: "Pages & profiles", defaultHandle: "yourname" },
-  { type: "youtube", label: "YouTube", hint: "Channels & videos", defaultHandle: "YourChannel" },
-  { type: "twitter", label: "X / Twitter", hint: "Short updates", defaultHandle: "your_handle" },
-  { type: "tiktok", label: "TikTok", hint: "Short-form content", defaultHandle: "yourname" },
-  { type: "linkedin", label: "LinkedIn", hint: "Professional profile", defaultHandle: "yourname" },
-  { type: "github", label: "GitHub", hint: "Projects & repos", defaultHandle: "yourname" },
-  { type: "dribbble", label: "Dribbble", hint: "Design showcase", defaultHandle: "yourname" },
-];
+export const ADD_WIDGET_OPTIONS: AddWidgetOption[] = SOCIAL_PLATFORMS.map((type) => ({
+  type,
+  label: WIDGET_TYPE_CONFIG[type].label,
+  hint: WIDGET_TYPE_CONFIG[type].hint,
+  defaultHandle: WIDGET_TYPE_CONFIG[type].defaultHandle,
+}));
 
 interface AddWidgetModalProps {
   isOpen: boolean;

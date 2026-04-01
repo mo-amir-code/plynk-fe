@@ -38,8 +38,9 @@ export async function checkAuthStatus() {
   return !!token;
 }
 
-export async function authSignup(data: { email: string; password: string; fullName: string; tnc: boolean }) {
+export async function authSignup(data: { email: string; password: string; fullName: string, tnc: boolean }) {
   try {
+    console.log("Signup data:", data);
     const result = await api.post<AuthResponse>("/auth/register", data);
 
     if (result && result.token) {

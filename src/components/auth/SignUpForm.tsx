@@ -114,7 +114,7 @@ export function SignUpForm() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 mb-6" noValidate>
+        <form onSubmit={(e) => handleSubmit(e)} className="space-y-4 mb-6" noValidate>
           <FormInput
             label="Full Name"
             type="text"
