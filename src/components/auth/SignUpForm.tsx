@@ -83,7 +83,7 @@ export function SignUpForm() {
 
     setIsFormLoading(true);
     try {
-      const user = await authSignup({ email, password, fullName });
+      const user = await authSignup({ email, password, fullName, tnc: agreeToTerms });
       setUser(user);
       toast.success("Account created successfully!");
       // Redirect to onboarding or dashboard
@@ -117,7 +117,7 @@ export function SignUpForm() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 mb-6" noValidate>
+        <form onSubmit={(e) => handleSubmit(e)} className="space-y-4 mb-6" noValidate>
           <FormInput
             label="Full Name"
             type="text"

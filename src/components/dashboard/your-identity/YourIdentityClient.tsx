@@ -7,6 +7,7 @@ import {
   DashboardSocialWidget,
   DashboardSocialWidgetData,
 } from "@/components/dashboard/widgets/SocialWidget";
+import { SOCIAL_PLATFORMS, SocialPlatform } from "@/components/dashboard/widgets/widget-config";
 import { AddWidgetModal, AddWidgetOption } from "./AddWidgetModal";
 import { EditWidgetModal } from "./EditWidgetModal";
 import useAuthStore from "@/stores/authStore";
@@ -55,12 +56,73 @@ const initialWidgets: DashboardSocialWidgetData[] = [
     startRow: 1,
     colSize: 3,
     rowSize: 3,
-    style: "gradient",
   }
 ];
 
 const MAX_PACK_ROWS = 60;
 type ResizeDirection = "right" | "bottom" | "corner";
+
+const SUPPORTED_WIDGET_TYPES: SocialPlatform[] = [...SOCIAL_PLATFORMS];
+
+function toSafePositiveInt(value: unknown, fallback: number) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num <= 0) return fallback;
+  return Math.floor(num);
+}
+
+function normalizeWidget(rawWidget: any, index: number): DashboardSocialWidgetData {
+  const fallbackColSize = 3;
+  const fallbackRowSize = 3;
+
+  const colSize = Math.max(1, Math.min(toSafePositiveInt(rawWidget?.colSize, fallbackColSize), GRID_COLS));
+  const rowSize = Math.max(1, Math.min(toSafePositiveInt(rawWidget?.rowSize, fallbackRowSize), MAX_PACK_ROWS));
+
+  const fallbackStartCol = 1;
+  const fallbackStartRow = 1 + index * fallbackRowSize;
+
+  const safeStartCol = toSafePositiveInt(rawWidget?.startCol, fallbackStartCol);
+  const safeStartRow = toSafePositiveInt(rawWidget?.startRow, fallbackStartRow);
+
+  const startCol = Math.max(1, Math.min(safeStartCol, GRID_COLS - colSize + 1));
+  const startRow = Math.max(1, safeStartRow);
+
+  const rawType = typeof rawWidget?.type === "string" ? rawWidget.type.toLowerCase() : "instagram";
+  const type: SocialPlatform = SUPPORTED_WIDGET_TYPES.includes(rawType as SocialPlatform)
+    ? (rawType as SocialPlatform)
+    : "instagram";
+
+  const handle = typeof rawWidget?.handle === "string" ? rawWidget.handle : "";
+
+  return {
+    id: typeof rawWidget?.id === "string" && rawWidget.id.trim() ? rawWidget.id : `w${index + 1}`,
+    type,
+    handle,
+    startCol,
+    startRow,
+    colSize,
+    rowSize,
+  };
+}
+
+function normalizeWidgets(rawWidgets: unknown): DashboardSocialWidgetData[] {
+  if (!Array.isArray(rawWidgets) || rawWidgets.length === 0) {
+    return initialWidgets;
+  }
+
+  const normalized = rawWidgets.map((widget, index) => normalizeWidget(widget, index));
+  const usedIds = new Set<string>();
+
+  return normalized.map((widget, index) => {
+    if (!usedIds.has(widget.id)) {
+      usedIds.add(widget.id);
+      return widget;
+    }
+
+    const deduped = { ...widget, id: `${widget.id}-${index + 1}` };
+    usedIds.add(deduped.id);
+    return deduped;
+  });
+}
 
 
 function getMobileSpan(size: number) {
@@ -251,7 +313,6 @@ export function YourIdentityClient() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addSearch, setAddSearch] = useState("");
   const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
   const [editHandle, setEditHandle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -272,10 +333,10 @@ export function YourIdentityClient() {
     const loadInitialState = async () => {
       // First try to load from API
       const apiPage = await getMyPage() as any;
-      
+
       if (apiPage) {
         const pageData = apiPage;
-        
+
         // 1. Theme Sync
         if (pageData.theme?.styleConfig) {
           const cfg = pageData.theme.styleConfig;
@@ -290,16 +351,15 @@ export function YourIdentityClient() {
 
         // 2. Widgets Sync
         if (Array.isArray(pageData.widgets) && pageData.widgets.length > 0) {
-          const mappedWidgets = pageData.widgets.map((w: any) => ({
+          const mappedWidgets = normalizeWidgets(pageData.widgets.map((w: any) => ({
             id: w.id,
-            type: w.type.toLowerCase(),
-            handle: w.config?.data?.handle || "",
-            customName: w.config?.data?.customName || "",
-            startCol: w.x + 1,
-            startRow: w.y + 1,
+            type: w.type,
+            handle: w.config?.data?.handle,
+            startCol: Number(w.x) + 1,
+            startRow: Number(w.y) + 1,
             colSize: w.width,
             rowSize: w.height,
-          }));
+          })));
           setWidgets(mappedWidgets);
         } else {
           setWidgets(initialWidgets);
@@ -308,7 +368,7 @@ export function YourIdentityClient() {
         // Fallback to localStorage if no API data or not logged in
         const themeKey = `moku_theme_${userId}`;
         const widgetsKey = `moku_widgets_${userId}`;
-        
+
         const savedTheme = localStorage.getItem(themeKey);
         const savedWidgets = localStorage.getItem(widgetsKey);
 
@@ -319,15 +379,14 @@ export function YourIdentityClient() {
             if (parsed.frostIntensity !== undefined) setFrostIntensity(parsed.frostIntensity);
             if (parsed.surfaceTint !== undefined) setSurfaceTint(parsed.surfaceTint);
             if (parsed.activeFont) setActiveFont(parsed.activeFont);
-          } catch (e) {}
+          } catch (e) { }
         }
-        
+
         if (savedWidgets) {
           try {
             const parsed = JSON.parse(savedWidgets);
-            if (Array.isArray(parsed) && parsed.length > 0) setWidgets(parsed);
-            else setWidgets(initialWidgets);
-          } catch (e) {}
+            setWidgets(normalizeWidgets(parsed));
+          } catch (e) { }
         } else {
           setWidgets(initialWidgets);
         }
@@ -342,6 +401,15 @@ export function YourIdentityClient() {
   useEffect(() => {
     if (!isInitialized || !userId) return;
 
+    const normalizedWidgets = normalizeWidgets(widgets);
+    const normalizedString = JSON.stringify(normalizedWidgets);
+    const currentString = JSON.stringify(widgets);
+
+    if (normalizedString !== currentString) {
+      setWidgets(normalizedWidgets);
+      return;
+    }
+
     const themeConfig = {
       activeWallpaper,
       frostIntensity,
@@ -353,10 +421,10 @@ export function YourIdentityClient() {
     const widgetsKey = `moku_widgets_${userId}`;
 
     localStorage.setItem(themeKey, JSON.stringify(themeConfig));
-    localStorage.setItem(widgetsKey, JSON.stringify(widgets));
+    localStorage.setItem(widgetsKey, normalizedString);
 
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    
+
     // Set status to idle if no changes for a bit, OR keep showing 'saved'
     // Let's set it to saving as soon as a change is detected (and timeout starts)
     setSyncStatus("saving");
@@ -365,7 +433,7 @@ export function YourIdentityClient() {
       const syncData = {
         themeConfig,
         isPublished, // Maintain current status during autosave
-        widgets: widgets.map(w => ({
+        widgets: normalizedWidgets.map(w => ({
           type: w.type.toUpperCase(),
           x: w.startCol - 1,
           y: w.startRow - 1,
@@ -374,7 +442,6 @@ export function YourIdentityClient() {
           config: {
             data: {
               handle: w.handle,
-              customName: w.customName,
             }
           }
         }))
@@ -453,7 +520,91 @@ export function YourIdentityClient() {
     return { startCol: 1, startRow: 1 };
   };
 
-  const buildReflowedLayout = (
+  const widgetsOverlap = (a: DashboardSocialWidgetData, b: DashboardSocialWidgetData) => {
+    const aRight = a.startCol + a.colSize - 1;
+    const aBottom = a.startRow + a.rowSize - 1;
+    const bRight = b.startCol + b.colSize - 1;
+    const bBottom = b.startRow + b.rowSize - 1;
+
+    return !(aRight < b.startCol || bRight < a.startCol || aBottom < b.startRow || bBottom < a.startRow);
+  };
+
+  const canPlaceWithBlockers = (
+    widget: DashboardSocialWidgetData,
+    blockers: DashboardSocialWidgetData[],
+  ) => {
+    if (widget.startCol < 1 || widget.startRow < 1) return false;
+    if (widget.startCol + widget.colSize - 1 > GRID_COLS) return false;
+    if (widget.startRow + widget.rowSize - 1 > MAX_PACK_ROWS) return false;
+
+    return blockers.every((other) => !widgetsOverlap(widget, other));
+  };
+
+  const findClosestAxisPlacement = (
+    widget: DashboardSocialWidgetData,
+    blockers: DashboardSocialWidgetData[],
+    axis: "horizontal" | "vertical",
+  ) => {
+    const maxColStart = GRID_COLS - widget.colSize + 1;
+    const maxRowStart = MAX_PACK_ROWS - widget.rowSize + 1;
+
+    if (axis === "horizontal") {
+      const maxStep = Math.max(widget.startCol - 1, maxColStart - widget.startCol);
+
+      for (let step = 0; step <= maxStep; step += 1) {
+        const candidates = step === 0 ? [widget.startCol] : [widget.startCol + step, widget.startCol - step];
+
+        for (const col of candidates) {
+          if (col < 1 || col > maxColStart) continue;
+          const candidate = { ...widget, startCol: col };
+          if (canPlaceWithBlockers(candidate, blockers)) {
+            return { candidate, steps: Math.abs(col - widget.startCol) };
+          }
+        }
+      }
+
+      return null;
+    }
+
+    const maxStep = Math.max(widget.startRow - 1, maxRowStart - widget.startRow);
+
+    for (let step = 0; step <= maxStep; step += 1) {
+      const candidates = step === 0 ? [widget.startRow] : [widget.startRow + step, widget.startRow - step];
+
+      for (const row of candidates) {
+        if (row < 1 || row > maxRowStart) continue;
+        const candidate = { ...widget, startRow: row };
+        if (canPlaceWithBlockers(candidate, blockers)) {
+          return { candidate, steps: Math.abs(row - widget.startRow) };
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const findClosestAnyPlacement = (
+    widget: DashboardSocialWidgetData,
+    blockers: DashboardSocialWidgetData[],
+  ) => {
+    let best: { candidate: DashboardSocialWidgetData; distance: number } | null = null;
+
+    for (let row = 1; row <= MAX_PACK_ROWS - widget.rowSize + 1; row += 1) {
+      for (let col = 1; col <= GRID_COLS - widget.colSize + 1; col += 1) {
+        const candidate = { ...widget, startCol: col, startRow: row };
+        if (!canPlaceWithBlockers(candidate, blockers)) continue;
+
+        const distance = Math.abs(col - widget.startCol) + Math.abs(row - widget.startRow);
+        if (!best || distance < best.distance) {
+          best = { candidate, distance };
+        }
+      }
+    }
+
+    return best?.candidate ?? null;
+  };
+
+  const buildSingleWidgetPlacementLayout = (
     current: DashboardSocialWidgetData[],
     draggedWidgetId: string,
     preview: { startCol: number; startRow: number; colSize: number; rowSize: number },
@@ -461,28 +612,42 @@ export function YourIdentityClient() {
     const dragged = current.find((w) => w.id === draggedWidgetId);
     if (!dragged) return current;
 
-    const others = current.filter((w) => w.id !== draggedWidgetId);
-    const placed: DashboardSocialWidgetData[] = [
-      {
-        ...dragged,
-        startCol: preview.startCol,
-        startRow: preview.startRow,
-        colSize: preview.colSize,
-        rowSize: preview.rowSize,
-      },
-    ];
+    const moved: DashboardSocialWidgetData = {
+      ...dragged,
+      startCol: preview.startCol,
+      startRow: preview.startRow,
+      colSize: preview.colSize,
+      rowSize: preview.rowSize,
+    };
 
-    for (const widget of others) {
-      const fit = findFirstFit(widget, placed);
-      placed.push({
-        ...widget,
-        startCol: fit.startCol,
-        startRow: fit.startRow,
-      });
+    const blockers = current.filter((w) => w.id !== draggedWidgetId);
+
+    let resolved = canPlaceWithBlockers(moved, blockers) ? moved : null;
+
+    if (!resolved) {
+      const horizontal = findClosestAxisPlacement(moved, blockers, "horizontal");
+      const vertical = findClosestAxisPlacement(moved, blockers, "vertical");
+
+      if (horizontal && vertical) {
+        resolved = horizontal.steps <= vertical.steps ? horizontal.candidate : vertical.candidate;
+      } else if (horizontal) {
+        resolved = horizontal.candidate;
+      } else if (vertical) {
+        resolved = vertical.candidate;
+      }
     }
 
-    const placedById = new Map(placed.map((w) => [w.id, w]));
-    return current.map((w) => placedById.get(w.id) ?? w);
+    if (!resolved) {
+      resolved = findClosestAnyPlacement(moved, blockers);
+    }
+
+    if (!resolved) return current;
+
+    return current.map((widget) =>
+      widget.id === draggedWidgetId
+        ? resolved
+        : widget,
+    );
   };
 
   const getPointerGridPosition = (clientX: number, clientY: number) => {
@@ -529,7 +694,7 @@ export function YourIdentityClient() {
     }
 
     const currentLayout = widgets;
-    const nextLayout = buildReflowedLayout(currentLayout, draggingId, preview);
+    const nextLayout = buildSingleWidgetPlacementLayout(currentLayout, draggingId, preview);
     const unit = cellPx + GAP_PX;
     const offsets: Record<string, { x: number; y: number }> = {};
     const nextById = new Map(nextLayout.map((w) => [w.id, w]));
@@ -639,7 +804,7 @@ export function YourIdentityClient() {
           return prev;
         }
 
-        return buildReflowedLayout(prev, resizing.id, {
+        return buildSingleWidgetPlacementLayout(prev, resizing.id, {
           startCol: resizing.startCol,
           startRow: resizing.startRow,
           colSize: nextColSize,
@@ -839,13 +1004,11 @@ export function YourIdentityClient() {
 
   const openEditModal = (widget: DashboardSocialWidgetData) => {
     setEditingWidgetId(widget.id);
-    setEditName(widget.customName ?? "");
     setEditHandle(widget.handle);
   };
 
   const closeEditModal = () => {
     setEditingWidgetId(null);
-    setEditName("");
     setEditHandle("");
   };
 
@@ -871,7 +1034,6 @@ export function YourIdentityClient() {
         rowSize: 3,
         startCol: 1,
         startRow: 1,
-        style: "gradient",
       };
 
       const nextPos = findFirstFit(template, prev);
@@ -888,14 +1050,11 @@ export function YourIdentityClient() {
     const trimmedHandle = editHandle.trim();
     if (!trimmedHandle) return;
 
-    const trimmedName = editName.trim();
-
     setWidgets((prev) =>
       prev.map((widget) =>
         widget.id === editingWidgetId
           ? {
             ...widget,
-            customName: trimmedName || undefined,
             handle: trimmedHandle,
           }
           : widget,
@@ -934,7 +1093,6 @@ export function YourIdentityClient() {
         height: w.rowSize,
         config: {
           handle: w.handle,
-          style: w.style, // If this is considered a structural variant for the widget rather than global
         }
       }));
 
@@ -966,23 +1124,21 @@ export function YourIdentityClient() {
   const currentFont = FONTS.find(f => f.id === activeFont)?.family || 'inherit';
 
   return (
-    <div 
+    <div
       className={`min-h-screen transition-all duration-700 relative flex flex-col items-center overflow-x-hidden ${isInitialized ? 'opacity-100' : 'opacity-0'}`}
       style={{ background: activeBackground, fontFamily: currentFont }}
     >
       {/* Premium Cloud Sync Status Indicator - Relocated to Top Right */}
-      <div className={`fixed top-10 right-8 z-60 pointer-events-none transition-all duration-500 ease-in-out flex flex-row items-center gap-3 ${
-        isPreview ? "opacity-0 scale-90 translate-x-4" : 
-        syncStatus === "saving" ? "opacity-100 translate-x-0" : 
-        syncStatus === "saved" ? "opacity-90 translate-x-0" : 
-        syncStatus === "error" ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
-      }`}>
-        {/* Privacy Status Badge */}
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-xl transition-all duration-700 bg-white/95 dark:bg-slate-900/90 ${
-          isPublished 
-            ? "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-emerald-500/10" 
-            : "border-amber-500/30 text-amber-600 dark:text-amber-400 shadow-amber-500/10"
+      <div className={`fixed top-10 right-8 z-60 pointer-events-none transition-all duration-500 ease-in-out flex flex-row items-center gap-3 ${isPreview ? "opacity-0 scale-90 translate-x-4" :
+          syncStatus === "saving" ? "opacity-100 translate-x-0" :
+            syncStatus === "saved" ? "opacity-90 translate-x-0" :
+              syncStatus === "error" ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
         }`}>
+        {/* Privacy Status Badge */}
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-xl transition-all duration-700 bg-white/95 dark:bg-slate-900/90 ${isPublished
+            ? "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-emerald-500/10"
+            : "border-amber-500/30 text-amber-600 dark:text-amber-400 shadow-amber-500/10"
+          }`}>
           <div className={`size-2 rounded-full ${isPublished ? "bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.6)]" : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]"}`} />
           <span className="text-[10px] font-black uppercase tracking-widest leading-none">
             {isPublished ? "Live on Moku" : "Private Draft"}
@@ -1009,10 +1165,9 @@ export function YourIdentityClient() {
         </div>
       </div>
 
-      <div 
-        className={`w-full max-w-[800px] px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-32 flex flex-col flex-1 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          isThemeStudioOpen ? 'lg:-translate-x-[180px]' : 'translate-x-0'
-        }`}
+      <div
+        className={`w-full max-w-[800px] px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-32 flex flex-col flex-1 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${isThemeStudioOpen ? 'lg:-translate-x-[180px]' : 'translate-x-0'
+          }`}
       >
         {!isPreview && (
           <div className="flex justify-center mb-8 pointer-events-none animate-in fade-in slide-in-from-top-4 duration-500">
@@ -1024,142 +1179,142 @@ export function YourIdentityClient() {
         )}
 
         {/* Mobile card grid — 2 columns with size-aware spans */}
-      <div
-        ref={mobileGridRef}
-        className="grid grid-cols-2 gap-4 sm:hidden"
-        style={{ gridAutoRows: "128px" }}
-      >
-        {widgets.map((w, index) => {
-          const placement = mobilePlacements.find((item) => item.index === index);
-          if (!placement) return null;
+        <div
+          ref={mobileGridRef}
+          className="grid grid-cols-2 gap-4 sm:hidden"
+          style={{ gridAutoRows: "128px" }}
+        >
+          {widgets.map((w, index) => {
+            const placement = mobilePlacements.find((item) => item.index === index);
+            if (!placement) return null;
 
-          const canMoveLeft = getMobileNeighborIndex(index, "left", mobilePlacements) !== null;
-          const canMoveRight = getMobileNeighborIndex(index, "right", mobilePlacements) !== null;
-          const canMoveUp = getMobileNeighborIndex(index, "up", mobilePlacements) !== null;
-          const canMoveDown = getMobileNeighborIndex(index, "down", mobilePlacements) !== null;
+            const canMoveLeft = getMobileNeighborIndex(index, "left", mobilePlacements) !== null;
+            const canMoveRight = getMobileNeighborIndex(index, "right", mobilePlacements) !== null;
+            const canMoveUp = getMobileNeighborIndex(index, "up", mobilePlacements) !== null;
+            const canMoveDown = getMobileNeighborIndex(index, "down", mobilePlacements) !== null;
 
-          return (
+            return (
+              <div
+                key={w.id}
+                className="relative"
+                style={{
+                  gridColumn: `span ${placement.colSpan}`,
+                  gridRow: `span ${placement.rowSpan}`,
+                }}
+              >
+                <button
+                  type="button"
+                  aria-label={`Move ${w.type} widget left`}
+                  onClick={() => moveMobileWidget(index, "left")}
+                  disabled={!canMoveLeft}
+                  hidden={isPreview}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-30 size-7 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-[18px] leading-none">chevron_left</span>
+                </button>
+
+                <button
+                  type="button"
+                  aria-label={`Move ${w.type} widget right`}
+                  onClick={() => moveMobileWidget(index, "right")}
+                  disabled={!canMoveRight}
+                  hidden={isPreview}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-30 size-7 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-[18px] leading-none">chevron_right</span>
+                </button>
+
+                <button
+                  type="button"
+                  aria-label={`Move ${w.type} widget up`}
+                  onClick={() => moveMobileWidget(index, "up")}
+                  disabled={!canMoveUp}
+                  hidden={isPreview}
+                  className="absolute top-2 left-1/2 -translate-x-1/2 z-30 size-7 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-[18px] leading-none">expand_less</span>
+                </button>
+
+                <button
+                  type="button"
+                  aria-label={`Move ${w.type} widget down`}
+                  onClick={() => moveMobileWidget(index, "down")}
+                  disabled={!canMoveDown}
+                  hidden={isPreview}
+                  className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 size-7 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-[18px] leading-none">expand_more</span>
+                </button>
+
+                <DashboardSocialWidget
+                  data={{
+                    ...w,
+                    startCol: 1,
+                    startRow: 1,
+                    colSize: placement.colSpan,
+                    rowSize: placement.rowSpan,
+                  }}
+                  motionOffset={layoutOffsets[w.id]}
+                  layoutMotionEnabled={layoutMotionEnabled}
+                  forceShowLabel
+                  disableLink={!isPreview}
+                  showEditButton={!isPreview}
+                  onEditClick={() => openEditModal(w)}
+                  onDeleteClick={() => deleteWidget(w.id)}
+                  frostIntensity={frostIntensity}
+                  surfaceTint={surfaceTint}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop grid — row height == column width so equal colSize/rowSize = square */}
+        <div
+          ref={ref}
+          className="hidden sm:grid"
+          onDragOver={isPreview ? undefined : handleDesktopDragOver}
+          onDrop={isPreview ? undefined : handleDesktopDrop}
+          onDragLeave={isPreview ? undefined : () => setDropPreview(null)}
+          style={{
+            gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
+            gridTemplateRows: `repeat(${totalRows}, ${rowHeight}px)`,
+            gap: `${GAP_PX}px`,
+          }}
+        >
+          {!isPreview && dropPreview && (
             <div
-              key={w.id}
-              className="relative"
+              className="rounded-3xl border-2 border-dashed border-primary/50 bg-primary/10 flex items-center justify-center text-primary/80 text-xs font-semibold pointer-events-none transition-all duration-200"
               style={{
-                gridColumn: `span ${placement.colSpan}`,
-                gridRow: `span ${placement.rowSpan}`,
+                gridColumn: `${dropPreview.startCol} / span ${dropPreview.colSize}`,
+                gridRow: `${dropPreview.startRow} / span ${dropPreview.rowSize}`,
               }}
             >
-              <button
-                type="button"
-                aria-label={`Move ${w.type} widget left`}
-                onClick={() => moveMobileWidget(index, "left")}
-                disabled={!canMoveLeft}
-                hidden={isPreview}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-30 size-7 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <span className="material-symbols-outlined text-[18px] leading-none">chevron_left</span>
-              </button>
-
-              <button
-                type="button"
-                aria-label={`Move ${w.type} widget right`}
-                onClick={() => moveMobileWidget(index, "right")}
-                disabled={!canMoveRight}
-                hidden={isPreview}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-30 size-7 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <span className="material-symbols-outlined text-[18px] leading-none">chevron_right</span>
-              </button>
-
-              <button
-                type="button"
-                aria-label={`Move ${w.type} widget up`}
-                onClick={() => moveMobileWidget(index, "up")}
-                disabled={!canMoveUp}
-                hidden={isPreview}
-                className="absolute top-2 left-1/2 -translate-x-1/2 z-30 size-7 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <span className="material-symbols-outlined text-[18px] leading-none">expand_less</span>
-              </button>
-
-              <button
-                type="button"
-                aria-label={`Move ${w.type} widget down`}
-                onClick={() => moveMobileWidget(index, "down")}
-                disabled={!canMoveDown}
-                hidden={isPreview}
-                className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 size-7 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <span className="material-symbols-outlined text-[18px] leading-none">expand_more</span>
-              </button>
-
-              <DashboardSocialWidget
-                data={{
-                  ...w,
-                  startCol: 1,
-                  startRow: 1,
-                  colSize: placement.colSpan,
-                  rowSize: placement.rowSpan,
-                  alwaysShowLabel: true,
-                }}
-                motionOffset={layoutOffsets[w.id]}
-                layoutMotionEnabled={layoutMotionEnabled}
-                disableLink={!isPreview}
-                showEditButton={!isPreview}
-                onEditClick={() => openEditModal(w)}
-                onDeleteClick={() => deleteWidget(w.id)}
-                frostIntensity={frostIntensity}
-                surfaceTint={surfaceTint}
-              />
+              Drop here
             </div>
-          );
-        })}
-      </div>
-
-      {/* Desktop grid — row height == column width so equal colSize/rowSize = square */}
-      <div
-        ref={ref}
-        className="hidden sm:grid"
-        onDragOver={isPreview ? undefined : handleDesktopDragOver}
-        onDrop={isPreview ? undefined : handleDesktopDrop}
-        onDragLeave={isPreview ? undefined : () => setDropPreview(null)}
-        style={{
-          gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
-          gridTemplateRows: `repeat(${totalRows}, ${rowHeight}px)`,
-          gap: `${GAP_PX}px`,
-        }}
-      >
-        {!isPreview && dropPreview && (
-          <div
-            className="rounded-3xl border-2 border-dashed border-primary/50 bg-primary/10 flex items-center justify-center text-primary/80 text-xs font-semibold pointer-events-none transition-all duration-200"
-            style={{
-              gridColumn: `${dropPreview.startCol} / span ${dropPreview.colSize}`,
-              gridRow: `${dropPreview.startRow} / span ${dropPreview.rowSize}`,
-            }}
-          >
-            Drop here
-          </div>
-        )}
-        {widgets.map((w) => (
-          <DashboardSocialWidget
-            key={w.id}
-            data={w}
-            draggable={!isPreview && !resizing}
-            onDragStart={() => handleDesktopDragStart(w.id)}
-            onDragEnd={handleDesktopDragEnd}
-            isDragging={draggingId === w.id}
-            motionOffset={layoutOffsets[w.id]}
-            layoutMotionEnabled={layoutMotionEnabled}
-            showResizeHandles={!isPreview}
-            isResizing={resizing?.id === w.id}
-            onResizeStart={isPreview ? undefined : (direction, event) => handleResizeStart(w.id, direction, event)}
-            disableLink={!isPreview}
-            showEditButton={!isPreview}
-            onEditClick={() => openEditModal(w)}
-            onDeleteClick={() => deleteWidget(w.id)}
-            frostIntensity={frostIntensity}
-            surfaceTint={surfaceTint}
-          />
-        ))}
-      </div>
+          )}
+          {widgets.map((w) => (
+            <DashboardSocialWidget
+              key={w.id}
+              data={w}
+              draggable={!isPreview && !resizing}
+              onDragStart={() => handleDesktopDragStart(w.id)}
+              onDragEnd={handleDesktopDragEnd}
+              isDragging={draggingId === w.id}
+              motionOffset={layoutOffsets[w.id]}
+              layoutMotionEnabled={layoutMotionEnabled}
+              showResizeHandles={!isPreview}
+              isResizing={resizing?.id === w.id}
+              onResizeStart={isPreview ? undefined : (direction, event) => handleResizeStart(w.id, direction, event)}
+              disableLink={!isPreview}
+              showEditButton={!isPreview}
+              onEditClick={() => openEditModal(w)}
+              onDeleteClick={() => deleteWidget(w.id)}
+              frostIntensity={frostIntensity}
+              surfaceTint={surfaceTint}
+            />
+          ))}
+        </div>
 
       </div>
 
@@ -1197,11 +1352,10 @@ export function YourIdentityClient() {
             }
             setIsPreview((prev) => !prev);
           }}
-          className={`cursor-pointer inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs sm:text-sm font-bold transition-all hover:scale-105 active:scale-95 ${
-            isPreview
+          className={`cursor-pointer inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs sm:text-sm font-bold transition-all hover:scale-105 active:scale-95 ${isPreview
               ? "bg-slate-900 text-white dark:bg-white dark:text-blue-600 shadow-md"
               : "text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10"
-          }`}
+            }`}
         >
           {isPreview ? <Pencil size={18} /> : <Eye size={18} />}
           {isPreview ? "Edit Mode" : "Preview"}
@@ -1232,8 +1386,8 @@ export function YourIdentityClient() {
                 <p className="text-[10px] uppercase tracking-widest text-slate-400 font-black mt-1">Customize Vibe</p>
               </div>
             </div>
-            <button 
-              onClick={() => setIsThemeStudioOpen(false)} 
+            <button
+              onClick={() => setIsThemeStudioOpen(false)}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 outline-none size-8 flex items-center justify-center shrink-0 rounded-full hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 shadow-sm hover:shadow-md"
             >
               <X size={16} strokeWidth={3} />
@@ -1252,9 +1406,8 @@ export function YourIdentityClient() {
                   <button
                     key={wp.id}
                     onClick={() => setActiveWallpaper(wp.id)}
-                    className={`relative aspect-square rounded-full flex items-center justify-center transition-all duration-300 ${
-                      activeWallpaper === wp.id ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900 scale-100 shadow-md' : 'hover:scale-[1.08] opacity-90 hover:opacity-100 shadow-sm'
-                    }`}
+                    className={`relative aspect-square rounded-full flex items-center justify-center transition-all duration-300 ${activeWallpaper === wp.id ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900 scale-100 shadow-md' : 'hover:scale-[1.08] opacity-90 hover:opacity-100 shadow-sm'
+                      }`}
                     style={{ background: wp.background }}
                   >
                     {activeWallpaper === wp.id && (
@@ -1271,7 +1424,7 @@ export function YourIdentityClient() {
                 Glass Material
                 <div className="h-px bg-slate-100 dark:bg-slate-800 flex-1"></div>
               </h3>
-              
+
               <div className="space-y-6">
                 <div>
                   <div className="flex justify-between items-center mb-3">
@@ -1281,10 +1434,10 @@ export function YourIdentityClient() {
                     </span>
                     <span className="text-xs font-bold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-0.5 rounded-md">{frostIntensity}px</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="0" max="100" 
-                    value={frostIntensity} 
+                  <input
+                    type="range"
+                    min="0" max="100"
+                    value={frostIntensity}
                     onChange={(e) => setFrostIntensity(Number(e.target.value))}
                     className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-95 transition-all"
                   />
@@ -1298,10 +1451,10 @@ export function YourIdentityClient() {
                     </span>
                     <span className="text-xs font-bold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-0.5 rounded-md">{surfaceTint}%</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="0" max="100" 
-                    value={surfaceTint} 
+                  <input
+                    type="range"
+                    min="0" max="100"
+                    value={surfaceTint}
                     onChange={(e) => setSurfaceTint(Number(e.target.value))}
                     className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-95 transition-all"
                   />
@@ -1320,17 +1473,15 @@ export function YourIdentityClient() {
                   <button
                     key={font.id}
                     onClick={() => setActiveFont(font.id)}
-                    className={`w-full flex items-center justify-between p-3.5 rounded-[16px] border transition-all duration-200 ${
-                      activeFont === font.id ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-500/10 shadow-sm' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                    }`}
+                    className={`w-full flex items-center justify-between p-3.5 rounded-[16px] border transition-all duration-200 ${activeFont === font.id ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-500/10 shadow-sm' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                      }`}
                   >
                     <div className="flex flex-col items-start gap-1">
                       <span className={`text-[15px] font-bold ${activeFont === font.id ? 'text-slate-900 dark:text-white' : 'text-slate-800 dark:text-slate-300'}`} style={{ fontFamily: font.family }}>{font.name}</span>
                       <span className="text-[11px] text-slate-500 dark:text-slate-500 uppercase tracking-wide" style={{ fontFamily: font.family }}>{font.family.split(',')[0].replace(/['"]/g, '')}</span>
                     </div>
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
-                      activeFont === font.id ? 'bg-blue-500 border-blue-500 transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
-                    }`}>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${activeFont === font.id ? 'bg-blue-500 border-blue-500 transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
+                      }`}>
                       {activeFont === font.id && <Check size={12} className="text-white" />}
                     </div>
                   </button>
@@ -1356,13 +1507,13 @@ export function YourIdentityClient() {
                         {isPublished ? "Page is Public" : "Private Draft"}
                       </h4>
                       <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed font-medium">
-                        {isPublished 
-                          ? "Anyone with your link can see your profile." 
+                        {isPublished
+                          ? "Anyone with your link can see your profile."
                           : "Only you can see your profile page."}
                       </p>
                     </div>
                   </div>
-                  
+
                   <button
                     onClick={() => {
                       setIsPublished(!isPublished);
@@ -1370,19 +1521,17 @@ export function YourIdentityClient() {
                         icon: isPublished ? <Lock className="text-amber-500" size={16} /> : <Check className="text-emerald-500" size={16} />
                       });
                     }}
-                    className={`relative w-10 h-6 shrink-0 rounded-full transition-colors duration-300 outline-none focus:ring-2 focus:ring-blue-500/50 ${
-                      isPublished ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'
-                    }`}
+                    className={`relative w-10 h-6 shrink-0 rounded-full transition-colors duration-300 outline-none focus:ring-2 focus:ring-blue-500/50 ${isPublished ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'
+                      }`}
                   >
-                    <div className={`absolute top-1 left-1 size-4 rounded-full bg-white shadow-sm transition-all duration-300 ease-in-out ${
-                      isPublished ? 'translate-x-4' : 'translate-x-0'
-                    }`} />
+                    <div className={`absolute top-1 left-1 size-4 rounded-full bg-white shadow-sm transition-all duration-300 ease-in-out ${isPublished ? 'translate-x-4' : 'translate-x-0'
+                      }`} />
                   </button>
                 </div>
-                
+
                 {isPublished && (
                   <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
-                    <button 
+                    <button
                       onClick={() => {
                         navigator.clipboard.writeText(`moku.com/${user?.username}`);
                         toast.success("Public link copied!");
@@ -1417,17 +1566,15 @@ export function YourIdentityClient() {
         <EditWidgetModal
           isOpen={!!editingWidgetId}
           onClose={closeEditModal}
-          editName={editName}
-          setEditName={setEditName}
           editHandle={editHandle}
           setEditHandle={setEditHandle}
           onSave={saveWidgetEdits}
         />
       )}
-      <SuccessModal 
-        isOpen={isSuccessModalOpen} 
-        onClose={() => setIsSuccessModalOpen(false)} 
-        username={user?.username || "username"} 
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        username={user?.username || "username"}
       />
     </div>
   );

@@ -1,10 +1,6 @@
-import { DashboardSocialWidgetData } from "@/components/dashboard/widgets/SocialWidget";
-
 interface EditWidgetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  editName: string;
-  setEditName: (val: string) => void;
   editHandle: string;
   setEditHandle: (val: string) => void;
   onSave: () => void;
@@ -13,8 +9,6 @@ interface EditWidgetModalProps {
 export function EditWidgetModal({
   isOpen,
   onClose,
-  editName,
-  setEditName,
   editHandle,
   setEditHandle,
   onSave,
@@ -42,16 +36,6 @@ export function EditWidgetModal({
         </div>
 
         <div className="space-y-3">
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Display Name</span>
-            <input
-              value={editName}
-              onChange={(event) => setEditName(event.target.value)}
-              placeholder="Custom widget name"
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-2.5 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-primary/70"
-            />
-          </label>
-
           <label className="block">
             <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Handle</span>
             <input
