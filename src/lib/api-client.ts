@@ -1,5 +1,5 @@
 
-import { BASE_URL } from "@/config/setting";
+import { API_CONFIG } from "@/lib/api-config";
 import { cookies } from "next/headers";
 
 async function getAuthToken() {
@@ -42,8 +42,9 @@ async function request<T>(
   options: FetchOptions = {},
 ): Promise<T> {
   const { params, headers, ...rest } = options;
+  let url = endpoint.startsWith("http") ? endpoint : `${API_CONFIG.BASE_URL}${endpoint}`;
 
-  let url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`;
+  console.log(`URL called: ${url} with options:`, options);
 
   if (params) {
     const search = new URLSearchParams();

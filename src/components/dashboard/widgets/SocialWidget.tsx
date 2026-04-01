@@ -1,82 +1,16 @@
 import { PlatformIcon } from "./PlatformIcon";
 import { Pencil, Trash2 } from "lucide-react";
-
-export type SocialPlatform =
-  | "instagram"
-  | "facebook"
-  | "youtube"
-  | "twitter"
-  | "tiktok"
-  | "linkedin"
-  | "github"
-  | "dribbble";
-
-export type WidgetStyle = "gradient" | "minimal" | "dark" | "glass";
+import { SocialPlatform, WIDGET_TYPE_CONFIG } from "./widget-config";
 
 export interface DashboardSocialWidgetData {
   id: string;
   type: SocialPlatform;
-  customName?: string;
   handle: string;
   startCol: number;
   startRow: number;
   colSize: number;
   rowSize: number;
-  style?: WidgetStyle; // stored for future use — not applied yet
-  alwaysShowLabel?: boolean;
 }
-
-/* ─── Platform config ─── */
-/* ─── Platform config — icons match the landing page ─── */
-type PlatformCfg = {
-  label: string;
-  gradient: string;
-  url: (h: string) => string;
-};
-
-const PLATFORM_CONFIG: Record<SocialPlatform, PlatformCfg> = {
-  instagram: {
-    label: "Instagram",
-    gradient: "from-[#f09433] via-[#dc2743] to-[#bc1888]",
-    url: (h) => `https://instagram.com/${h}`,
-    /* No inline style needed — devicon handles the icon, gradient bg covers it */
-  },
-  facebook: {
-    label: "Facebook",
-    gradient: "from-blue-600 to-blue-500",
-    url: (h) => `https://facebook.com/${h}`,
-  },
-  youtube: {
-    label: "YouTube",
-    gradient: "from-red-600 to-red-500",
-    url: (h) => `https://youtube.com/@${h}`,
-  },
-  twitter: {
-    label: "X / Twitter",
-    gradient: "from-slate-900 to-slate-800",
-    url: (h) => `https://x.com/${h}`,
-  },
-  tiktok: {
-    label: "TikTok",
-    gradient: "from-slate-900 via-slate-800 to-slate-900",
-    url: (h) => `https://tiktok.com/@${h}`,
-  },
-  linkedin: {
-    label: "LinkedIn",
-    gradient: "from-[#0A66C2] to-blue-600",
-    url: (h) => `https://linkedin.com/in/${h}`,
-  },
-  github: {
-    label: "GitHub",
-    gradient: "from-slate-800 to-slate-700",
-    url: (h) => `https://github.com/${h}`,
-  },
-  dribbble: {
-    label: "Dribbble",
-    gradient: "from-[#ea4c89] to-pink-500",
-    url: (h) => `https://dribbble.com/${h}`,
-  },
-};
 
 /* ─── Scale icon container + text size based on widget area ─── */
 function getContainerSize(colSize: number, rowSize: number): string {
@@ -118,6 +52,7 @@ interface Props {
   onDeleteClick?: () => void;
   frostIntensity?: number;
   surfaceTint?: number;
+  forceShowLabel?: boolean;
 }
 
 export function DashboardSocialWidget({
@@ -137,15 +72,16 @@ export function DashboardSocialWidget({
   onDeleteClick,
   frostIntensity = 24,
   surfaceTint = 65,
+  forceShowLabel = false,
 }: Props) {
-  const { type, customName, handle, startCol, startRow, colSize, rowSize } = data;
-  const cfg = PLATFORM_CONFIG[type];
+  const { type, handle, startCol, startRow, colSize, rowSize } = data;
+  const cfg = WIDGET_TYPE_CONFIG[type];
   const area = colSize * rowSize;
   const containerSize = getContainerSize(colSize, rowSize);
   const iconTextSize = getIconTextSize(colSize, rowSize);
-  const href = cfg.url(handle);
-  const displayName = customName?.trim() || cfg.label;
-  const isMobileWidget = data.alwaysShowLabel ?? (colSize === 1 && rowSize === 1);
+  const href = cfg.url(handle.trim());
+  const displayName = cfg.label;
+  const isMobileWidget = forceShowLabel || (colSize === 1 && rowSize === 1);
   const desktopHoverLiftClass =
     area >= 18
       ? "sm:group-hover:-translate-y-10"
@@ -192,8 +128,11 @@ export function DashboardSocialWidget({
 
       {/* Gradient background */}
       <div 
-        className={`absolute inset-0 bg-linear-to-br ${cfg.gradient} transition-opacity duration-200 pointer-events-none`} 
-        style={{ opacity: surfaceTint / 100 }}
+        className="absolute inset-0 transition-opacity duration-200 pointer-events-none"
+        style={{
+          opacity: surfaceTint / 100,
+          background: cfg.background,
+        }}
       />
 
       {/* Overlay on hover for depth — desktop only */}
