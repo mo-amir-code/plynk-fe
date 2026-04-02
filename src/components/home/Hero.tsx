@@ -22,7 +22,7 @@ export function Hero() {
             <span className="gradient-text">Architected with Widgets</span>
           </h1>
           <p className="animate-fade-up delay-200 text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
-            mokU is the definitive platform for creators and professionals to curate their digital presence. Build dynamic, interactive link hubs seamlessly.
+            Plynk is the definitive platform for creators and professionals to curate their digital presence. Build dynamic, interactive link hubs seamlessly.
           </p>
           <div className="animate-fade-up delay-300 flex flex-wrap gap-3 sm:gap-4">
             <a href="/auth/signup" className="inline-block btn-primary px-7 sm:px-8 py-3.5 sm:py-4 bg-primary text-white rounded-xl text-base sm:text-lg font-bold shadow-xl shadow-primary/30">
@@ -42,7 +42,7 @@ export function Hero() {
               ))}
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              <span className="font-bold text-slate-900 dark:text-slate-100">50,000+</span> creators already on mokU
+              <span className="font-bold text-slate-900 dark:text-slate-100">50,000+</span> creators already on Plynk
             </p>
           </div>
         </div>
@@ -142,7 +142,7 @@ export function Hero() {
             <div className="col-span-1 row-span-1 aspect-square sm:aspect-auto bg-primary/5 rounded-[2rem] sm:rounded-[2.5rem] flex flex-col items-center justify-center border border-primary/20 transition-transform duration-500 hover:scale-105 cursor-pointer">
               <span className="material-symbols-outlined text-primary text-[20px] sm:text-[24px] mb-0.5 sm:mb-1">widgets</span>
               <span className="text-[6px] sm:text-[8px] md:text-[10px] font-black text-primary/80 uppercase tracking-widest">Built With</span>
-              <span className="text-[8px] sm:text-[10px] md:text-xs font-black text-primary uppercase tracking-widest">mokU</span>
+              <span className="text-[8px] sm:text-[10px] md:text-xs font-black text-primary uppercase tracking-widest">PLYNK</span>
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@ import useAuthStore from "@/stores/authStore";
 import { Loader2, CheckCircle, XCircle, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { checkUsernameAvailability, claimUsername } from "../../../actions/auth";
+import { APP_DOMAIN } from "@/config/app-config";
 
 type Status = "idle" | "checking" | "available" | "taken" | "invalid";
 
@@ -90,7 +91,7 @@ export default function OnboardingPage() {
             Claim your link
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
-            Choose a unique username for your Moku hub.
+            Choose a unique username for your Plynk hub.
             <br className="hidden sm:block" /> You can always change this later in settings.
           </p>
         </div>
@@ -109,7 +110,7 @@ export default function OnboardingPage() {
             >
               {/* Domain Prefix */}
               <span className="text-base sm:text-lg font-medium text-slate-400 dark:text-slate-500 select-none mr-0.5">
-                moku.com/
+                {APP_DOMAIN}/
               </span>
 
               {/* Input */}

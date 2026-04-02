@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
+import { BRAND_NAME } from "@/config/app-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Moku | Your Personal Link Hub",
+  title: `${BRAND_NAME} | Your Personal Link Hub`,
   description: "Build Your Personal Link Hub With Widgets",
 };
 

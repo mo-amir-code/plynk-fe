@@ -7,7 +7,7 @@ export function ExperienceLive() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="reveal text-center mb-10 sm:mb-14">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-slate-100 mb-3">Experience it live</h2>
-          <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">Uncompromising design, engineered for maximum conversion. This is your future mokU profile.</p>
+          <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">Uncompromising design, engineered for maximum conversion. This is your future Plynk profile.</p>
         </div>
         <div className="reveal-scale bg-white dark:bg-slate-700 rounded-[2rem] sm:rounded-[3rem] p-[0.5px] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div className="bg-background-light dark:bg-background-dark/80 rounded-[1.8rem] sm:rounded-[2.8rem] overflow-hidden">
