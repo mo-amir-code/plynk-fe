@@ -77,7 +77,7 @@ export function Footer() {
         <div className="pt-8 sm:pt-10 border-t border-slate-200 dark:border-slate-800/80 flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-slate-500">
           <div className="flex items-center gap-2">
             <div className="size-2 rounded-full bg-green-500 animate-pulse" />
-            <p>All systems operational. © 2026 mokU Inc.</p>
+            <p>All systems operational. © 2026 Plynk Inc.</p>
           </div>
           
           {mounted && (

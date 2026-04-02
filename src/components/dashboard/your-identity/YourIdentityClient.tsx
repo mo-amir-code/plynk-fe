@@ -10,9 +10,11 @@ import {
 import { SOCIAL_PLATFORMS, SocialPlatform } from "@/components/dashboard/widgets/widget-config";
 import { AddWidgetModal, AddWidgetOption } from "./AddWidgetModal";
 import { EditWidgetModal } from "./EditWidgetModal";
+import { WallpaperUploadModal } from "./WallpaperUploadModal";
 import useAuthStore from "@/stores/authStore";
 import { getMyPage, syncPage } from "../../../../actions/page";
 import { SuccessModal } from "./SuccessModal";
+import { BRAND_NAME, STORAGE_KEYS, getPublicProfileDisplay } from "@/config/app-config";
 
 export type Wallpaper = {
   id: string;
@@ -27,13 +29,51 @@ export const WALLPAPERS: Wallpaper[] = [
   { id: "wp5", background: "linear-gradient(135deg, #CDD0FF, #9BB0FF)" },
   { id: "wp6", background: "linear-gradient(135deg, #18D1FF, #0099FF)" },
   { id: "wp7", background: "linear-gradient(135deg, #5EE689, #25CC97)" },
-  { id: "wp8", background: "linear-gradient(135deg, #FFB966, #FF6600)" },
+  { id: "wp8", background: "linear-gradient(135deg, #FFB966, #FF6600)" }
 ];
 
 export const FONTS = [
   { id: "modern", name: "Modern", family: "Manrope, sans-serif" },
   { id: "classic", name: "Classic", family: "'Playfair Display', serif" },
   { id: "technical", name: "Technical", family: "'JetBrains Mono', monospace" },
+];
+
+type ThemeConfig = {
+  id: string;
+  name: string;
+  frostIntensity: number;
+  surfaceTint: number;
+  fontStyle: string;
+  wallpaper: string;
+};
+
+const DUMMY_API_WALLPAPERS: Wallpaper[] = WALLPAPERS;
+const DUMMY_API_FONT_STYLES = FONTS;
+const DUMMY_API_DEFAULT_THEMES: ThemeConfig[] = [
+  {
+    id: "theme_ocean_glass",
+    name: "Ocean Glass",
+    frostIntensity: 24,
+    surfaceTint: 65,
+    fontStyle: "modern",
+    wallpaper: "wp1",
+  },
+  {
+    id: "theme_sunset_soft",
+    name: "Sunset Soft",
+    frostIntensity: 18,
+    surfaceTint: 58,
+    fontStyle: "classic",
+    wallpaper: "wp2",
+  },
+  {
+    id: "theme_electric_bold",
+    name: "Electric Bold",
+    frostIntensity: 36,
+    surfaceTint: 72,
+    fontStyle: "technical",
+    wallpaper: "wp6",
+  },
 ];
 
 /* ─────────────────────────────────────────
@@ -320,6 +360,19 @@ export function YourIdentityClient() {
   const [frostIntensity, setFrostIntensity] = useState(24);
   const [surfaceTint, setSurfaceTint] = useState(65);
   const [activeFont, setActiveFont] = useState("modern");
+  const [customThemes, setCustomThemes] = useState<ThemeConfig[]>([]);
+  const [selectedDefaultThemeId, setSelectedDefaultThemeId] = useState<string | null>(null);
+  const [selectedCustomThemeId, setSelectedCustomThemeId] = useState<string | null>(null);
+  const [isCustomThemeModalOpen, setIsCustomThemeModalOpen] = useState(false);
+  const [customThemeName, setCustomThemeName] = useState("");
+  const [isEditCustomThemeModalOpen, setIsEditCustomThemeModalOpen] = useState(false);
+  const [editingCustomThemeId, setEditingCustomThemeId] = useState<string | null>(null);
+  const [editingCustomThemeName, setEditingCustomThemeName] = useState("");
+  const [wallpaperOptions, setWallpaperOptions] = useState<Wallpaper[]>(WALLPAPERS);
+  const [isWallpaperUploadModalOpen, setIsWallpaperUploadModalOpen] = useState(false);
+  const [selectedWallpaperFile, setSelectedWallpaperFile] = useState<File | null>(null);
+  const [selectedWallpaperPreview, setSelectedWallpaperPreview] = useState<string | null>(null);
+  const [isWallpaperUploading, setIsWallpaperUploading] = useState(false);
   const [isThemeStudioOpen, setIsThemeStudioOpen] = useState(true);
   const [wasThemeStudioOpen, setWasThemeStudioOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -327,6 +380,235 @@ export function YourIdentityClient() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const customPromptShownRef = useRef(false);
+  const WALLPAPER_UPLOAD_API = "/api/upload/wallpaper";
+
+  const DUMMY_API_WALLPAPERS = wallpaperOptions;
+
+  const applyThemeConfig = (theme: ThemeConfig, source: "default" | "custom") => {
+    setActiveWallpaper(theme.wallpaper);
+    setFrostIntensity(theme.frostIntensity);
+    setSurfaceTint(theme.surfaceTint);
+    setActiveFont(theme.fontStyle);
+
+    if (source === "default") {
+      setSelectedDefaultThemeId(theme.id);
+      setSelectedCustomThemeId(null);
+      customPromptShownRef.current = false;
+    } else {
+      setSelectedCustomThemeId(theme.id);
+      setSelectedDefaultThemeId(null);
+      customPromptShownRef.current = true;
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedWallpaperFile) {
+      setSelectedWallpaperPreview(null);
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(selectedWallpaperFile);
+    setSelectedWallpaperPreview(previewUrl);
+
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [selectedWallpaperFile]);
+
+  const openWallpaperUploadModal = () => {
+    setSelectedWallpaperFile(null);
+    setSelectedWallpaperPreview(null);
+    setIsWallpaperUploadModalOpen(true);
+  };
+
+  const closeWallpaperUploadModal = () => {
+    setIsWallpaperUploadModalOpen(false);
+    setSelectedWallpaperFile(null);
+    setSelectedWallpaperPreview(null);
+  };
+
+  const uploadWallpaper = async () => {
+    if (!selectedWallpaperFile) {
+      toast.error("Choose an image first");
+      return;
+    }
+
+    setIsWallpaperUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedWallpaperFile);
+
+      const response = await fetch(WALLPAPER_UPLOAD_API, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const result = await response.json();
+      const uploadedUrl = result?.url || result?.data?.url || result?.imageUrl || result?.result?.url;
+
+      if (!uploadedUrl) {
+        throw new Error("Upload response did not include a URL");
+      }
+
+      const uploadedWallpaper: Wallpaper = {
+        id: `wp_uploaded_${Date.now()}`,
+        background: `url("${uploadedUrl}") center/cover no-repeat`,
+      };
+
+      setWallpaperOptions((prev) => [uploadedWallpaper, ...prev]);
+      setActiveWallpaper(uploadedWallpaper.id);
+      toast.success("Wallpaper uploaded successfully");
+      closeWallpaperUploadModal();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to upload wallpaper");
+    } finally {
+      setIsWallpaperUploading(false);
+    }
+  };
+
+  const handleThemeValueCustomization = () => {
+    if (selectedDefaultThemeId && !customPromptShownRef.current) {
+      customPromptShownRef.current = true;
+      setIsCustomThemeModalOpen(true);
+      setCustomThemeName("");
+      setSelectedDefaultThemeId(null);
+      return;
+    }
+  };
+
+  const saveCustomTheme = () => {
+    const trimmedName = customThemeName.trim();
+    if (!trimmedName) {
+      toast.error("Please enter a theme name");
+      return;
+    }
+
+    const newTheme: ThemeConfig = {
+      id: `theme_custom_${Date.now()}`,
+      name: trimmedName,
+      frostIntensity,
+      surfaceTint,
+      fontStyle: activeFont,
+      wallpaper: activeWallpaper,
+    };
+
+    setCustomThemes((prev) => [newTheme, ...prev]);
+    setSelectedCustomThemeId(newTheme.id);
+    setSelectedDefaultThemeId(null);
+    setIsCustomThemeModalOpen(false);
+    setCustomThemeName("");
+    toast.success("Custom theme saved");
+  };
+
+  const closeCustomThemeModal = () => {
+    setIsCustomThemeModalOpen(false);
+    setCustomThemeName("");
+  };
+
+  const openEditCustomThemeModal = (theme: ThemeConfig) => {
+    setEditingCustomThemeId(theme.id);
+    setEditingCustomThemeName(theme.name);
+    setIsEditCustomThemeModalOpen(true);
+  };
+
+  const closeEditCustomThemeModal = () => {
+    setIsEditCustomThemeModalOpen(false);
+    setEditingCustomThemeId(null);
+    setEditingCustomThemeName("");
+  };
+
+  const saveCustomThemeName = () => {
+    if (!editingCustomThemeId) return;
+
+    const trimmedName = editingCustomThemeName.trim();
+    if (!trimmedName) {
+      toast.error("Please enter a theme name");
+      return;
+    }
+
+    setCustomThemes((prev) =>
+      prev.map((theme) =>
+        theme.id === editingCustomThemeId
+          ? { ...theme, name: trimmedName }
+          : theme,
+      ),
+    );
+
+    closeEditCustomThemeModal();
+    toast.success("Theme name updated");
+  };
+
+  const deleteCustomTheme = (themeId: string) => {
+    if (selectedCustomThemeId === themeId) {
+      toast.error("Cannot delete selected customized theme");
+      return;
+    }
+
+    const confirmed = window.confirm("Are you sure you want to delete this customized theme?");
+    if (!confirmed) return;
+
+    setCustomThemes((prev) => prev.filter((theme) => theme.id !== themeId));
+    toast.success("Customized theme deleted");
+  };
+
+  const handleWallpaperChange = (wallpaperId: string) => {
+    if (wallpaperId === activeWallpaper) return;
+    setActiveWallpaper(wallpaperId);
+    handleThemeValueCustomization();
+  };
+
+  const handleFrostIntensityChange = (value: number) => {
+    if (value === frostIntensity) return;
+    setFrostIntensity(value);
+    handleThemeValueCustomization();
+  };
+
+  const handleSurfaceTintChange = (value: number) => {
+    if (value === surfaceTint) return;
+    setSurfaceTint(value);
+    handleThemeValueCustomization();
+  };
+
+  const handleFontStyleChange = (fontId: string) => {
+    if (fontId === activeFont) return;
+    setActiveFont(fontId);
+    handleThemeValueCustomization();
+  };
+
+  useEffect(() => {
+    if (!selectedCustomThemeId) return;
+
+    setCustomThemes((prev) => {
+      let changed = false;
+
+      const next = prev.map((theme) => {
+        if (theme.id !== selectedCustomThemeId) return theme;
+
+        if (
+          theme.wallpaper === activeWallpaper &&
+          theme.frostIntensity === frostIntensity &&
+          theme.surfaceTint === surfaceTint &&
+          theme.fontStyle === activeFont
+        ) {
+          return theme;
+        }
+
+        changed = true;
+        return {
+          ...theme,
+          wallpaper: activeWallpaper,
+          frostIntensity,
+          surfaceTint,
+          fontStyle: activeFont,
+        };
+      });
+
+      return changed ? next : prev;
+    });
+  }, [selectedCustomThemeId, activeWallpaper, frostIntensity, surfaceTint, activeFont]);
 
   // 1. Initial state load from localStorage
   useEffect(() => {
@@ -344,6 +626,9 @@ export function YourIdentityClient() {
           if (cfg.frostIntensity !== undefined) setFrostIntensity(cfg.frostIntensity);
           if (cfg.surfaceTint !== undefined) setSurfaceTint(cfg.surfaceTint);
           if (cfg.activeFont) setActiveFont(cfg.activeFont);
+          if (Array.isArray(cfg.customThemes)) setCustomThemes(cfg.customThemes);
+          if (cfg.selectedDefaultThemeId) setSelectedDefaultThemeId(cfg.selectedDefaultThemeId);
+          if (cfg.selectedCustomThemeId) setSelectedCustomThemeId(cfg.selectedCustomThemeId);
         }
 
         // 1.5 State check
@@ -355,10 +640,10 @@ export function YourIdentityClient() {
             id: w.id,
             type: w.type,
             handle: w.config?.data?.handle,
-            startCol: Number(w.x) + 1,
-            startRow: Number(w.y) + 1,
-            colSize: w.width,
-            rowSize: w.height,
+            startCol: Number(w.startCol),
+            startRow: Number(w.startRow),
+            colSize: w.colSize,
+            rowSize: w.rowSize,
           })));
           setWidgets(mappedWidgets);
         } else {
@@ -366,8 +651,8 @@ export function YourIdentityClient() {
         }
       } else {
         // Fallback to localStorage if no API data or not logged in
-        const themeKey = `moku_theme_${userId}`;
-        const widgetsKey = `moku_widgets_${userId}`;
+        const themeKey = STORAGE_KEYS.themeByUser(userId);
+        const widgetsKey = STORAGE_KEYS.widgetsByUser(userId);
 
         const savedTheme = localStorage.getItem(themeKey);
         const savedWidgets = localStorage.getItem(widgetsKey);
@@ -379,6 +664,9 @@ export function YourIdentityClient() {
             if (parsed.frostIntensity !== undefined) setFrostIntensity(parsed.frostIntensity);
             if (parsed.surfaceTint !== undefined) setSurfaceTint(parsed.surfaceTint);
             if (parsed.activeFont) setActiveFont(parsed.activeFont);
+            if (Array.isArray(parsed.customThemes)) setCustomThemes(parsed.customThemes);
+            if (parsed.selectedDefaultThemeId) setSelectedDefaultThemeId(parsed.selectedDefaultThemeId);
+            if (parsed.selectedCustomThemeId) setSelectedCustomThemeId(parsed.selectedCustomThemeId);
           } catch (e) { }
         }
 
@@ -415,10 +703,13 @@ export function YourIdentityClient() {
       frostIntensity,
       surfaceTint,
       activeFont,
+      customThemes,
+      selectedDefaultThemeId,
+      selectedCustomThemeId,
     };
 
-    const themeKey = `moku_theme_${userId}`;
-    const widgetsKey = `moku_widgets_${userId}`;
+    const themeKey = STORAGE_KEYS.themeByUser(userId);
+    const widgetsKey = STORAGE_KEYS.widgetsByUser(userId);
 
     localStorage.setItem(themeKey, JSON.stringify(themeConfig));
     localStorage.setItem(widgetsKey, normalizedString);
@@ -435,10 +726,10 @@ export function YourIdentityClient() {
         isPublished, // Maintain current status during autosave
         widgets: normalizedWidgets.map(w => ({
           type: w.type.toUpperCase(),
-          x: w.startCol - 1,
-          y: w.startRow - 1,
-          width: w.colSize,
-          height: w.rowSize,
+          startCol: w.startCol,
+          startRow: w.startRow,
+          colSize: w.colSize,
+          rowSize: w.rowSize,
           config: {
             data: {
               handle: w.handle,
@@ -460,7 +751,7 @@ export function YourIdentityClient() {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [widgets, activeWallpaper, frostIntensity, surfaceTint, activeFont, isInitialized, isPublished]);
+  }, [widgets, activeWallpaper, frostIntensity, surfaceTint, activeFont, customThemes, selectedDefaultThemeId, selectedCustomThemeId, isInitialized, isPublished]);
 
   useEffect(() => {
     if (!isPreview) return;
@@ -1067,8 +1358,20 @@ export function YourIdentityClient() {
   const submitWidgets = async () => {
     setIsSubmitting(true);
     try {
+      const selectedDefaultTheme = DUMMY_API_DEFAULT_THEMES.find((theme) => theme.id === selectedDefaultThemeId);
+      const selectedCustomTheme = customThemes.find((theme) => theme.id === selectedCustomThemeId);
+      const currentThemeJson: ThemeConfig = {
+        id: selectedCustomTheme?.id || selectedDefaultTheme?.id || "theme_manual",
+        name: selectedCustomTheme?.name || selectedDefaultTheme?.name || "Manual Theme",
+        frostIntensity,
+        surfaceTint,
+        fontStyle: activeFont,
+        wallpaper: activeWallpaper,
+      };
+
       // 1. Separate Theme Payload (Page + Styling options)
       const themePayload = {
+        theme: currentThemeJson,
         page: {
           background: activeWallpaper,
           font: activeFont
@@ -1087,10 +1390,10 @@ export function YourIdentityClient() {
       const widgetsPayload = widgets.map(w => ({
         id: w.id,
         type: w.type,
-        x: w.startCol,
-        y: w.startRow,
-        width: w.colSize,
-        height: w.rowSize,
+        startCol: w.startCol,
+        startRow: w.startRow,
+        colSize: w.colSize,
+        rowSize: w.rowSize,
         config: {
           handle: w.handle,
         }
@@ -1107,7 +1410,7 @@ export function YourIdentityClient() {
       setSyncStatus("saved");
       setIsPublished(true);
       setIsSuccessModalOpen(true);
-      console.group('Submitting Moku Page State');
+      console.group(`Submitting ${BRAND_NAME} Page State`);
       console.log('1️⃣ THEME_JSON (style_config) ->', themePayload);
       console.log('2️⃣ PUBLIC_STATUS ->', true);
       console.log('3️⃣ WIDGETS_JSON (layout + data)->', widgetsPayload);
@@ -1120,8 +1423,8 @@ export function YourIdentityClient() {
     }
   };
 
-  const activeBackground = WALLPAPERS.find(w => w.id === activeWallpaper)?.background || WALLPAPERS[0].background;
-  const currentFont = FONTS.find(f => f.id === activeFont)?.family || 'inherit';
+  const activeBackground = DUMMY_API_WALLPAPERS.find(w => w.id === activeWallpaper)?.background || DUMMY_API_WALLPAPERS[0].background;
+  const currentFont = DUMMY_API_FONT_STYLES.find(f => f.id === activeFont)?.family || 'inherit';
 
   return (
     <div
@@ -1130,18 +1433,18 @@ export function YourIdentityClient() {
     >
       {/* Premium Cloud Sync Status Indicator - Relocated to Top Right */}
       <div className={`fixed top-10 right-8 z-60 pointer-events-none transition-all duration-500 ease-in-out flex flex-row items-center gap-3 ${isPreview ? "opacity-0 scale-90 translate-x-4" :
-          syncStatus === "saving" ? "opacity-100 translate-x-0" :
-            syncStatus === "saved" ? "opacity-90 translate-x-0" :
-              syncStatus === "error" ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
+        syncStatus === "saving" ? "opacity-100 translate-x-0" :
+          syncStatus === "saved" ? "opacity-90 translate-x-0" :
+            syncStatus === "error" ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
         }`}>
         {/* Privacy Status Badge */}
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-xl transition-all duration-700 bg-white/95 dark:bg-slate-900/90 ${isPublished
-            ? "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-emerald-500/10"
-            : "border-amber-500/30 text-amber-600 dark:text-amber-400 shadow-amber-500/10"
+          ? "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-emerald-500/10"
+          : "border-amber-500/30 text-amber-600 dark:text-amber-400 shadow-amber-500/10"
           }`}>
           <div className={`size-2 rounded-full ${isPublished ? "bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.6)]" : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]"}`} />
           <span className="text-[10px] font-black uppercase tracking-widest leading-none">
-            {isPublished ? "Live on Moku" : "Private Draft"}
+            {isPublished ? `Live on ${BRAND_NAME}` : "Private Draft"}
           </span>
         </div>
 
@@ -1166,7 +1469,7 @@ export function YourIdentityClient() {
       </div>
 
       <div
-        className={`w-full max-w-[800px] px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-32 flex flex-col flex-1 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${isThemeStudioOpen ? 'lg:-translate-x-[180px]' : 'translate-x-0'
+        className={`w-full max-w-200 px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-32 flex flex-col flex-1 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${isThemeStudioOpen ? 'lg:-translate-x-45' : 'translate-x-0'
           }`}
       >
         {!isPreview && (
@@ -1319,11 +1622,11 @@ export function YourIdentityClient() {
       </div>
 
       {/* Floating Action Dock */}
-      <div className="fixed bottom-6 lg:bottom-10 left-1/2 -translate-x-1/2 z-[45] flex items-center gap-1 sm:gap-2 p-2 rounded-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)]">
+      <div className="fixed bottom-6 lg:bottom-10 left-1/2 -translate-x-1/2 z-45 flex items-center gap-1 sm:gap-2 p-2 rounded-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)]">
         <button
           type="button"
           onClick={() => setIsThemeStudioOpen(true)}
-          className="cursor-pointer inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs sm:text-sm font-bold transition-all hover:scale-105 active:scale-95 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10"
+          className="cursor-pointer inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs sm:text-sm font-bold transition-all hover:scale-105 active:scale-95 bg-linear-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30 ring-1 ring-blue-500/20"
         >
           <span className="material-symbols-outlined text-[18px] leading-none">palette</span>
           <span className="hidden sm:inline">Theme</span>
@@ -1353,8 +1656,8 @@ export function YourIdentityClient() {
             setIsPreview((prev) => !prev);
           }}
           className={`cursor-pointer inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs sm:text-sm font-bold transition-all hover:scale-105 active:scale-95 ${isPreview
-              ? "bg-slate-900 text-white dark:bg-white dark:text-blue-600 shadow-md"
-              : "text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10"
+            ? "bg-slate-900 text-white dark:bg-white dark:text-blue-600 shadow-md"
+            : "text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10"
             }`}
         >
           {isPreview ? <Pencil size={18} /> : <Eye size={18} />}
@@ -1374,38 +1677,156 @@ export function YourIdentityClient() {
 
       {/* Theme Studio Floating Panel */}
       {isThemeStudioOpen && (
-        <div className="fixed top-24 right-6 w-[340px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[24px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.6)] z-50 flex flex-col overflow-hidden border border-slate-100 dark:border-white/5 animate-in fade-in slide-in-from-right-full duration-500 ease-out" style={{ fontFamily: 'Manrope, sans-serif' }}>
+        <div
+          className="fixed top-20 bottom-6 right-4 w-[min(92vw,388px)] bg-white/92 dark:bg-slate-950/90 backdrop-blur-2xl rounded-[28px] shadow-[0_28px_70px_-20px_rgba(37,99,235,0.35)] dark:shadow-[0_28px_70px_-20px_rgba(0,0,0,0.75)] z-50 flex flex-col overflow-hidden border border-blue-100/80 dark:border-blue-400/10 ring-1 ring-white/40 dark:ring-white/5 animate-in fade-in slide-in-from-right-full duration-500 ease-out"
+          style={{ fontFamily: 'Manrope, sans-serif' }}
+        >
+          <div className="h-1.5 w-full bg-linear-to-r from-blue-500 via-indigo-500 to-cyan-400" />
           {/* Header */}
-          <div className="px-6 py-5 flex items-center justify-between border-b border-slate-100/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
+          <div className="px-6 py-5 flex items-start justify-between gap-4 border-b border-slate-100/70 dark:border-white/5 bg-linear-to-b from-blue-50/70 to-white/70 dark:from-white/5 dark:to-slate-950/10">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500">
+              <div className="p-2.5 rounded-2xl bg-linear-to-br from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30">
                 <Palette size={18} />
               </div>
               <div>
                 <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Theme Studio</h2>
-                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-black mt-1">Customize Vibe</p>
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-blue-200/70 dark:border-blue-400/20 bg-blue-50/80 dark:bg-blue-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">
+                  <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  Live appearance
+                </div>
               </div>
             </div>
             <button
               onClick={() => setIsThemeStudioOpen(false)}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 outline-none size-8 flex items-center justify-center shrink-0 rounded-full hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 shadow-sm hover:shadow-md"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 outline-none size-9 flex items-center justify-center shrink-0 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-all border border-slate-200/60 dark:border-white/10 shadow-sm hover:shadow-md"
             >
               <X size={16} strokeWidth={3} />
             </button>
           </div>
 
-          <div className="p-6 overflow-y-auto max-h-[calc(100vh-300px)] lg:max-h-[calc(100vh-220px)] space-y-8 custom-scrollbar">
-            {/* Wallpaper */}
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-75 fill-mode-both">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[11px] font-bold tracking-[0.1em] text-slate-800 dark:text-slate-300 uppercase">Wallpaper</h3>
-                <button className="text-xs font-semibold text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">Upload</button>
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar divide-y divide-slate-200/70 dark:divide-slate-800/80">
+            {/* Default Themes */}
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-50 fill-mode-both px-6 py-6 first:pt-6">
+              <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase mb-4 flex items-center gap-3">
+                Default Themes
+                <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+              </h3>
+              <div className="space-y-2.5">
+                {DUMMY_API_DEFAULT_THEMES.map((theme) => {
+                  const wallpaper = DUMMY_API_WALLPAPERS.find((wp) => wp.id === theme.wallpaper);
+                  const isActive = selectedDefaultThemeId === theme.id;
+
+                  return (
+                    <button
+                      key={theme.id}
+                      onClick={() => applyThemeConfig(theme, "default")}
+                      className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 ${isActive
+                        ? "border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-sm"
+                        : "border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white/70 dark:bg-slate-900/70 hover:bg-white dark:hover:bg-slate-800/70"
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="size-7 rounded-full border border-white/30 shadow-sm" style={{ background: wallpaper?.background || DUMMY_API_WALLPAPERS[0].background }} />
+                        <div className="flex flex-col items-start">
+                          <span className="text-sm font-bold text-slate-900 dark:text-white">{theme.name}</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-500">{theme.fontStyle}</span>
+                        </div>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isActive ? 'bg-blue-500 border-blue-500 transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
+                        }`}>
+                        {isActive && <Check size={12} className="text-white" />}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-              <div className="grid grid-cols-4 gap-3">
-                {WALLPAPERS.map(wp => (
+            </div>
+
+            {/* Customized Themes */}
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-100 fill-mode-both px-6 py-6">
+              <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase mb-4 flex items-center gap-3">
+                Customized Themes
+                <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+              </h3>
+
+              {customThemes.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-300/80 dark:border-slate-700 px-4 py-3 text-xs text-slate-500 dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40">
+                  No customized theme yet. Select a default theme and edit values to create one.
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {customThemes.map((theme) => {
+                    const wallpaper = DUMMY_API_WALLPAPERS.find((wp) => wp.id === theme.wallpaper);
+                    const isActive = selectedCustomThemeId === theme.id;
+
+                    return (
+                      <div
+                        key={theme.id}
+                        className={`w-full p-2.5 rounded-2xl border transition-all duration-200 ${isActive
+                          ? "border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-sm"
+                          : "border-slate-200/70 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70"
+                          }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => applyThemeConfig(theme, "custom")}
+                          className="w-full flex items-center justify-between px-1 py-1"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="size-7 rounded-full border border-white/30 shadow-sm" style={{ background: wallpaper?.background || DUMMY_API_WALLPAPERS[0].background }} />
+                            <div className="flex flex-col items-start">
+                              <span className="text-sm font-bold text-slate-900 dark:text-white">{theme.name}</span>
+                              <span className="text-[11px] text-slate-500 dark:text-slate-500">{theme.fontStyle}</span>
+                            </div>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isActive ? 'bg-blue-500 border-blue-500 transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
+                            }`}>
+                            {isActive && <Check size={12} className="text-white" />}
+                          </div>
+                        </button>
+
+                        <div className="mt-2 flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEditCustomThemeModal(theme)}
+                            className="h-7 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1"
+                          >
+                            <Pencil size={11} />
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteCustomTheme(theme.id)}
+                            className="h-7 px-2.5 rounded-lg border border-red-200 dark:border-red-500/40 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50/70 dark:hover:bg-red-500/10 flex items-center gap-1"
+                          >
+                            <X size={11} />
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Wallpaper */}
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-75 fill-mode-both px-6 py-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase">Wallpaper</h3>
+                <button
+                  type="button"
+                  onClick={openWallpaperUploadModal}
+                  className="text-xs font-semibold text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  Upload
+                </button>
+              </div>
+              <div className="grid grid-cols-4 gap-3 content-start">
+                {DUMMY_API_WALLPAPERS.map(wp => (
                   <button
                     key={wp.id}
-                    onClick={() => setActiveWallpaper(wp.id)}
+                    onClick={() => handleWallpaperChange(wp.id)}
                     className={`relative aspect-square rounded-full flex items-center justify-center transition-all duration-300 ${activeWallpaper === wp.id ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900 scale-100 shadow-md' : 'hover:scale-[1.08] opacity-90 hover:opacity-100 shadow-sm'
                       }`}
                     style={{ background: wp.background }}
@@ -1419,14 +1840,14 @@ export function YourIdentityClient() {
             </div>
 
             {/* Glass Material */}
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-150 fill-mode-both">
-              <h3 className="text-[11px] font-bold tracking-[0.1em] text-slate-800 dark:text-slate-300 uppercase mb-5 flex items-center gap-3">
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-150 fill-mode-both px-6 py-6">
+              <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase mb-5 flex items-center gap-3">
                 Glass Material
-                <div className="h-px bg-slate-100 dark:bg-slate-800 flex-1"></div>
+                <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
               </h3>
 
-              <div className="space-y-6">
-                <div>
+              <div className="space-y-4">
+                <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-3.5">
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 font-medium">
                       <span className="material-symbols-outlined text-[16px] text-slate-400 dark:text-slate-500">blur_on</span>
@@ -1438,12 +1859,12 @@ export function YourIdentityClient() {
                     type="range"
                     min="0" max="100"
                     value={frostIntensity}
-                    onChange={(e) => setFrostIntensity(Number(e.target.value))}
+                    onChange={(e) => handleFrostIntensityChange(Number(e.target.value))}
                     className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-95 transition-all"
                   />
                 </div>
 
-                <div>
+                <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-3.5">
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 font-medium">
                       <span className="material-symbols-outlined text-[16px] text-slate-400 dark:text-slate-500">water_drop</span>
@@ -1455,7 +1876,7 @@ export function YourIdentityClient() {
                     type="range"
                     min="0" max="100"
                     value={surfaceTint}
-                    onChange={(e) => setSurfaceTint(Number(e.target.value))}
+                    onChange={(e) => handleSurfaceTintChange(Number(e.target.value))}
                     className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-95 transition-all"
                   />
                 </div>
@@ -1463,17 +1884,17 @@ export function YourIdentityClient() {
             </div>
 
             {/* Typography */}
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-200 fill-mode-both">
-              <h3 className="text-[11px] font-bold tracking-widest text-slate-800 dark:text-slate-300 uppercase mb-4 flex items-center gap-3">
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-200 fill-mode-both px-6 py-6">
+              <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase mb-4 flex items-center gap-3">
                 Typography
-                <div className="h-px bg-slate-100 dark:bg-slate-800 flex-1"></div>
+                <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
               </h3>
               <div className="space-y-2.5">
-                {FONTS.map(font => (
+                {DUMMY_API_FONT_STYLES.map(font => (
                   <button
                     key={font.id}
-                    onClick={() => setActiveFont(font.id)}
-                    className={`w-full flex items-center justify-between p-3.5 rounded-[16px] border transition-all duration-200 ${activeFont === font.id ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-500/10 shadow-sm' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                    onClick={() => handleFontStyleChange(font.id)}
+                    className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 ${activeFont === font.id ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-sm' : 'border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white/70 dark:bg-slate-900/70 hover:bg-white dark:hover:bg-slate-800/70'
                       }`}
                   >
                     <div className="flex flex-col items-start gap-1">
@@ -1490,10 +1911,10 @@ export function YourIdentityClient() {
             </div>
 
             {/* Privacy & Publication */}
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-300 fill-mode-both">
-              <h3 className="text-[11px] font-bold tracking-widest text-slate-800 dark:text-slate-300 uppercase mb-5 flex items-center gap-3">
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-300 fill-mode-both px-6 py-6 last:pb-6">
+              <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase mb-5 flex items-center gap-3">
                 Privacy & Publication
-                <div className="h-px bg-slate-100 dark:bg-slate-800 flex-1"></div>
+                <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
               </h3>
 
               <div className="bg-slate-50 dark:bg-white/5 rounded-[20px] p-5 border border-slate-100 dark:border-white/5">
@@ -1519,6 +1940,7 @@ export function YourIdentityClient() {
                       setIsPublished(!isPublished);
                       toast.success(isPublished ? "Page set to Private Draft" : "Page Published Live!", {
                         icon: isPublished ? <Lock className="text-amber-500" size={16} /> : <Check className="text-emerald-500" size={16} />
+
                       });
                     }}
                     className={`relative w-10 h-6 shrink-0 rounded-full transition-colors duration-300 outline-none focus:ring-2 focus:ring-blue-500/50 ${isPublished ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'
@@ -1533,10 +1955,10 @@ export function YourIdentityClient() {
                   <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(`moku.com/${user?.username}`);
+                        navigator.clipboard.writeText(getPublicProfileDisplay(user?.username || "username"));
                         toast.success("Public link copied!");
                       }}
-                      className="w-full py-2.5 rounded-[12px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[11px] font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-sm cursor-pointer"
+                      className="w-full py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[11px] font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-sm cursor-pointer"
                     >
                       <Save size={12} />
                       Copy Public Link
@@ -1544,6 +1966,104 @@ export function YourIdentityClient() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <WallpaperUploadModal
+        isOpen={isWallpaperUploadModalOpen}
+        onClose={closeWallpaperUploadModal}
+        onSelectFile={setSelectedWallpaperFile}
+        onUpload={uploadWallpaper}
+        selectedFile={selectedWallpaperFile}
+        previewUrl={selectedWallpaperPreview}
+        isUploading={isWallpaperUploading}
+      />
+
+      {isCustomThemeModalOpen && (
+        <div className="fixed inset-0 z-70 flex items-center justify-center px-4">
+          <button
+            type="button"
+            aria-label="Close custom theme naming modal"
+            onClick={closeCustomThemeModal}
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+          />
+
+          <div className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div>
+              <h3 className="text-base font-black text-slate-900 dark:text-white">Save Customized Theme</h3>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                You edited a default theme. Give your customized theme a name.
+              </p>
+            </div>
+
+            <input
+              value={customThemeName}
+              onChange={(e) => setCustomThemeName(e.target.value)}
+              placeholder="Theme name"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/40"
+            />
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeCustomThemeModal}
+                className="px-3.5 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                Later
+              </button>
+              <button
+                type="button"
+                onClick={saveCustomTheme}
+                className="px-3.5 h-9 rounded-xl bg-blue-500 text-white text-xs font-bold hover:bg-blue-600"
+              >
+                Save Theme
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isEditCustomThemeModalOpen && (
+        <div className="fixed inset-0 z-71 flex items-center justify-center px-4">
+          <button
+            type="button"
+            aria-label="Close edit custom theme modal"
+            onClick={closeEditCustomThemeModal}
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+          />
+
+          <div className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div>
+              <h3 className="text-base font-black text-slate-900 dark:text-white">Edit Customized Theme</h3>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Update your customized theme name.
+              </p>
+            </div>
+
+            <input
+              value={editingCustomThemeName}
+              onChange={(e) => setEditingCustomThemeName(e.target.value)}
+              placeholder="Theme name"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/40"
+            />
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeEditCustomThemeModal}
+                className="px-3.5 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveCustomThemeName}
+                className="px-3.5 h-9 rounded-xl bg-blue-500 text-white text-xs font-bold hover:bg-blue-600"
+              >
+                Save Name
+              </button>
             </div>
           </div>
         </div>
