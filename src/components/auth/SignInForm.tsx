@@ -12,7 +12,6 @@ export function SignInForm() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [localError, setLocalError] = useState("");
   const router = useRouter();
 
   const validate = () => {
@@ -33,7 +32,7 @@ export function SignInForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLocalError("");
+
     if (!validate()) return;
 
     setIsLoading(true);
@@ -44,7 +43,6 @@ export function SignInForm() {
       router.refresh();
     } catch (error: any) {
       const msg = error.message || "Invalid credentials";
-      setLocalError(msg);
       toast.error(msg);
     } finally {
       setIsLoading(false);
@@ -56,7 +54,7 @@ export function SignInForm() {
       <div className="animate-fade-up">
         {/* Header */}
         <div className="mb-8 sm:mb-10 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/20 to-primary/5 px-4 py-2 rounded-full mb-6 border border-primary/20 hover:border-primary/40 transition-colors group">
+          <Link href="/" className="inline-flex items-center gap-2 bg-linear-to-r from-primary/20 to-primary/5 px-4 py-2 rounded-full mb-6 border border-primary/20 hover:border-primary/40 transition-colors group">
             <span className="material-symbols-outlined text-lg leading-none text-primary">arrow_back</span>
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Back to Home</span>
           </Link>
@@ -117,18 +115,6 @@ export function SignInForm() {
               Forgot password?
             </Link>
           </div>
-
-          {/* Error Message */}
-          {localError && (
-            <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-start gap-3">
-              <span className="material-symbols-outlined text-lg leading-none text-red-600 dark:text-red-400 flex-shrink-0">
-                error
-              </span>
-              <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                {localError}
-              </p>
-            </div>
-          )}
 
           {/* Submit Button */}
           <button

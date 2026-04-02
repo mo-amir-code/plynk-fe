@@ -164,3 +164,52 @@ body {
 .dark .card-hover:hover {
   box-shadow: 0 24px 48px rgba(0,0,0,0.4);
 }
+
+/* ── Senior Glossy Toasts ── */
+[data-sonner-toast] {
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-radius: 18px !important;
+  padding: 14px 20px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Success Toast */
+[data-sonner-toast][data-type="success"] {
+  background: rgba(240, 253, 244, 0.85) !important;
+  color: #15803d !important;
+  border: 1px solid rgba(34, 197, 94, 0.4) !important;
+}
+.dark [data-sonner-toast][data-type="success"] {
+  background: rgba(6, 78, 59, 0.7) !important;
+  color: #34d399 !important; /* Brighter emerald for dark mode */
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Error Toast */
+[data-sonner-toast][data-type="error"] {
+  background: rgba(254, 242, 242, 0.85) !important;
+  color: #dc2626 !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+}
+.dark [data-sonner-toast][data-type="error"] {
+  background: rgba(69, 10, 10, 0.7) !important;
+  color: #fb7185 !important; /* Brighter rose for dark mode */
+  border: 1px solid rgba(244, 63, 94, 0.3) !important;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Info Toast */
+[data-sonner-toast][data-type="info"] {
+  background: rgba(239, 246, 255, 0.85) !important;
+  color: #1d4ed8 !important;
+  border: 1px solid rgba(59, 130, 246, 0.4) !important;
+}
+.dark [data-sonner-toast][data-type="info"] {
+  background: rgba(30, 58, 138, 0.7) !important;
+  color: #60a5fa !important; /* Brighter blue for dark mode */
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.6) !important;
+}
