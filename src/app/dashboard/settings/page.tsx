@@ -272,7 +272,7 @@ export default function SettingsPage() {
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-400">
                 <header>
                   <h2 className="text-2xl font-bold text-slate-950 dark:text-white tracking-tight">Appearance</h2>
-                  <p className="text-sm text-slate-500 mt-1">Customize how MokU looks for you.</p>
+                  <p className="text-sm text-slate-500 mt-1">Customize how Plynk looks for you.</p>
                 </header>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -326,7 +326,7 @@ export default function SettingsPage() {
                 
                 <div className="space-y-3">
                   <h3 className="text-4xl font-black tracking-tighter flex items-center gap-3">
-                    MokU <span className="bg-linear-to-r from-primary to-orange-400 bg-clip-text text-transparent italic">PRO</span>
+                    Plynk <span className="bg-linear-to-r from-primary to-orange-400 bg-clip-text text-transparent italic">PRO</span>
                   </h3>
                   <p className="text-slate-400 text-base font-medium max-w-sm leading-relaxed">
                     Deploy unlimited widgets, unlock global analytics, and get priority developer support.

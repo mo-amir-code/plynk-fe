@@ -6,7 +6,7 @@ export function Features() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="reveal text-center max-w-3xl mx-auto mb-12 sm:mb-16">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-6 tracking-tight text-slate-900 dark:text-white">Engineered for Expression</h2>
-          <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400">Move beyond static lists. mokU provides a robust, component-driven architecture to dynamically represent your brand identity.</p>
+          <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400">Move beyond static lists. Plynk provides a robust, component-driven architecture to dynamically represent your brand identity.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-8">
           {featuresList.map((card, i) => (

@@ -42,14 +42,14 @@ export default function NotFound() {
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold text-sm transition-all active:scale-95 backdrop-blur-md"
           >
             <Search size={18} strokeWidth={2.5} />
-            Explore Moku
+            Explore Plynk
           </Link>
         </div>
 
         {/* Brand Link */}
         <div className="mt-20 opacity-30">
           <span className="text-[10px] font-black tracking-[0.3em] uppercase text-white">
-            MOKU PLATFORM
+            PLYNK PLATFORM
           </span>
         </div>
       </div>

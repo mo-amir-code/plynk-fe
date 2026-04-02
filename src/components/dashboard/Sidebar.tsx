@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { authLogout } from "../../../actions/auth";
 import useAuthStore from "@/stores/authStore";
+import { STORAGE_KEYS } from "@/config/app-config";
 
 const primaryNavItems = [
   { name: "Your Identity", href: "/dashboard/your-identity", icon: "person" },
@@ -35,8 +36,8 @@ export function Sidebar() {
     try {
       await authLogout();
       logout();
-      localStorage.removeItem("moku_theme");
-      localStorage.removeItem("moku_widgets");
+      localStorage.removeItem(STORAGE_KEYS.legacyTheme);
+      localStorage.removeItem(STORAGE_KEYS.legacyWidgets);
 
       router.push("/auth/signin");
       router.refresh();
@@ -69,13 +70,13 @@ export function Sidebar() {
       {/* Tooltip */}
       <div className="absolute left-full ml-4 px-3 py-2 bg-slate-900 dark:bg-slate-700 text-white text-xs font-bold rounded-lg opacity-0 -translate-x-2 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 whitespace-nowrap z-100 shadow-xl border border-white/10 flex items-center">
         {item.name}
-        <span className="absolute top-1/2 -left-[5px] -translate-y-1/2 border-[5px] border-transparent border-r-slate-900 dark:border-r-slate-700" />
+        <span className="absolute top-1/2 -left-1.25 -translate-y-1/2 border-[5px] border-transparent border-r-slate-900 dark:border-r-slate-700" />
       </div>
     </Link>
   );
 
   return (
-    <aside className="hidden lg:flex flex-col items-center w-[88px] py-6 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen sticky top-0 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-none">
+    <aside className="hidden lg:flex flex-col items-center w-22 py-6 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen sticky top-0 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-none">
       {/* Logo */}
       <Link href="/" className="group mb-10 flex items-center justify-center relative">
         <div className="size-12 bg-linear-to-br from-primary to-orange-500 rounded-[14px] flex items-center justify-center text-white shadow-lg shadow-primary/30 transition-all duration-300 group-hover:scale-105 group-hover:shadow-primary/50 group-hover:-translate-y-0.5">
@@ -116,13 +117,13 @@ export function Sidebar() {
           
           <div className="absolute left-full ml-4 px-3 py-2 bg-red-600 dark:bg-red-500 text-white text-xs font-bold rounded-lg opacity-0 -translate-x-2 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 whitespace-nowrap z-100 shadow-xl flex items-center">
             Sign out
-            <span className="absolute top-1/2 -left-[5px] -translate-y-1/2 border-[5px] border-transparent border-r-red-600 dark:border-r-red-500" />
+            <span className="absolute top-1/2 -left-1.25 -translate-y-1/2 border-[5px] border-transparent border-r-red-600 dark:border-r-red-500" />
           </div>
         </button>
 
         {/* User avatar */}
         <div className="relative group mt-3 cursor-pointer">
-          <div className="size-11 rounded-[14px] bg-linear-to-tr from-slate-200 to-slate-100 dark:from-slate-700 dark:to-slate-600 p-[2px] transition-all duration-300 shadow-md ring-2 ring-transparent group-hover:ring-primary/30">
+          <div className="size-11 rounded-[14px] bg-linear-to-tr from-slate-200 to-slate-100 dark:from-slate-700 dark:to-slate-600 p-0.5 transition-all duration-300 shadow-md ring-2 ring-transparent group-hover:ring-primary/30">
             <div className="w-full h-full rounded-xl bg-slate-900 flex items-center justify-center text-white/95 font-black tracking-wider text-sm overflow-hidden relative shadow-inner">
               <div className="absolute inset-0 bg-linear-to-b from-white/10 to-transparent" />
               {initials}
@@ -132,7 +133,7 @@ export function Sidebar() {
           <div className="absolute bottom-0 left-full ml-4 py-2 px-3 bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 -translate-x-4 pointer-events-none transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 whitespace-nowrap z-100 shadow-xl border border-white/10 flex flex-col items-start gap-0.5">
             <span className="text-sm font-bold tracking-tight">{user?.fullName || "User"}</span>
             <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Pro Plan</span>
-            <span className="absolute bottom-4 -left-[5px] border-[5px] border-transparent border-r-slate-900 dark:border-r-slate-700" />
+            <span className="absolute bottom-4 -left-1.25 border-[5px] border-transparent border-r-slate-900 dark:border-r-slate-700" />
           </div>
         </div>
       </div>

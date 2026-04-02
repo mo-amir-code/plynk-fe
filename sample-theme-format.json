@@ -1,0 +1,9 @@
+
+{
+    "id": "theme_id",
+    "name": "theme_name",
+    "frostIntensity": "frost_intensity_value",
+    "surfaceTint": "surface_tint_value",
+    "fontStyle": "font_style_value",
+    "wallpaper": "wallpaper(color_or_image_value)" 
+}

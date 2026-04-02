@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Check, Copy, ExternalLink, Twitter, Linkedin, MessageCircle, Share2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { BRAND_NAME, getPublicProfileDisplay, getPublicProfileUrl } from "@/config/app-config";
 
 interface SuccessModalProps {
   isOpen: boolean;
@@ -12,8 +13,8 @@ interface SuccessModalProps {
 
 export function SuccessModal({ isOpen, onClose, username }: SuccessModalProps) {
   const [copied, setCopied] = useState(false);
-  const publicUrl = `moku.com/${username}`;
-  const fullUrl = `https://${publicUrl}`;
+  const publicUrl = getPublicProfileDisplay(username);
+  const fullUrl = getPublicProfileUrl(username);
 
   useEffect(() => {
     if (copied) {
@@ -35,7 +36,7 @@ export function SuccessModal({ isOpen, onClose, username }: SuccessModalProps) {
   };
 
   const shareTwitter = () => {
-    const text = encodeURIComponent(`Check out my new Moku profile! 🚀\n\n${fullUrl}`);
+    const text = encodeURIComponent(`Check out my new ${BRAND_NAME} profile! 🚀\n\n${fullUrl}`);
     window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
   };
 
@@ -48,7 +49,7 @@ export function SuccessModal({ isOpen, onClose, username }: SuccessModalProps) {
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden shadow-2xl border border-slate-100 dark:border-white/5 animate-in zoom-in-95 fade-in duration-300">
+      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-4xl overflow-hidden shadow-2xl border border-slate-100 dark:border-white/5 animate-in zoom-in-95 fade-in duration-300">
         
         {/* Decorative Top Gradient/Icon Section */}
         <div className="relative h-32 flex items-center justify-center overflow-hidden bg-linear-to-br from-blue-500 to-indigo-600">
@@ -71,7 +72,7 @@ export function SuccessModal({ isOpen, onClose, username }: SuccessModalProps) {
         <div className="p-8 pt-6">
           <div className="text-center space-y-2 mb-8">
             <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-2">
-              Your Moku is Live! <Sparkles className="text-amber-400" size={20} fill="currentColor" />
+              Your {BRAND_NAME} is Live! <Sparkles className="text-amber-400" size={20} fill="currentColor" />
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
               Your identity is now public and ready to share with the world.
