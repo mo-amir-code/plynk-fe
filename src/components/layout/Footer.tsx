@@ -1,37 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useAppTheme } from "@/components/theme/ThemeProvider";
 import { footerSocials, footerLinkGroups } from "@/data/site-data";
 
 export function Footer() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // Initialize theme state from DOM (which was set by our blocking script in layout.tsx)
-    let isMounted = true;
-    const syncTheme = () => {
-      if (document.documentElement.classList.contains("dark")) {
-        setTheme("dark");
-      } else {
-        setTheme("light");
-      }
-      if (isMounted) setMounted(true);
-    };
-    syncTheme();
-    return () => { isMounted = false; };
-  }, []);
-
-  const toggleTheme = () => {
-    if (theme === "light") {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-      setTheme("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-      setTheme("light");
-    }
-  };
+  const { theme, mounted, toggleTheme } = useAppTheme();
 
   return (
     <footer className="bg-slate-50/50 dark:bg-background-dark py-16 sm:py-20 relative overflow-hidden">

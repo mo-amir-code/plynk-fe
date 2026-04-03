@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
-import { BRAND_NAME } from "@/config/app-config";
+import { APP_THEME_STORAGE_KEY, BRAND_NAME } from "@/config/app-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,11 +30,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                  document.documentElement.classList.add('dark')
-                } else {
-                  document.documentElement.classList.remove('dark')
-                }
+                var theme = localStorage.getItem('${APP_THEME_STORAGE_KEY}') === 'dark' ? 'dark' : 'light';
+                localStorage.setItem('${APP_THEME_STORAGE_KEY}', theme);
+                document.documentElement.classList.toggle('dark', theme === 'dark');
               } catch (_) {}
             `,
           }}

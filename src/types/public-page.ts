@@ -27,12 +27,7 @@ export type PublicThemeResult = {
 export type PublicWidgetApiItem = {
   id: string;
   type: DashboardSocialWidgetData["type"];
-  config?: {
-    data?: {
-      handle?: string;
-      customName?: string;
-    };
-  };
+  handle: string;
   startCol: number;
   startRow: number;
   colSize: number;

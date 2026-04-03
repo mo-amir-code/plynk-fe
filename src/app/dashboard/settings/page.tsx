@@ -23,25 +23,23 @@ import {
 import { toast } from "sonner";
 import useAuthStore from "@/stores/authStore";
 import { getMe, updateProfile } from "../../../../actions/auth";
+import { useAppTheme } from "@/components/theme/ThemeProvider";
 
-type Theme = "light" | "dark" | "system";
+type Theme = "light" | "dark";
 
 export default function SettingsPage() {
   const { user, setUser } = useAuthStore();
+  const { theme, setTheme } = useAppTheme();
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
-  const [theme, setTheme] = useState<Theme>("system");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
-    if (savedTheme) setTheme(savedTheme);
-
     const fetchProfile = async () => {
       try {
         const data = await getMe();
@@ -59,34 +57,7 @@ export default function SettingsPage() {
     };
 
     fetchProfile();
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = () => {
-      if (localStorage.getItem("theme") === "system" || !localStorage.getItem("theme")) {
-        applyTheme("system");
-      }
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
   }, [setUser]);
-
-  const applyTheme = (t: Theme) => {
-    setTheme(t);
-    const root = document.documentElement;
-    
-    if (t === "dark") {
-      root.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else if (t === "light") {
-      root.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    } else {
-      localStorage.setItem("theme", "system");
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      prefersDark ? root.classList.add("dark") : root.classList.remove("dark");
-    }
-  };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -279,14 +250,13 @@ export default function SettingsPage() {
                   {[
                     { id: "light", label: "Light", icon: Sun },
                     { id: "dark", label: "Dark", icon: Moon },
-                    { id: "system", label: "System", icon: Monitor },
                   ].map((option) => {
                     const active = theme === option.id;
                     const Icon = option.icon;
                     return (
                       <button
                         key={option.id}
-                        onClick={() => applyTheme(option.id as Theme)}
+                        onClick={() => setTheme(option.id as Theme)}
                         className={`flex flex-col gap-3 p-4 rounded-xl border-2 transition-all text-left ${
                           active 
                             ? "border-primary bg-primary/5" 

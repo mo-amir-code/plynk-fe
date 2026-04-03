@@ -1,10 +1,25 @@
 "use server";
 
 import { api } from "@/lib/api-client";
-import { AuthResponse } from "@/types/auth";
+import { AuthResponse, User } from "@/types/auth";
 import { cookies } from "next/headers";
 
 const COOKIE_NAME = "auth_token";
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+  }
+
+  return fallback;
+}
 
 export async function authLogin(data: { email: string; password: string }) {
   try {
@@ -22,8 +37,8 @@ export async function authLogin(data: { email: string; password: string }) {
     }
 
     return result.user;
-  } catch (error: any) {
-    throw new Error(error.message || "Login failed");
+  } catch (error: unknown) {
+    throw new Error(getErrorMessage(error, "Login failed"));
   }
 }
 
@@ -55,8 +70,8 @@ export async function authSignup(data: { email: string; password: string; fullNa
     }
 
     return result.user;
-  } catch (error: any) {
-    throw new Error(error.message || "Signup failed");
+  } catch (error: unknown) {
+    throw new Error(getErrorMessage(error, "Signup failed"));
   }
 }
 
@@ -64,8 +79,8 @@ export async function checkUsernameAvailability(username: string) {
   try {
     const result = await api.get<{ isAvailable: boolean }>(`/auth/check-username/${username}`);
     return result.isAvailable;
-  } catch (error: any) {
-    throw new Error(error.message || "Username check failed");
+  } catch (error: unknown) {
+    throw new Error(getErrorMessage(error, "Username check failed"));
   }
 }
 
@@ -87,23 +102,23 @@ export async function claimUsername(username: string) {
     }
 
     return result.user;
-  } catch (error: any) {
-    throw new Error(error.message || "Username claim failed");
+  } catch (error: unknown) {
+    throw new Error(getErrorMessage(error, "Username claim failed"));
   }
 }
 
 export async function getMe() {
   try {
-    return await api.get<any>("/users/me");
-  } catch (error: any) {
-    throw new Error(error.message || "Failed to fetch user");
+    return await api.get<User>("/users/me");
+  } catch (error: unknown) {
+    throw new Error(getErrorMessage(error, "Failed to fetch user"));
   }
 }
 
 export async function updateProfile(data: { fullName?: string; username?: string }) {
   try {
-    return await api.patch<any>("/users/me", data);
-  } catch (error: any) {
-    throw new Error(error.message || "Failed to update profile");
+    return await api.patch<User>("/users/me", data);
+  } catch (error: unknown) {
+    throw new Error(getErrorMessage(error, "Failed to update profile"));
   }
 }

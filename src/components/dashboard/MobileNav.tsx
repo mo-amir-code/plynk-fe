@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import useAuthStore from "@/stores/authStore";
 import { authLogout } from "../../../actions/auth";
+import { useAppTheme } from "@/components/theme/ThemeProvider";
 
 const navItems = [
   { name: "Your Identity", href: "/dashboard/your-identity", icon: "person" },
@@ -16,18 +17,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    let isMounted = true;
-    const sync = () => {
-      setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
-      if (isMounted) setMounted(true);
-    };
-    sync();
-    return () => { isMounted = false; };
-  }, []);
+  const { theme, mounted, toggleTheme } = useAppTheme();
 
   // Close on route change
   useEffect(() => {
@@ -44,17 +34,6 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
     } catch (error) {
        console.error("Logout failed", error);
     }
-  };
-
-  const toggleTheme = () => {
-    const next = theme === "light" ? "dark" : "light";
-    if (next === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    localStorage.setItem("theme", next);
-    setTheme(next);
   };
 
   const initials = user?.fullName
