@@ -17,6 +17,30 @@ export const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || (() => {
 export const BRAND_NAME = "Plynk";
 export const BRAND_NAME_UPPER = "PLYNK";
 
+export type AppThemeMode = "light" | "dark";
+
+export const APP_THEME_STORAGE_KEY = "theme";
+
+export function getStoredThemeMode(): AppThemeMode {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+
+  return window.localStorage.getItem(APP_THEME_STORAGE_KEY) === "dark" ? "dark" : "light";
+}
+
+export function setStoredThemeMode(mode: AppThemeMode) {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(APP_THEME_STORAGE_KEY, mode);
+  }
+}
+
+export function applyThemeModeToDocument(mode: AppThemeMode) {
+  if (typeof document !== "undefined") {
+    document.documentElement.classList.toggle("dark", mode === "dark");
+  }
+}
+
 export const STORAGE_KEYS = {
   themeByUser: (userId: string) => `plynk_theme_${userId}`,
   widgetsByUser: (userId: string) => `plynk_widgets_${userId}`,

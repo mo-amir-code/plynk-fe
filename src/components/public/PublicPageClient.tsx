@@ -4,9 +4,10 @@ import React from "react";
 import { DashboardSocialWidget, DashboardSocialWidgetData } from "@/components/dashboard/widgets/SocialWidget";
 import { WALLPAPERS, FONTS } from "../dashboard/your-identity/YourIdentityClient";
 import type { ApiResponse, PublicThemeResult, PublicWidgetsResult } from "@/types/public-page";
-import { APP_DOMAIN, APP_ORIGIN, BRAND_NAME_UPPER } from "@/config/app-config";
 
 const GRID_COLS = 12;
+const MOBILE_GRID_COLS = 6;
+const SMALL_SCREEN_BREAKPOINT = 600;
 const GAP_PX = 12;
 const MAX_PACK_ROWS = 60;
 
@@ -14,6 +15,14 @@ function toSafePositiveInt(value: unknown, fallback: number) {
   const num = Number(value);
   if (!Number.isFinite(num) || num <= 0) return fallback;
   return Math.floor(num);
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(value, max));
+}
+
+function normalizeSpan(value: number) {
+  return Math.ceil(value / 3) * 3;
 }
 
 interface PublicPageClientProps {
@@ -31,14 +40,34 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
     surfaceTint: styleConfig?.surfaceTint ?? 65,
   };
 
+  const gridRef = React.useRef<HTMLDivElement>(null);
+  const [cellPx, setCellPx] = React.useState(96);
+  const [isSmallScreen, setIsSmallScreen] = React.useState(false);
+  const effectiveGridCols = isSmallScreen ? MOBILE_GRID_COLS : GRID_COLS;
+
+  React.useEffect(() => {
+    const mediaQuery = window.matchMedia(`(max-width: ${SMALL_SCREEN_BREAKPOINT - 1}px)`);
+
+    const updateIsSmallScreen = () => {
+      setIsSmallScreen(mediaQuery.matches);
+    };
+
+    updateIsSmallScreen();
+    mediaQuery.addEventListener("change", updateIsSmallScreen);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateIsSmallScreen);
+    };
+  }, []);
+
   const apiWidgets = Array.isArray(widgetsResponse?.result?.widgets)
     ? widgetsResponse?.result?.widgets
     : Array.isArray(pageData?.widgets)
       ? pageData.widgets
       : [];
 
-  const widgets: DashboardSocialWidgetData[] = apiWidgets.map((widget: any, index: number) => {
-    const colSize = Math.max(1, Math.min(toSafePositiveInt(widget?.colSize, 3), GRID_COLS));
+  const baseWidgets: DashboardSocialWidgetData[] = apiWidgets.map((widget: any, index: number) => {
+    const baseColSize = Math.max(1, Math.min(toSafePositiveInt(widget?.colSize, 3), GRID_COLS));
     const rowSize = Math.max(1, Math.min(toSafePositiveInt(widget?.rowSize, 3), MAX_PACK_ROWS));
 
     const fallbackStartCol = 1;
@@ -52,13 +81,14 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
       ? Number(widget?.startRow)
       : fallbackStartRow;
 
-    const startCol = Math.max(1, Math.min(toSafePositiveInt(startColRaw, fallbackStartCol), GRID_COLS - colSize + 1));
+    const colSize = clamp(baseColSize, 1, GRID_COLS);
+    const startCol = clamp(toSafePositiveInt(startColRaw, fallbackStartCol), 1, GRID_COLS - colSize + 1);
     const startRow = Math.max(1, Math.min(toSafePositiveInt(startRowRaw, fallbackStartRow), MAX_PACK_ROWS - rowSize + 1));
 
     return {
       id: String(widget?.id ?? `widget-${index}`),
       type: String(widget?.type ?? "instagram").toLowerCase() as DashboardSocialWidgetData["type"],
-      handle: widget?.config?.data?.handle || widget?.config?.handle || widget?.handle || "",
+      handle: String(widget?.handle ?? ""),
       startCol,
       startRow,
       colSize,
@@ -66,26 +96,95 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
     };
   });
 
-  const gridRef = React.useRef<HTMLDivElement>(null);
-  const [cellPx, setCellPx] = React.useState(96);
+  const widgets = React.useMemo<DashboardSocialWidgetData[]>(() => {
+    if (!isSmallScreen) {
+      return baseWidgets;
+    }
+
+    const occupiedCells = new Set<string>();
+
+    const sortedWidgets = [...baseWidgets].sort((firstWidget, secondWidget) => {
+      if (firstWidget.startRow !== secondWidget.startRow) {
+        return firstWidget.startRow - secondWidget.startRow;
+      }
+      if (firstWidget.startCol !== secondWidget.startCol) {
+        return firstWidget.startCol - secondWidget.startCol;
+      }
+      return firstWidget.id.localeCompare(secondWidget.id);
+    });
+
+    const canPlaceAt = (startRow: number, startCol: number, rowSize: number, colSize: number) => {
+      if (startCol + colSize - 1 > MOBILE_GRID_COLS) {
+        return false;
+      }
+
+      for (let row = startRow; row < startRow + rowSize; row += 1) {
+        for (let col = startCol; col < startCol + colSize; col += 1) {
+          if (occupiedCells.has(`${row}:${col}`)) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    };
+
+    const markPlacement = (startRow: number, startCol: number, rowSize: number, colSize: number) => {
+      for (let row = startRow; row < startRow + rowSize; row += 1) {
+        for (let col = startCol; col < startCol + colSize; col += 1) {
+          occupiedCells.add(`${row}:${col}`);
+        }
+      }
+    };
+
+    return sortedWidgets.map((widget) => {
+      const mobileColSize = clamp(normalizeSpan(widget.colSize), 3, MOBILE_GRID_COLS);
+      const mobileRowSize = clamp(normalizeSpan(widget.rowSize), 3, MAX_PACK_ROWS);
+      let placedStartRow = 1;
+      let placedStartCol = 1;
+      let didPlace = false;
+
+      for (let row = 1; row <= MAX_PACK_ROWS - mobileRowSize + 1 && !didPlace; row += 1) {
+        for (let col = 1; col <= MOBILE_GRID_COLS - mobileColSize + 1; col += 1) {
+          if (canPlaceAt(row, col, mobileRowSize, mobileColSize)) {
+            placedStartRow = row;
+            placedStartCol = col;
+            markPlacement(row, col, mobileRowSize, mobileColSize);
+            didPlace = true;
+            break;
+          }
+        }
+      }
+
+      return {
+        ...widget,
+        startCol: placedStartCol,
+        startRow: placedStartRow,
+        colSize: mobileColSize,
+        rowSize: mobileRowSize,
+      };
+    });
+  }, [baseWidgets, isSmallScreen]);
 
   React.useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
     const compute = () => {
       const w = el.getBoundingClientRect().width;
-      const cell = (w - (GRID_COLS - 1) * GAP_PX) / GRID_COLS;
+      const cell = (w - (effectiveGridCols - 1) * GAP_PX) / effectiveGridCols;
       setCellPx(Math.max(cell, 20));
     };
     compute();
     const observer = new ResizeObserver(compute);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [effectiveGridCols]);
 
   const totalRows = Math.max(...widgets.map((w) => w.startRow + w.rowSize - 1), 6);
   const pageSlug = String(themeResponse?.result?.page?.slug || pageData?.slug || "user");
   const pageTitle = String(themeResponse?.result?.page?.title || pageData?.title || pageSlug);
+  const profileHandle = `@${pageSlug}`;
+  const profileInitial = pageTitle.charAt(0).toUpperCase();
 
   return (
     <div
@@ -100,26 +199,30 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
       <div className="pointer-events-none absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-indigo-500/25 blur-3xl" />
 
       <div className="relative z-10 mx-auto w-full max-w-200 px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center text-center animate-in fade-in duration-700">
-          <div className="mb-4 flex size-20 items-center justify-center rounded-full border-2 border-white/30 bg-white/15 shadow-xl sm:size-24">
-            <span className="text-2xl font-black text-white sm:text-3xl">
-              {pageSlug.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <h1 className="text-xl font-black tracking-tight text-white sm:text-2xl lg:text-3xl">{pageTitle}</h1>
-          <p className="mt-1 text-xs font-semibold text-white/75 sm:text-sm">{APP_DOMAIN}/{pageSlug}</p>
-
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/90 sm:text-xs">
-            <span className="material-symbols-outlined text-[14px]">visibility</span>
-            Public profile
+        {/* Centered Profile Bar */}
+        <div className="mb-10 flex justify-center animate-in fade-in duration-700 sm:mb-12">
+          <div className="flex items-center gap-3 rounded-full bg-white/95 px-2 py-1.5 backdrop-blur-lg border border-slate-200/60 shadow-lg hover:shadow-xl transition-shadow w-fit sm:px-3 sm:py-2">
+            <div className="flex size-10 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-blue-600 text-sm font-black text-white shadow-md sm:size-12">
+              {profileInitial}
+            </div>
+            <div className="min-w-0 pr-1">
+              <p className="text-xs font-bold text-slate-900 truncate sm:text-sm">{pageTitle}</p>
+              <p className="text-[10px] font-medium text-slate-500 truncate sm:text-xs">{profileHandle}</p>
+            </div>
+            <button
+              type="button"
+              className="rounded-full bg-blue-500 hover:bg-blue-600 px-5 py-1.5 text-xs font-bold text-white shadow-md transition-all hover:shadow-lg active:scale-95"
+            >
+              Follow
+            </button>
           </div>
         </div>
 
         <div
           ref={gridRef}
-          className="mt-8 grid w-full animate-in fade-in duration-1000 delay-150"
+          className="grid w-full animate-in fade-in duration-1000 delay-150"
           style={{
-            gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
+            gridTemplateColumns: `repeat(${effectiveGridCols}, 1fr)`,
             gridTemplateRows: `repeat(${totalRows}, ${cellPx}px)`,
             gap: `${GAP_PX}px`,
           }}
@@ -134,15 +237,6 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
               surfaceTint={themeCfg.surfaceTint}
             />
           ))}
-        </div>
-
-        <div className="mt-12 text-center">
-          <a
-            href={APP_ORIGIN}
-            className="text-[10px] font-black tracking-widest text-white/70 uppercase transition hover:text-white"
-          >
-            Powered by {BRAND_NAME_UPPER}
-          </a>
         </div>
       </div>
     </div>

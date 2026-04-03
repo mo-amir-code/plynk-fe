@@ -59,6 +59,10 @@ export async function getPageByUsername(username: string) {
   }
 }
 
+export async function getPageBySlug(slug: string) {
+  return getPageByUsername(slug);
+}
+
 export async function getPublicThemeBySlug(slug: string): Promise<ApiResponse<PublicThemeResult>> {
   const endpoint = `/public/theme/${slug}`;
 
@@ -103,17 +107,17 @@ export async function getPublicWidgetsBySlug(slug: string): Promise<ApiResponse<
         {
           id: "public-w1",
           type: "instagram",
-          config: { data: { handle: "johndoe" } },
+          handle: "johndoe",
           startCol: 1,
           startRow: 1,
-          colSize: 3,
+          colSize: 4,
           rowSize: 3,
         },
         {
           id: "public-w2",
           type: "youtube",
-          config: { data: { handle: "yourchannel" } },
-          startCol: 4,
+          handle: "yourchannel",
+          startCol: 5,
           startRow: 1,
           colSize: 3,
           rowSize: 3,
@@ -121,8 +125,8 @@ export async function getPublicWidgetsBySlug(slug: string): Promise<ApiResponse<
         {
           id: "public-w3",
           type: "twitter",
-          config: { data: { handle: "john_handle" } },
-          startCol: 7,
+          handle: "john_handle",
+          startCol: 10,
           startRow: 1,
           colSize: 3,
           rowSize: 3,
@@ -130,17 +134,17 @@ export async function getPublicWidgetsBySlug(slug: string): Promise<ApiResponse<
         {
           id: "public-w4",
           type: "tiktok",
-          config: { data: { handle: "johndoe" } },
-          startCol: 10,
-          startRow: 1,
-          colSize: 3,
-          rowSize: 3,
+          handle: "johndoe",
+          startCol: 1,
+          startRow: 4,
+          colSize: 6,
+          rowSize: 6,
         },
         {
           id: "public-w5",
           type: "dribbble",
-          config: { data: { handle: "johndoe" } },
-          startCol: 1,
+          handle: "johndoe",
+          startCol: 7,
           startRow: 4,
           colSize: 3,
           rowSize: 3,
