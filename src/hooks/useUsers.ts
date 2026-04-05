@@ -3,10 +3,10 @@
  * Custom hooks for user operations using TanStack Query
  */
 
-import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { API_ENDPOINTS, QUERY_KEYS } from "@/lib/api-config";
-import { User } from "@/types/auth";
+import type { User } from "@/types/common";
 
 /**
  * Hook: useGetMe
@@ -25,9 +25,18 @@ export const useGetMe = () => {
  * Mutation hook to update user profile
  */
 export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (data: { fullName?: string; username?: string }) => {
       return await api.patch<User>(API_ENDPOINTS.USERS.PROFILE, data);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.AUTH.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PAGE.ALL }),
+      ]);
     },
   });
 };

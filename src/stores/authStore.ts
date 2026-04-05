@@ -1,26 +1,6 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-
-interface AuthUser {
-  id: string;
-  email: string;
-  username?: string | null;
-  fullName?: string;
-}
-
-interface AuthState {
-  user: AuthUser | null;
-  isLoading: boolean;
-  error: string | null;
-  isAuthenticated: boolean;
-
-  // Auth actions
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, fullName: string) => Promise<void>;
-  logout: () => void;
-  clearError: () => void;
-  setUser: (user: AuthUser | null) => void;
-}
+import type { AuthState, AuthUser } from "@/types/stores";
 
 const useAuthStore = create<AuthState>()(
   devtools(

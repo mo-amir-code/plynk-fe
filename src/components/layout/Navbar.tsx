@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { navLinks } from "@/data/site-data";
-import { checkAuthStatus } from "../../../actions/auth";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { useAuthStatus } from "@/hooks/useAuth";
 
 function useScrolledNav() {
   const [scrolled, setScrolled] = useState(false);
@@ -19,12 +19,7 @@ function useScrolledNav() {
 export function Navbar() {
   const scrolled = useScrolledNav();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isAuth, setIsAuth] = useState(false);
-  
-  useEffect(() => {
-    // Check if the user is authenticated via httpOnly cookies using server action
-    checkAuthStatus().then((status) => setIsAuth(status));
-  }, []);
+  const { data: isAuth = false } = useAuthStatus();
 
   return (
     <nav

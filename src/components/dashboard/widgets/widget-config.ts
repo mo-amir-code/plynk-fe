@@ -1,3 +1,5 @@
+import type { SocialPlatform, WidgetTypeConfig } from "@/types/components/dashboard/widgets";
+
 export const SOCIAL_PLATFORMS = [
   "instagram",
   "facebook",
@@ -8,16 +10,6 @@ export const SOCIAL_PLATFORMS = [
   "github",
   "dribbble",
 ] as const;
-
-export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
-
-export type WidgetTypeConfig = {
-  label: string;
-  hint: string;
-  defaultHandle: string;
-  background: string;
-  url: (handle: string) => string;
-};
 
 export const WIDGET_TYPE_CONFIG: Record<SocialPlatform, WidgetTypeConfig> = {
   instagram: {

@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { authLogout } from "../../../actions/auth";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 import useAuthStore from "@/stores/authStore";
 import { STORAGE_KEYS } from "@/config/app-config";
+import { useLogout } from "@/hooks/useAuth";
+import type { NavItem } from "@/types/components/dashboard";
 
 const primaryNavItems = [
   { name: "Your Identity", href: "/dashboard/your-identity", icon: "person" },
@@ -18,8 +19,8 @@ const secondaryNavItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const logoutMutation = useLogout();
 
   const { logout, user } = useAuthStore();
   const initials = user?.fullName
@@ -34,13 +35,13 @@ export function Sidebar() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await authLogout();
+      await logoutMutation.mutateAsync();
       logout();
+      localStorage.removeItem("auth-storage");
       localStorage.removeItem(STORAGE_KEYS.legacyTheme);
       localStorage.removeItem(STORAGE_KEYS.legacyWidgets);
 
-      router.push("/auth/signin");
-      router.refresh();
+      window.location.assign("/auth/signin");
     } catch (error) {
       console.error("Logout failed", error);
       setIsLoggingOut(false);
@@ -48,7 +49,7 @@ export function Sidebar() {
   };
 
   // Reusable component to keep the JSX clean
-  const NavIcon = ({ item, isActive }: { item: any, isActive?: boolean }) => (
+  const NavIcon = ({ item, isActive }: { item: NavItem; isActive?: boolean }) => (
     <Link
       href={item.href}
       className={`relative group flex items-center justify-center size-12 rounded-xl transition-all duration-300 ${

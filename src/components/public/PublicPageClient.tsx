@@ -1,9 +1,10 @@
 "use client";
 
 import React from "react";
-import { DashboardSocialWidget, DashboardSocialWidgetData } from "@/components/dashboard/widgets/SocialWidget";
+import { DashboardSocialWidget } from "@/components/dashboard/widgets/SocialWidget";
 import { WALLPAPERS, FONTS } from "../dashboard/your-identity/YourIdentityClient";
-import type { ApiResponse, PublicThemeResult, PublicWidgetsResult } from "@/types/public-page";
+import type { DashboardSocialWidgetData } from "@/types/components/dashboard/widgets";
+import type { PublicPageClientProps } from "@/types/components/public";
 
 const GRID_COLS = 12;
 const MOBILE_GRID_COLS = 6;
@@ -23,12 +24,6 @@ function clamp(value: number, min: number, max: number) {
 
 function normalizeSpan(value: number) {
   return Math.ceil(value / 3) * 3;
-}
-
-interface PublicPageClientProps {
-  pageData: any;
-  themeResponse?: ApiResponse<PublicThemeResult>;
-  widgetsResponse?: ApiResponse<PublicWidgetsResult>;
 }
 
 export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: PublicPageClientProps) {

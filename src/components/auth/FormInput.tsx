@@ -1,17 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-interface FormInputProps {
-  label: string;
-  type?: string;
-  placeholder?: string;
-  value: string;
-  onChange: (value: string) => void;
-  error?: string;
-  icon?: string;
-  showPasswordToggle?: boolean;
-}
+import type { FormInputProps } from "@/types/components/auth";
 
 export function FormInput({
   label,

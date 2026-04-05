@@ -1,12 +1,7 @@
 "use client";
 
 import React from "react";
-
-interface AuthLayoutProps {
-  children: React.ReactNode;
-  showBlobLeft?: boolean;
-  showBlobRight?: boolean;
-}
+import type { AuthLayoutProps } from "@/types/components/auth";
 
 export function AuthLayout({
   children,

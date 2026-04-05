@@ -5,14 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormInput } from "@/components/auth/FormInput";
 import { AuthLayout } from "@/components/auth/AuthLayout";
-import { authLogin } from "../../../actions/auth";
 import { toast } from "sonner";
+import { useLogin } from "@/hooks/useAuth";
+import useAuthStore from "@/stores/authStore";
 
 export function SignInForm() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { setUser } = useAuthStore();
+  const loginMutation = useLogin();
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -35,17 +37,15 @@ export function SignInForm() {
 
     if (!validate()) return;
 
-    setIsLoading(true);
     try {
-      await authLogin(formData);
+      const auth = await loginMutation.mutateAsync(formData);
+      setUser(auth.user);
       toast.success("Login successful");
       router.push("/dashboard");
       router.refresh();
-    } catch (error: any) {
-      const msg = error.message || "Invalid credentials";
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Invalid credentials";
       toast.error(msg);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -119,10 +119,10 @@ export function SignInForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={loginMutation.isPending}
             className="w-full btn-primary px-5 py-3.5 bg-primary text-white rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-primary/20 disabled:hover:translate-y-0"
           >
-            {isLoading ? (
+            {loginMutation.isPending ? (
               <>
                 <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Signing in...

@@ -5,13 +5,29 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import useAuthStore from '@/stores/authStore';
 import { api } from '@/lib/api-client';
 import { API_ENDPOINTS, QUERY_KEYS } from '@/lib/api-config';
-import { AuthResponse } from '@/types/auth';
+import type { AuthResponse } from '@/types/common';
 
 const COOKIE_NAME = 'auth_token';
+
+function hasAuthCookie() {
+  if (typeof document === 'undefined') return false;
+  return document.cookie
+    .split(';')
+    .map((cookie) => cookie.trim())
+    .some((cookie) => cookie.startsWith(`${COOKIE_NAME}=`));
+}
+
+function setAuthCookie(token: string) {
+  document.cookie = `${COOKIE_NAME}=${token}; path=/; max-age=${60 * 60 * 24 * 7}`;
+}
+
+function clearAuthCookie() {
+  document.cookie = `${COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+}
 
 /**
  * Hook to protect routes that require authentication
@@ -52,13 +68,21 @@ export function useRedirectIfAuthenticated(redirectTo = '/dashboard') {
  * Mutation hook for user login
  */
 export const useLogin = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
-      const result = await api.post<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, data);
+      return await api.post<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, data);
+    },
+    onSuccess: async (result) => {
       if (result?.token) {
-        document.cookie = `${COOKIE_NAME}=${result.token}; path=/; max-age=${60 * 60 * 24 * 7}`;
+        setAuthCookie(result.token);
       }
-      return result;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.AUTH.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PAGE.ALL }),
+      ]);
     },
   });
 };
@@ -68,14 +92,30 @@ export const useLogin = () => {
  * Mutation hook for user registration
  */
 export const useSignup = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (data: { email: string; password: string; fullName: string }) => {
-      const result = await api.post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, data);
-      if (result?.token) {
-        document.cookie = `${COOKIE_NAME}=${result.token}; path=/; max-age=${60 * 60 * 24 * 7}`;
-      }
-      return result;
+      return await api.post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, data);
     },
+    onSuccess: async (result) => {
+      if (result?.token) {
+        setAuthCookie(result.token);
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.AUTH.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PAGE.ALL }),
+      ]);
+    },
+  });
+};
+
+export const useAuthStatus = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.AUTH.STATUS,
+    queryFn: async () => hasAuthCookie(),
+    staleTime: 1000 * 60,
   });
 };
 
@@ -102,16 +142,24 @@ export const useCheckUsername = (username: string | null) => {
  * Mutation hook to claim a username
  */
 export const useClaimUsername = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (username: string) => {
-      const result = await api.patch<AuthResponse>(
+      return await api.patch<AuthResponse>(
         API_ENDPOINTS.AUTH.CLAIM_USERNAME,
         { username }
       );
+    },
+    onSuccess: async (result) => {
       if (result?.token) {
-        document.cookie = `${COOKIE_NAME}=${result.token}; path=/; max-age=${60 * 60 * 24 * 7}`;
+        setAuthCookie(result.token);
       }
-      return result;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.AUTH.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PAGE.ALL }),
+      ]);
     },
   });
 };
@@ -121,9 +169,20 @@ export const useClaimUsername = () => {
  * Mutation hook for user logout
  */
 export const useLogout = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async () => {
-      document.cookie = `${COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      clearAuthCookie();
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.AUTH.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PAGE.ALL }),
+      ]);
+      queryClient.removeQueries({ queryKey: QUERY_KEYS.USERS.ALL });
+      queryClient.removeQueries({ queryKey: QUERY_KEYS.PAGE.ALL });
     },
   });
 };

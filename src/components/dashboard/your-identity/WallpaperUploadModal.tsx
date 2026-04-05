@@ -3,16 +3,7 @@
 import { ChangeEvent, useRef } from "react";
 import { Check, Palette, RefreshCcw, X } from "lucide-react";
 import { toast } from "sonner";
-
-type WallpaperUploadModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  onSelectFile: (file: File | null) => void;
-  onUpload: () => void;
-  selectedFile: File | null;
-  previewUrl: string | null;
-  isUploading: boolean;
-};
+import type { WallpaperUploadModalProps } from "@/types/components/dashboard/your-identity";
 
 export function WallpaperUploadModal({
   isOpen,

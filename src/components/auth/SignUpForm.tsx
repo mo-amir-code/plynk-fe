@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormInput } from "@/components/auth/FormInput";
 import { AuthLayout } from "@/components/auth/AuthLayout";
-import { authSignup } from "../../../actions/auth";
 import useAuthStore from "@/stores/authStore";
 import { toast } from "sonner";
+import { useSignup } from "@/hooks/useAuth";
 
 export function SignUpForm() {
   const router = useRouter();
@@ -20,9 +20,9 @@ export function SignUpForm() {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
-  const [isFormLoading, setIsFormLoading] = useState(false);
 
   const { setUser } = useAuthStore();
+  const signupMutation = useSignup();
 
   const validateForm = (): boolean => {
     setFullNameError("");
@@ -79,19 +79,16 @@ export function SignUpForm() {
       return;
     }
 
-    setIsFormLoading(true);
     try {
-      const user = await authSignup({ email, password, fullName, tnc: agreeToTerms });
-      setUser(user);
+      const auth = await signupMutation.mutateAsync({ email, password, fullName });
+      setUser(auth.user);
       toast.success("Account created successfully!");
       // Redirect to onboarding or dashboard
       router.push("/onboarding");
       router.refresh();
-    } catch (err: any) {
-      const msg = err.message || "Signup failed. Please try again.";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Signup failed. Please try again.";
       toast.error(msg);
-    } finally {
-      setIsFormLoading(false);
     }
   };
 
@@ -194,10 +191,10 @@ export function SignUpForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isFormLoading}
+            disabled={signupMutation.isPending}
             className="w-full btn-primary px-5 py-3.5 bg-primary text-white rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-primary/20 disabled:hover:translate-y-0"
           >
-            {isFormLoading ? (
+            {signupMutation.isPending ? (
               <>
                 <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Creating account...

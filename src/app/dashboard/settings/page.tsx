@@ -22,42 +22,37 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import useAuthStore from "@/stores/authStore";
-import { getMe, updateProfile } from "../../../../actions/auth";
 import { useAppTheme } from "@/components/theme/ThemeProvider";
-
-type Theme = "light" | "dark";
+import { useGetMe, useUpdateProfile } from "@/hooks/useUsers";
+import type { SettingsDraftProfile, Theme } from "@/types/app/dashboard/settings";
 
 export default function SettingsPage() {
   const { user, setUser } = useAuthStore();
   const { theme, setTheme } = useAppTheme();
-  const [displayName, setDisplayName] = useState("");
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
+  const [draftProfile, setDraftProfile] = useState<SettingsDraftProfile | null>(null);
   const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const fileRef = useRef<HTMLInputElement>(null);
+  const getMeQuery = useGetMe();
+  const updateProfileMutation = useUpdateProfile();
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await getMe();
-        const userData = data; 
-        setDisplayName(userData.fullName || "");
-        setUsername(userData.username || "");
-        setEmail(userData.email || "");
-        setUser(userData);
-      } catch (error) {
-        console.error("Failed to fetch profile", error);
-        toast.error("Could not load profile details");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (getMeQuery.data) {
+      setUser(getMeQuery.data);
+    }
+  }, [getMeQuery.data, setUser]);
 
-    fetchProfile();
-  }, [setUser]);
+  useEffect(() => {
+    if (getMeQuery.isError) {
+      toast.error("Could not load profile details");
+    }
+  }, [getMeQuery.isError]);
+
+  const profile = draftProfile ?? {
+    displayName: getMeQuery.data?.fullName || user?.fullName || "",
+    username: getMeQuery.data?.username || user?.username || "",
+    email: getMeQuery.data?.email || user?.email || "",
+  };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,22 +63,25 @@ export default function SettingsPage() {
   };
 
   const handleSave = async () => {
-    setIsSaving(true);
     try {
-      const result = await updateProfile({
-        fullName: displayName,
-        username: username,
+      const result = await updateProfileMutation.mutateAsync({
+        fullName: profile.displayName,
+        username: profile.username,
       });
       setUser(result);
+      setDraftProfile({
+        displayName: result.fullName || "",
+        username: result.username || "",
+        email: result.email || "",
+      });
       toast.success("Settings updated successfully");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save changes");
-    } finally {
-      setIsSaving(false);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to save changes";
+      toast.error(message);
     }
   };
 
-  if (isLoading) {
+  if (getMeQuery.isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-black/20">
         <Loader2 className="size-6 animate-spin text-primary" />
@@ -116,11 +114,11 @@ export default function SettingsPage() {
           
           <button
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={updateProfileMutation.isPending}
             className="inline-flex items-center gap-2 px-5 py-3 bg-primary hover:bg-primary/90 text-white text-xs font-bold rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed"
           >
-            {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {isSaving ? "Saving..." : "Save Changes"}
+            {updateProfileMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </div>
@@ -170,7 +168,7 @@ export default function SettingsPage() {
                         <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-2xl font-bold bg-linear-to-br from-slate-200 to-slate-300 dark:from-slate-800 dark:to-slate-900 text-slate-600 dark:text-slate-400">
-                          {displayName.charAt(0).toUpperCase() || "U"}
+                          {profile.displayName.charAt(0).toUpperCase() || "U"}
                         </div>
                       )}
                       
@@ -201,8 +199,10 @@ export default function SettingsPage() {
                     <label className="text-sm font-semibold text-slate-950 dark:text-white">Full Name</label>
                     <input
                       type="text"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
+                      value={profile.displayName}
+                      onChange={(e) =>
+                        setDraftProfile((prev) => ({ ...profile, ...prev, displayName: e.target.value }))
+                      }
                       placeholder="e.g. John Doe"
                       className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all text-sm font-medium text-slate-950 dark:text-white placeholder-slate-400"
                     />
@@ -215,8 +215,14 @@ export default function SettingsPage() {
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">@</span>
                       <input
                         type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s+/g, ""))}
+                        value={profile.username}
+                        onChange={(e) =>
+                          setDraftProfile((prev) => ({
+                            ...profile,
+                            ...prev,
+                            username: e.target.value.toLowerCase().replace(/\s+/g, ""),
+                          }))
+                        }
                         placeholder="username"
                         className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all text-sm font-medium text-slate-950 dark:text-white"
                       />
@@ -228,7 +234,7 @@ export default function SettingsPage() {
                     <div className="relative opacity-60">
                       <input
                         type="email"
-                        value={email}
+                        value={profile.email}
                         disabled
                         className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-500 cursor-not-allowed"
                       />

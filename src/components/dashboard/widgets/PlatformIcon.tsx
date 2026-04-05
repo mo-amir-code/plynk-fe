@@ -8,7 +8,7 @@ import {
   FaGithub, 
   FaDribbble 
 } from "react-icons/fa6";
-import { SocialPlatform } from "./widget-config";
+import type { SocialPlatform } from "@/types/components/dashboard/widgets";
 
 /** Renders the correct brand icon for each platform using FontAwesome 6 (react-icons/fa6).
  *  This provides modern, high-fidelity brand logos for all platforms.

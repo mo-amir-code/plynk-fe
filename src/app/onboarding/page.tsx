@@ -1,54 +1,42 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useDeferredValue, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import useAuthStore from "@/stores/authStore";
 import { Loader2, CheckCircle, XCircle, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { checkUsernameAvailability, claimUsername } from "../../../actions/auth";
 import { APP_DOMAIN } from "@/config/app-config";
-
-type Status = "idle" | "checking" | "available" | "taken" | "invalid";
+import { useCheckUsername, useClaimUsername } from "@/hooks/useAuth";
+import type { UsernameStatus } from "@/types/app/onboarding";
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
 
   const [username, setUsername] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const debouncedUsername = useDeferredValue(username);
+  const claimUsernameMutation = useClaimUsername();
 
-  // Simple debounce logic
-  useEffect(() => {
-    if (!username) {
-      setStatus("idle");
-      return;
-    }
+  const isFormatValid =
+    debouncedUsername.length >= 3 &&
+    debouncedUsername.length <= 20 &&
+    /^[a-zA-Z0-9_-]+$/.test(debouncedUsername);
 
-    // Invalid formatting
-    if (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_-]+$/.test(username)) {
-      setStatus("invalid");
-      return;
-    }
+  const checkUsernameQuery = useCheckUsername(isFormatValid ? debouncedUsername : null);
 
-    setStatus("checking");
-
-    const timer = setTimeout(async () => {
-      try {
-        const isAvailable = await checkUsernameAvailability(username);
-        if (isAvailable) {
-          setStatus("available");
-        } else {
-          setStatus("taken");
-        }
-      } catch (err) {
-        setStatus("idle");
-      }
-    }, 600); // 600ms latency simulation
-
-    return () => clearTimeout(timer);
-  }, [username]);
+  let status: UsernameStatus = "idle";
+  if (username.length > 0 && (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_-]+$/.test(username))) {
+    status = "invalid";
+  } else if (username.length > 0 && username !== debouncedUsername) {
+    status = "checking";
+  } else if (checkUsernameQuery.isFetching) {
+    status = "checking";
+  } else if (checkUsernameQuery.data?.isAvailable === true) {
+    status = "available";
+  } else if (checkUsernameQuery.data?.isAvailable === false) {
+    status = "taken";
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,19 +46,19 @@ export default function OnboardingPage() {
       return;
     }
 
-    setIsSubmitting(true);
     try {
-      await claimUsername(username);
+      const auth = await claimUsernameMutation.mutateAsync(username);
       
-      if (user) {
+      if (auth?.user) {
+        setUser(auth.user);
+      } else if (user) {
         setUser({ ...user, username });
       }
       toast.success("Username claimed successfully!");
       router.push("/dashboard");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to claim username. Try again.");
-    } finally {
-      setIsSubmitting(false);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to claim username. Try again.";
+      toast.error(message);
     }
   };
 
@@ -159,10 +147,10 @@ export default function OnboardingPage() {
           {/* Setup Button */}
           <button
             type="submit"
-            disabled={status !== "available" || isSubmitting}
+            disabled={status !== "available" || claimUsernameMutation.isPending}
             className="w-full btn-primary px-5 py-4 bg-primary text-white rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-primary/20 disabled:hover:translate-y-0 disabled:saturate-50"
           >
-            {isSubmitting ? (
+            {claimUsernameMutation.isPending ? (
               <>
                 <Loader2 className="size-5 animate-spin" />
                 Claiming...

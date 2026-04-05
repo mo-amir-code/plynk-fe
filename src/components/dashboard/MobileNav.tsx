@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import useAuthStore from "@/stores/authStore";
-import { authLogout } from "../../../actions/auth";
 import { useAppTheme } from "@/components/theme/ThemeProvider";
+import { useLogout } from "@/hooks/useAuth";
 
 const navItems = [
   { name: "Your Identity", href: "/dashboard/your-identity", icon: "person" },
@@ -15,9 +15,9 @@ const navItems = [
 
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, logout } = useAuthStore();
   const { theme, mounted, toggleTheme } = useAppTheme();
+  const logoutMutation = useLogout();
 
   // Close on route change
   useEffect(() => {
@@ -27,10 +27,11 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
 
   const handleLogout = async () => {
     try {
-      await authLogout();
+      await logoutMutation.mutateAsync();
       logout();
-      router.push("/auth/signin");
+      localStorage.removeItem("auth-storage");
       onClose();
+      window.location.assign("/auth/signin");
     } catch (error) {
        console.error("Logout failed", error);
     }
@@ -57,7 +58,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
 
       {/* Drawer */}
       <div
-        className={`lg:hidden fixed left-0 top-0 bottom-0 z-[60] w-72 bg-white dark:bg-slate-900 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed left-0 top-0 bottom-0 z-60 w-72 bg-white dark:bg-slate-900 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -120,7 +121,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
             </button>
           )}
           <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800">
-            <div className="size-9 rounded-full bg-gradient-to-tr from-primary to-orange-400 flex items-center justify-center text-white font-bold text-sm shadow-md">
+            <div className="size-9 rounded-full bg-linear-to-tr from-primary to-orange-400 flex items-center justify-center text-white font-bold text-sm shadow-md">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
