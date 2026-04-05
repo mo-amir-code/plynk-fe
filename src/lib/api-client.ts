@@ -1,28 +1,14 @@
-
 import { API_CONFIG } from "@/lib/api-config";
-import { cookies } from "next/headers";
+import type { ApiResponse } from "@/types/common";
+import type { FetchOptions } from "@/types/lib";
 
 async function getAuthToken() {
-  try {
-    const cookieStore = await cookies();
-    return cookieStore.get("auth_token")?.value;
-  } catch {
-    if (typeof document !== "undefined") {
-      const match = document.cookie.match(/(^|;)\s*auth_token\s*=\s*([^;]+)/);
-      return match ? match[2] : undefined;
-    }
+  if (typeof document !== "undefined") {
+    const match = document.cookie.match(/(^|;)\s*auth_token\s*=\s*([^;]+)/);
+    return match ? match[2] : undefined;
   }
-}
 
-type FetchOptions = RequestInit & {
-  params?: Record<string, string | number | boolean>;
-};
-
-interface ApiResponse<T> {
-  success: boolean;
-  code: number;
-  message: string;
-  result: T;
+  return undefined;
 }
 
 class ApiError extends Error {
@@ -87,7 +73,7 @@ async function request<T>(
     // Global 401 handler: if unauthorized and on the client side, redirect to login
     if (status === 401 && typeof window !== "undefined") {
       document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      window.location.href = "/admin/login";
+      window.location.href = "/auth/signin";
     }
 
     throw new ApiError(message, status, json);

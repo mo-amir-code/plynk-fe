@@ -4,12 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Check, Copy, ExternalLink, Twitter, Linkedin, MessageCircle, Share2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { BRAND_NAME, getPublicProfileDisplay, getPublicProfileUrl } from "@/config/app-config";
-
-interface SuccessModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  username: string;
-}
+import type { SuccessModalProps } from "@/types/components/dashboard/your-identity";
 
 export function SuccessModal({ isOpen, onClose, username }: SuccessModalProps) {
   const [copied, setCopied] = useState(false);

@@ -6,19 +6,13 @@ import {
   applyThemeModeToDocument,
   getStoredThemeMode,
   setStoredThemeMode,
-  type AppThemeMode,
 } from "@/config/app-config";
-
-type ThemeContextValue = {
-  theme: AppThemeMode;
-  mounted: boolean;
-  setTheme: (mode: AppThemeMode) => void;
-  toggleTheme: () => void;
-};
+import type { AppThemeMode } from "@/types/config";
+import type { ThemeContextValue, ThemeProviderProps } from "@/types/components/theme";
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<AppThemeMode>("light");
   const [mounted, setMounted] = useState(false);
 

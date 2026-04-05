@@ -1,16 +1,7 @@
 import { PlatformIcon } from "./PlatformIcon";
 import { Pencil, Trash2 } from "lucide-react";
-import { SocialPlatform, WIDGET_TYPE_CONFIG } from "./widget-config";
-
-export interface DashboardSocialWidgetData {
-  id: string;
-  type: SocialPlatform;
-  handle: string;
-  startCol: number;
-  startRow: number;
-  colSize: number;
-  rowSize: number;
-}
+import { WIDGET_TYPE_CONFIG } from "./widget-config";
+import type { DashboardSocialWidgetProps } from "@/types/components/dashboard/widgets";
 
 /* ─── Scale icon container + text size based on widget area ─── */
 function getContainerSize(colSize: number, rowSize: number): string {
@@ -31,30 +22,6 @@ function getIconTextSize(colSize: number, rowSize: number): string {
   return "text-[28px]";
 }
 
-/* ─── Component ─── */
-interface Props {
-  data: DashboardSocialWidgetData;
-  draggable?: boolean;
-  onDragStart?: () => void;
-  onDragEnd?: () => void;
-  isDragging?: boolean;
-  motionOffset?: { x: number; y: number };
-  layoutMotionEnabled?: boolean;
-  showResizeHandles?: boolean;
-  isResizing?: boolean;
-  onResizeStart?: (
-    direction: "right" | "bottom" | "corner",
-    event: React.PointerEvent<HTMLButtonElement>,
-  ) => void;
-  disableLink?: boolean;
-  showEditButton?: boolean;
-  onEditClick?: () => void;
-  onDeleteClick?: () => void;
-  frostIntensity?: number;
-  surfaceTint?: number;
-  forceShowLabel?: boolean;
-}
-
 export function DashboardSocialWidget({
   data,
   draggable,
@@ -73,7 +40,7 @@ export function DashboardSocialWidget({
   frostIntensity = 24,
   surfaceTint = 65,
   forceShowLabel = false,
-}: Props) {
+}: DashboardSocialWidgetProps) {
   const { type, handle, startCol, startRow, colSize, rowSize } = data;
   const cfg = WIDGET_TYPE_CONFIG[type];
   const area = colSize * rowSize;
@@ -88,6 +55,8 @@ export function DashboardSocialWidget({
       : area >= 9
         ? "sm:group-hover:-translate-y-8"
         : "sm:group-hover:-translate-y-6";
+
+  console.log('URL generated for widget:', { type, handle, href });
 
   return (
     <a

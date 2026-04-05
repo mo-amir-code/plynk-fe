@@ -1,3 +1,5 @@
+import type { AppThemeMode } from "@/types/config";
+
 const normalizeOrigin = (origin: string) => origin.replace(/\/$/, "");
 
 const fallbackOrigin = "http://localhost:3000";
@@ -16,8 +18,6 @@ export const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || (() => {
 
 export const BRAND_NAME = "Plynk";
 export const BRAND_NAME_UPPER = "PLYNK";
-
-export type AppThemeMode = "light" | "dark";
 
 export const APP_THEME_STORAGE_KEY = "theme";
 

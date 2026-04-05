@@ -1,14 +1,8 @@
 'use client';
 
-import { SocialPlatform, WIDGET_TYPE_CONFIG, SOCIAL_PLATFORMS } from "@/components/dashboard/widgets/widget-config";
+import { WIDGET_TYPE_CONFIG, SOCIAL_PLATFORMS } from "@/components/dashboard/widgets/widget-config";
 import { useEffect, useRef, useState } from "react";
-
-export type AddWidgetOption = {
-  type: SocialPlatform;
-  label: string;
-  hint: string;
-  defaultHandle: string;
-};
+import type { AddWidgetModalProps, AddWidgetOption } from "@/types/components/dashboard/your-identity";
 
 export const ADD_WIDGET_OPTIONS: AddWidgetOption[] = SOCIAL_PLATFORMS.map((type) => ({
   type,
@@ -16,14 +10,6 @@ export const ADD_WIDGET_OPTIONS: AddWidgetOption[] = SOCIAL_PLATFORMS.map((type)
   hint: WIDGET_TYPE_CONFIG[type].hint,
   defaultHandle: WIDGET_TYPE_CONFIG[type].defaultHandle,
 }));
-
-interface AddWidgetModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onAdd: (option: AddWidgetOption) => void;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-}
 
 export function AddWidgetModal({
   isOpen,

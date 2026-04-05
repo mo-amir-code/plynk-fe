@@ -5,21 +5,24 @@ import { toast } from "sonner";
 import { X, Palette, Check, RefreshCcw, Save, Eye, Pencil, Shield, Globe, Lock } from "lucide-react";
 import {
   DashboardSocialWidget,
-  DashboardSocialWidgetData,
 } from "@/components/dashboard/widgets/SocialWidget";
-import { SOCIAL_PLATFORMS, SocialPlatform } from "@/components/dashboard/widgets/widget-config";
-import { AddWidgetModal, AddWidgetOption } from "./AddWidgetModal";
+import { SOCIAL_PLATFORMS } from "@/components/dashboard/widgets/widget-config";
+import { AddWidgetModal } from "./AddWidgetModal";
 import { EditWidgetModal } from "./EditWidgetModal";
 import { WallpaperUploadModal } from "./WallpaperUploadModal";
 import useAuthStore from "@/stores/authStore";
-import { getMyPage, syncPage } from "../../../../actions/page";
+import { useGetMyPage, useSyncPage } from "@/hooks/usePage";
 import { SuccessModal } from "./SuccessModal";
 import { BRAND_NAME, STORAGE_KEYS, getPublicProfileDisplay } from "@/config/app-config";
-
-export type Wallpaper = {
-  id: string;
-  background: string;
-};
+import type { DashboardSocialWidgetData, SocialPlatform } from "@/types/components/dashboard/widgets";
+import type {
+  AddWidgetOption,
+  MobilePlacement,
+  ResizeDirection,
+  SyncStatus,
+  ThemeConfig,
+  Wallpaper,
+} from "@/types/components/dashboard/your-identity";
 
 export const WALLPAPERS: Wallpaper[] = [
   { id: "wp1", background: "linear-gradient(135deg, #6E85F0, #614CF5)" },
@@ -38,14 +41,6 @@ export const FONTS = [
   { id: "technical", name: "Technical", family: "'JetBrains Mono', monospace" },
 ];
 
-type ThemeConfig = {
-  id: string;
-  name: string;
-  frostIntensity: number;
-  surfaceTint: number;
-  fontStyle: string;
-  wallpaper: string;
-};
 
 const DUMMY_API_WALLPAPERS: Wallpaper[] = WALLPAPERS;
 const DUMMY_API_FONT_STYLES = FONTS;
@@ -100,7 +95,6 @@ const initialWidgets: DashboardSocialWidgetData[] = [
 ];
 
 const MAX_PACK_ROWS = 60;
-type ResizeDirection = "right" | "bottom" | "corner";
 
 const SUPPORTED_WIDGET_TYPES: SocialPlatform[] = [...SOCIAL_PLATFORMS];
 
@@ -168,14 +162,6 @@ function normalizeWidgets(rawWidgets: unknown): DashboardSocialWidgetData[] {
 function getMobileSpan(size: number) {
   return size >= 6 ? 2 : 1;
 }
-
-type MobilePlacement = {
-  index: number;
-  startRow: number;
-  startCol: number;
-  rowSpan: number;
-  colSpan: number;
-};
 
 function computeMobilePlacements(layout: DashboardSocialWidgetData[]): MobilePlacement[] {
   const occupied = new Set<string>();
@@ -326,6 +312,8 @@ function useSquareCellSize(gridCols: number, gapPx: number) {
 
 export function YourIdentityClient() {
   const { user } = useAuthStore();
+  const getMyPageQuery = useGetMyPage();
+  const syncPageMutation = useSyncPage();
   const userId = user?.id || "guest";
   const { ref, cellPx } = useSquareCellSize(GRID_COLS, GAP_PX);
   const mobileGridRef = useRef<HTMLDivElement>(null);
@@ -378,7 +366,7 @@ export function YourIdentityClient() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const customPromptShownRef = useRef(false);
   const WALLPAPER_UPLOAD_API = "/api/upload/wallpaper";
@@ -612,12 +600,14 @@ export function YourIdentityClient() {
 
   // 1. Initial state load from localStorage
   useEffect(() => {
-    const loadInitialState = async () => {
-      // First try to load from API
-      const apiPage = await getMyPage() as any;
+    if (isInitialized) return;
 
-      if (apiPage) {
-        const pageData = apiPage;
+    if (getMyPageQuery.isLoading) return;
+
+    const loadInitialState = () => {
+      const pageData = getMyPageQuery.data as any;
+
+      if (pageData) {
 
         // 1. Theme Sync
         if (pageData.theme?.styleConfig) {
@@ -683,7 +673,7 @@ export function YourIdentityClient() {
     };
 
     loadInitialState();
-  }, [userId]);
+  }, [userId, getMyPageQuery.data, getMyPageQuery.isLoading, isInitialized]);
 
   // 2. Auto-save to localStorage and debounce API simulation
   useEffect(() => {
@@ -723,7 +713,6 @@ export function YourIdentityClient() {
     saveTimeoutRef.current = setTimeout(async () => {
       const syncData = {
         themeConfig,
-        isPublished, // Maintain current status during autosave
         widgets: normalizedWidgets.map(w => ({
           type: w.type.toUpperCase(),
           startCol: w.startCol,
@@ -739,7 +728,7 @@ export function YourIdentityClient() {
       };
 
       try {
-        await syncPage(syncData);
+        await syncPageMutation.mutateAsync(syncData);
         setSyncStatus("saved");
         console.log("✅ Sync: Successfully saved to DB");
       } catch (error) {
@@ -751,7 +740,7 @@ export function YourIdentityClient() {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [widgets, activeWallpaper, frostIntensity, surfaceTint, activeFont, customThemes, selectedDefaultThemeId, selectedCustomThemeId, isInitialized, isPublished]);
+  }, [widgets, activeWallpaper, frostIntensity, surfaceTint, activeFont, customThemes, selectedDefaultThemeId, selectedCustomThemeId, isInitialized]);
 
   useEffect(() => {
     if (!isPreview) return;
@@ -1405,7 +1394,7 @@ export function YourIdentityClient() {
         widgets: widgetsPayload
       };
 
-      await syncPage(syncData);
+      await syncPageMutation.mutateAsync(syncData);
 
       setSyncStatus("saved");
       setIsPublished(true);

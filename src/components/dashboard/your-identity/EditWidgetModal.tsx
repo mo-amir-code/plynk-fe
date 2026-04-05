@@ -1,10 +1,4 @@
-interface EditWidgetModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  editHandle: string;
-  setEditHandle: (val: string) => void;
-  onSave: () => void;
-}
+import type { EditWidgetModalProps } from "@/types/components/dashboard/your-identity";
 
 export function EditWidgetModal({
   isOpen,

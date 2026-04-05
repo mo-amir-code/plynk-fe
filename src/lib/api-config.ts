@@ -45,6 +45,7 @@ export const API_ENDPOINTS = {
 export const QUERY_KEYS = {
   AUTH: {
     ALL: ["auth"] as const,
+    STATUS: ["auth", "status"] as const,
     CHECK_USERNAME: (username: string) => [...QUERY_KEYS.AUTH.ALL, "check-username", username] as const,
   },
   USERS: {
@@ -56,6 +57,8 @@ export const QUERY_KEYS = {
     ALL: ["page"] as const,
     ME: ["page", "me"] as const,
     BY_SLUG: (slug: string) => ["page", slug] as const,
+    PUBLIC_THEME: (slug: string) => ["page", "public-theme", slug] as const,
+    PUBLIC_WIDGETS: (slug: string) => ["page", "public-widgets", slug] as const,
   },
   WIDGET: {
     ALL: ["widget"] as const,
