@@ -80,7 +80,7 @@ export function SignUpForm() {
     }
 
     try {
-      const auth = await signupMutation.mutateAsync({ email, password, fullName });
+      const auth = await signupMutation.mutateAsync({ email, password, fullName, tnc: agreeToTerms });
       setUser(auth.user);
       toast.success("Account created successfully!");
       // Redirect to onboarding or dashboard

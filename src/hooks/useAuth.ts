@@ -95,7 +95,7 @@ export const useSignup = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { email: string; password: string; fullName: string }) => {
+    mutationFn: async (data: { email: string; password: string; fullName: string; tnc: boolean }) => {
       return await api.post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, data);
     },
     onSuccess: async (result) => {
