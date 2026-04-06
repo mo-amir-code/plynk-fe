@@ -2,6 +2,7 @@
 
 import { PublicPageClient } from "@/components/public/PublicPageClient";
 import { useGetPageBySlug, useGetPublicThemeBySlug, useGetPublicWidgetsBySlug } from "@/hooks/usePage";
+import type { PublicPageClientPageData } from "@/types/components/public";
 
 export function PublicPageContainer({ slug }: { slug: string }) {
   const pageQuery = useGetPageBySlug(slug);
@@ -21,7 +22,7 @@ export function PublicPageContainer({ slug }: { slug: string }) {
     );
   }
 
-  const pageData = pageQuery.data || themeQuery.data?.result?.page || { slug, title: slug };
+  const pageData = ((pageQuery.data as PublicPageClientPageData) || (themeQuery.data?.result?.page as PublicPageClientPageData) || { slug, title: slug }) as PublicPageClientPageData;
   const isNotFound = !pageData && !themeQuery.data?.success;
 
   if (isNotFound) {

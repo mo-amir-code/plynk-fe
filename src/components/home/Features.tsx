@@ -5,17 +5,17 @@ export function Features() {
     <section className="py-16 sm:py-24 bg-slate-50 dark:bg-background-dark/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="reveal text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-6 tracking-tight text-slate-900 dark:text-white">Engineered for Expression</h2>
-          <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400">Move beyond static lists. Plynk provides a robust, component-driven architecture to dynamically represent your brand identity.</p>
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black mb-6 tracking-[-0.04em] text-slate-900 dark:text-white leading-tight">Your whole world, <br className="hidden sm:block" /><span className="gradient-text italic">on one canvas.</span></h2>
+          <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 font-medium">Say goodbye to boring lists. Plynk uses beautiful, interactive widgets to showcase your true creative identity.</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
           {featuresList.map((card, i) => (
-            <div key={i} className={`reveal card-hover p-6 sm:p-8 bg-white dark:bg-slate-800 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 delay-${(i + 1) * 100}`}>
-              <div className={`size-11 sm:size-12 rounded-2xl ${card.bg} flex items-center justify-center mb-5 sm:mb-6`}>
-                <span className="material-symbols-outlined text-xl sm:text-2xl leading-none">{card.icon}</span>
+            <div key={i} className={`reveal group p-8 sm:p-10 bg-white dark:bg-slate-800 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-700 delay-${(i + 1) * 100} transition-all duration-300 hover:scale-[1.03] hover:shadow-xl dark:hover:shadow-primary/5`}>
+              <div className={`size-14 sm:size-16 rounded-full ${card.bg} flex items-center justify-center mb-6 sm:mb-8 transition-transform duration-300 group-hover:-translate-y-1`}>
+                <span className="material-symbols-outlined text-2xl sm:text-3xl leading-none">{card.icon}</span>
               </div>
-              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-slate-900 dark:text-slate-100">{card.title}</h3>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed">{card.desc}</p>
+              <h3 className="text-xl sm:text-2xl font-black mb-3 text-slate-900 dark:text-slate-100 tracking-tight">{card.title}</h3>
+              <p className="text-base text-slate-600 dark:text-slate-400 font-medium leading-relaxed">{card.desc}</p>
             </div>
           ))}
         </div>

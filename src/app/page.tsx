@@ -37,7 +37,7 @@ export default function Home() {
       <Hero />
       <ExperienceLive />
       <Features />
-      <ComponentLibrary />
+      {/* <ComponentLibrary /> */}
       <StreamlinedOnboarding />
       <CTA />
       <Footer />
