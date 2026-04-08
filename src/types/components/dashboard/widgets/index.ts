@@ -20,12 +20,15 @@ export type WidgetTypeConfig = {
 
 export interface DashboardSocialWidgetData {
   id: string;
+  pageId?: string;
   type: SocialPlatform;
   handle: string;
+  fullURL?: string;
   startCol: number;
   startRow: number;
   colSize: number;
   rowSize: number;
+  icon?: string;
 }
 
 export interface DashboardSocialWidgetProps {
@@ -48,5 +51,6 @@ export interface DashboardSocialWidgetProps {
   onDeleteClick?: () => void;
   frostIntensity?: number;
   surfaceTint?: number;
+  roundness?: number;
   forceShowLabel?: boolean;
 }

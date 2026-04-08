@@ -1,9 +1,45 @@
-
 {
     "id": "theme_id",
     "name": "theme_name",
-    "frostIntensity": "frost_intensity_value",
-    "surfaceTint": "surface_tint_value",
-    "fontStyle": "font_style_value",
-    "wallpaper": "wallpaper(color_or_image_value)" 
+    "description": "theme_description",
+    "styleConfig": {
+        "frostIntensity": "frost_intensity_value",
+        "surfaceTint": "surface_tint_value",
+        "fontStyle": "font_style_value",
+        "wallpaper": "wallpaper(color_or_image_value)",
+        "roundness": "theme_roundness_value",
+        "widgets": {
+            "widget_id": {
+                "wallpaper": "widget_wallpaper(color_or_image_value)",
+                "fontStyle": "widget_font_style_value",
+                "roundness": "widget_roundness_value"
+            }
+        }
+    }
+}
+
+{
+  id uuid pk
+  pageId uuid
+  type enum[]
+  handle string
+  fullURL URL // when type is equal to custom
+  startCol int
+  startRow int
+  colSize int
+  rowSize int
+  icon assets URL optional // in custom type condition 
+}
+
+{
+    "id": "widget_id",
+    "pageId": "page_id",
+    "type": "widget_type",
+    "handle": "widget_handle",
+    "fullURL": "widget_full_url_if_type_is_custom",
+    "startCol": "widget_start_column",
+    "startRow": "widget_start_row",
+    "colSize": "widget_column_span",
+    "rowSize": "widget_row_span",
+    "icon": "widget_icon_url_optional"
 }

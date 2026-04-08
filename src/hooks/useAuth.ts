@@ -95,7 +95,7 @@ export const useSignup = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { email: string; password: string; fullName: string }) => {
+    mutationFn: async (data: { email: string; password: string; fullName: string; tnc: boolean }) => {
       return await api.post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, data);
     },
     onSuccess: async (result) => {
@@ -173,9 +173,10 @@ export const useLogout = () => {
 
   return useMutation({
     mutationFn: async () => {
-      clearAuthCookie();
+      return await api.post<unknown>(API_ENDPOINTS.AUTH.LOGOUT);
     },
     onSuccess: async () => {
+      clearAuthCookie();
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.AUTH.ALL }),
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS.ALL }),
@@ -183,6 +184,9 @@ export const useLogout = () => {
       ]);
       queryClient.removeQueries({ queryKey: QUERY_KEYS.USERS.ALL });
       queryClient.removeQueries({ queryKey: QUERY_KEYS.PAGE.ALL });
+    },
+    onError: () => {
+      clearAuthCookie();
     },
   });
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import useAuthStore from "@/stores/authStore";
@@ -38,7 +38,7 @@ export default function OnboardingPage() {
     status = "taken";
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (status !== "available") {
@@ -48,6 +48,7 @@ export default function OnboardingPage() {
 
     try {
       const auth = await claimUsernameMutation.mutateAsync(username);
+      console.log(auth)
       
       if (auth?.user) {
         setUser(auth.user);
@@ -55,12 +56,18 @@ export default function OnboardingPage() {
         setUser({ ...user, username });
       }
       toast.success("Username claimed successfully!");
-      router.push("/dashboard");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to claim username. Try again.";
       toast.error(message);
     }
   };
+
+  useEffect(() => {
+    if (claimUsernameMutation.isSuccess) {
+      router.push("/dashboard");
+      router.refresh();
+    }
+  }, [claimUsernameMutation.isSuccess, router]);
 
   return (
     <AuthLayout>
