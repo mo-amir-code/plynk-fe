@@ -2,7 +2,7 @@ import { featuresList } from "@/data/site-data";
 
 export function Features() {
   return (
-    <section className="py-16 sm:py-24 bg-slate-50 dark:bg-background-dark/50">
+    <section className="py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="reveal text-center max-w-3xl mx-auto mb-12 sm:mb-16">
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-black mb-6 tracking-[-0.04em] text-slate-900 dark:text-white leading-tight">Your whole world, <br className="hidden sm:block" /><span className="gradient-text italic">on one canvas.</span></h2>

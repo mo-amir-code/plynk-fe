@@ -14,7 +14,10 @@ export function WideWidget({
   textClass = 'group-hover:text-primary text-slate-900 dark:text-slate-100'
 }: WideWidgetProps) {
   return (
-    <a href={url} className={`group relative col-span-2 row-span-1 rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center gap-3 sm:gap-4 transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 cursor-pointer min-h-[100px] sm:min-h-[120px] overflow-hidden ${containerClass}`}>
+    <a 
+      href={url} 
+      className={`group relative col-span-2 row-span-1 aspect-[2/1] rounded-4xl sm:rounded-[2.5rem] flex items-center justify-center gap-3 sm:gap-4 transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 cursor-pointer overflow-hidden ${containerClass}`}
+    >
       {overlayClass && (
         <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${overlayClass}`} />
       )}

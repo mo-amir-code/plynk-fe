@@ -190,11 +190,11 @@ export function SignUpForm() {
             />
             <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
               By signing up, you agree to our{" "}
-              <Link href="#" className="text-primary hover:text-primary/80 font-semibold">
+              <Link href="/terms" className="text-primary hover:text-primary/80 font-semibold">
                 Terms of Service
               </Link>
               {" "}and{" "}
-              <Link href="#" className="text-primary hover:text-primary/80 font-semibold">
+              <Link href="/privacy" className="text-primary hover:text-primary/80 font-semibold">
                 Privacy Policy
               </Link>
             </span>

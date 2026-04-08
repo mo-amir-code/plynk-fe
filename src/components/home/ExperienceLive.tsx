@@ -4,7 +4,7 @@ import { FaXTwitter, FaInstagram, FaDribbble, FaLinkedinIn, FaYoutube, FaGithub,
 
 export function ExperienceLive() {
   return (
-    <section className="py-16 sm:py-32 relative overflow-hidden bg-slate-50 dark:bg-background-dark/50">
+    <section className="py-16 md:py-32 relative overflow-hidden">
       {/* Ambient glowing backdrop */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[600px] bg-primary/5 dark:bg-primary/20 rounded-full blur-[120px] pointer-events-none -z-10" />
       
@@ -22,15 +22,26 @@ export function ExperienceLive() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                   {/* Hero-style Bento Box for Sarah Jenkins */}
                   {/* Profile Bio Card - Large 2x2 */}
-                  <div className="col-span-2 row-span-2 bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 shadow-xl border border-white/5 flex flex-col justify-between transition-transform duration-500 hover:scale-[1.02] overflow-hidden relative group cursor-pointer text-left min-h-[220px]">
-                    <div className="absolute top-0 right-0 p-5 opacity-50"><span className="material-symbols-outlined text-white/50 text-2xl">verified</span></div>
-                    <div className="size-16 sm:size-20 rounded-full border-2 border-white/20 overflow-hidden shadow-lg mb-4 sm:mb-6">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img alt="Avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWyvuALISSYK-dcrYVvg6Gi04CRvCX0vwjcC1OH9z3l7Zp1tgNdFcbJhLr7cz7oeSwc1sXSkEAQbJwZjiDlVFEB9haHM-ZmWM2MzBUFIzZiTYlMcOANulNfqNuyB5eCoO4LO513Oicz9VgTynNRjyQI0wXjTL2vZdb4B_Al2AFCjokr-6CznrS64-JaGnMtLAbbl6ik2OXiW-1bAOGEr0gems6j4yKey_0yD6ecP2uRu0Eeg55Ccwv6YAY_blQpqZqxSIUuSwkh_TZ" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl sm:text-3xl font-black text-white mb-2 tracking-tight">Sarah Jenkins</h3>
-                      <p className="text-sm md:text-base text-white/70 leading-relaxed font-medium">Product Designer &amp; Photographer based in NYC.</p>
+                  <div className="col-span-2 row-span-2 aspect-square bg-linear-to-br from-slate-900 to-slate-800 rounded-4xl sm:rounded-[2.5rem] p-8 sm:p-10 shadow-2xl border border-white/5 flex flex-col items-center justify-center transition-transform duration-500 hover:scale-[1.02] overflow-hidden relative group cursor-pointer text-center">
+                    {/* Background Detail */}
+                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.05),transparent)] pointer-events-none" />
+                    
+                    <div className="relative z-10 flex flex-col items-center">
+                      <div className="size-24 sm:size-28 rounded-full border-2 border-white/20 p-1 mb-8 relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img alt="Avatar" className="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWyvuALISSYK-dcrYVvg6Gi04CRvCX0vwjcC1OH9z3l7Zp1tgNdFcbJhLr7cz7oeSwc1sXSkEAQbJwZjiDlVFEB9haHM-ZmWM2MzBUFIzZiTYlMcOANulNfqNuyB5eCoO4LO513Oicz9VgTynNRjyQI0wXjTL2vZdb4B_Al2AFCjokr-6CznrS64-JaGnMtLAbbl6ik2OXiW-1bAOGEr0gems6j4yKey_0yD6ecP2uRu0Eeg55Ccwv6YAY_blQpqZqxSIUuSwkh_TZ" />
+                        <div className="absolute -bottom-1 -right-1 bg-primary px-1 py-1 rounded-full flex items-center justify-center border-2 border-slate-900">
+                          <span className="material-symbols-outlined text-white text-[12px] font-black">verified</span>
+                        </div>
+                      </div>
+                      
+                      <h3 className="text-3xl sm:text-4xl font-black text-white mb-3 tracking-tighter">Sarah Jenkins</h3>
+                      <p className="text-sm sm:text-lg text-white/60 leading-relaxed font-medium max-w-[200px] mx-auto">Product Designer & Photographer based in NYC.</p>
+                      
+                      <div className="mt-8 flex gap-2">
+                        <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] sm:text-xs font-bold text-white/40 uppercase tracking-widest border border-white/5">Photography</span>
+                        <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] sm:text-xs font-bold text-white/40 uppercase tracking-widest border border-white/5">Design</span>
+                      </div>
                     </div>
                   </div>
 
