@@ -2,18 +2,30 @@ import { onboardingSteps } from "@/data/site-data";
 
 export function StreamlinedOnboarding() {
   return (
-    <section className="py-16 sm:py-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <h2 className="reveal text-center text-2xl sm:text-3xl font-bold mb-12 sm:mb-16 tracking-tight text-slate-900 dark:text-slate-100">Streamlined Onboarding</h2>
-        <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-12 text-center">
-          <div className="hidden sm:block absolute top-8 left-1/4 right-1/4 h-px border-t-2 border-dashed border-slate-200 dark:border-slate-800 -z-10" />
+    <section className="py-16 sm:py-24 relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+        <div className="reveal text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+          <h2 className="text-4xl sm:text-5xl font-black tracking-[-0.04em] text-slate-900 dark:text-slate-100">
+            Zero to launched in <span className="text-primary italic">minutes.</span>
+          </h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {onboardingSteps.map((step, i) => (
-            <div key={i} className={`reveal flex flex-col items-center delay-${(i + 1) * 200}`}>
-              <div className="size-14 sm:size-16 rounded-full bg-primary text-white flex items-center justify-center text-xl sm:text-2xl font-bold mb-5 sm:mb-6 ring-8 ring-primary/5 shadow-lg shadow-primary/20 transition-transform duration-300 hover:scale-110">
+            <div key={i} className={`reveal relative p-8 sm:p-10 rounded-[3rem] bg-white dark:bg-slate-800/80 shadow-sm border border-slate-100 dark:border-slate-700/80 overflow-hidden group transition-all duration-500 hover:-translate-y-2 hover:shadow-xl dark:hover:shadow-primary/5 delay-${(i + 1) * 100}`}>
+              {/* Massive Editorial Number */}
+              <div className="absolute -top-6 -right-6 text-[180px] font-black text-slate-50 dark:text-slate-700/30 leading-none select-none group-hover:text-primary/5 dark:group-hover:text-primary/10 transition-colors duration-500 z-0">
                 {step.n}
               </div>
-              <h3 className="text-lg sm:text-xl font-bold mb-2 text-slate-900 dark:text-slate-100">{step.title}</h3>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-[260px] mx-auto">{step.desc}</p>
+              
+              <div className="relative z-10 flex flex-col h-full justify-end pt-20">
+                <h3 className="text-xl sm:text-2xl font-black mb-3 text-slate-900 dark:text-slate-100 tracking-tight">
+                  {step.title}
+                </h3>
+                <p className="text-base text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                  {step.desc}
+                </p>
+              </div>
             </div>
           ))}
         </div>

@@ -3,8 +3,38 @@
 import { useEffect, useState } from "react";
 import { navLinks } from "@/data/site-data";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Moon, Sun } from "lucide-react";
 import { useAuthStatus } from "@/hooks/useAuth";
+import { useAppTheme } from "@/components/theme/ThemeProvider";
+
+function ThemeToggle() {
+  const { theme, mounted, toggleTheme } = useAppTheme();
+
+  if (!mounted) return <div className="size-10" />;
+
+  return (
+    <button
+      onClick={toggleTheme}
+      className="relative size-10 flex items-center justify-center rounded-xl hover:bg-slate-200/50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400 transition-all duration-300 group overflow-hidden cursor-pointer"
+      aria-label="Toggle theme"
+    >
+      <div className="relative size-5 overflow-hidden">
+        {/* Sun Icon */}
+        <div className={`absolute inset-0 transition-all duration-500 ease-spring ${
+          theme === 'dark' ? 'translate-y-8 opacity-0 rotate-45' : 'translate-y-0 opacity-100 rotate-0'
+        }`}>
+          <Sun size={20} className="text-primary" />
+        </div>
+        {/* Moon Icon */}
+        <div className={`absolute inset-0 transition-all duration-500 ease-spring ${
+          theme === 'dark' ? 'translate-y-0 opacity-100 rotate-0' : '-translate-y-8 opacity-0 -rotate-45'
+        }`}>
+          <Moon size={20} className="text-blue-400" />
+        </div>
+      </div>
+    </button>
+  );
+}
 
 function useScrolledNav() {
   const [scrolled, setScrolled] = useState(false);
@@ -31,11 +61,11 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-8">
-          <a href="#" className="flex items-center gap-2 group">
-            <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white transition-transform duration-200 group-hover:scale-110">
-              <span className="material-symbols-outlined text-xl leading-none">widgets</span>
+          <a href="#" className="flex items-center gap-2.5 group">
+            <div className="size-9 rounded-lg overflow-hidden">
+              <img src="/logo.svg" alt="plynk logo" className="w-full h-full object-cover" />
             </div>
-            <span className="text-xl font-black tracking-tight text-slate-900 dark:text-slate-100">mok<span className="text-primary">U</span></span>
+            <span className="text-xl font-bold tracking-[-0.03em] text-slate-900 dark:text-slate-100">plynk</span>
           </a>
           {/* Desktop links */}
           <div className="hidden md:flex items-center gap-6">
@@ -48,6 +78,7 @@ export function Navbar() {
         </div>
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
           {!isAuth ? (
             <>
               <Link href="/auth/signin" className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors duration-200 rounded-lg hover:bg-primary/5">
@@ -65,13 +96,16 @@ export function Navbar() {
           )}
         </div>
         {/* Mobile hamburger */}
-        <button
-          className="md:hidden p-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
-        >
-          <span className="material-symbols-outlined">{mobileOpen ? "close" : "menu"}</span>
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            className="p-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle menu"
+          >
+            <span className="material-symbols-outlined">{mobileOpen ? "close" : "menu"}</span>
+          </button>
+        </div>
       </div>
       {/* Mobile menu */}
       <div

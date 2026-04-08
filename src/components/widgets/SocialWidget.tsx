@@ -5,30 +5,45 @@ export function SocialWidget({
   platform,
   icon,
   url = '#',
-  containerClass = 'bg-white dark:bg-slate-800 shadow-xl border border-slate-100 dark:border-slate-700 hover:shadow-2xl',
-  overlayClass,
-  arrowClass = 'text-slate-400 dark:text-slate-500',
-  iconContainerClass = 'bg-slate-900 dark:bg-slate-100',
-  iconColorClass = 'text-white dark:text-slate-900',
+  username = '@johndoe',
+  containerClass = 'bg-slate-100 dark:bg-slate-800',
+  overlayClass, // Kept for API compatibility, but we rely on container gradients mostly now
+  arrowClass, // Unused in this design
+  iconContainerClass = 'bg-white/20 dark:bg-white/10',
+  iconColorClass = 'text-white',
   iconCustomStyle,
-  textClass = 'group-hover:text-primary'
+  textClass = ''
 }: SocialWidgetProps) {
   return (
-    <a href={url} className={`group relative col-span-1 row-span-1 rounded-[2rem] sm:rounded-[2.5rem] flex flex-col items-center justify-center transition-all duration-500 hover:scale-105 hover:-translate-y-1 cursor-pointer min-h-[120px] sm:min-h-[140px] overflow-hidden ${containerClass}`}>
-      {overlayClass && (
-        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${overlayClass}`} />
-      )}
-      <div className="absolute top-4 sm:top-5 right-4 sm:right-5 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-500">
-        <span className={`material-symbols-outlined text-sm sm:text-base ${arrowClass}`}>arrow_outward</span>
-      </div>
-      <div className={`size-10 sm:size-12 rounded-full flex items-center justify-center mb-2 shadow-md group-hover:scale-110 transition-transform duration-500 ${iconContainerClass}`} style={iconCustomStyle}>
+    <a 
+      href={url} 
+      onClick={(e) => { if(url === '#') e.preventDefault(); }}
+      className={`group relative col-span-1 row-span-1 rounded-[2.5rem] flex flex-col items-center justify-center transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 cursor-pointer min-h-[160px] overflow-hidden shadow-lg ${containerClass}`}
+    >
+      {/* Light Reflection / Glass Sheen Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+
+      {/* The Central Glassmorphic Circle */}
+      <div 
+        className={`relative z-10 size-[84px] sm:size-[96px] rounded-full flex items-center justify-center shadow-xl backdrop-blur-md border border-white/20 transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-2 ${iconContainerClass}`} 
+        style={iconCustomStyle}
+      >
         {typeof icon === 'string' ? (
-          <span className={`material-symbols-outlined text-[20px] sm:text-[24px] leading-none ${iconColorClass}`}>{icon}</span>
-        ) : icon}
+          <i className={`${icon} text-[36px] sm:text-[42px] leading-none ${iconColorClass}`} />
+        ) : (
+          <div className={`${iconColorClass} flex items-center justify-center`}>{icon}</div>
+        )}
       </div>
-      <span className={`text-[10px] sm:text-xs font-black uppercase tracking-widest relative z-10 transition-colors duration-300 text-slate-900 dark:text-slate-100 ${textClass}`}>
-        {platform}
-      </span>
+
+      {/* The Floating @Username Pill (Shown on Hover) */}
+      <div className={`absolute bottom-4 mx-auto flex flex-col items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-xl rounded-2xl px-5 py-2 border border-white/10 shadow-lg transform transition-all duration-500 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 z-20 ${textClass}`}>
+        <span className="text-xs sm:text-sm font-bold text-white tracking-wide leading-tight">
+          {platform}
+        </span>
+        <span className="text-[10px] sm:text-xs text-white/70 font-medium">
+          {username}
+        </span>
+      </div>
     </a>
   );
 }

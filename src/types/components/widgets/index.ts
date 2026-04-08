@@ -4,6 +4,7 @@ export interface SocialWidgetProps {
   platform: string;
   icon: string | React.ReactNode;
   url?: string;
+  username?: string;
   containerClass?: string;
   overlayClass?: string;
   arrowClass?: string;

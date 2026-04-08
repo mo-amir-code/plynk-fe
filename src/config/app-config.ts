@@ -16,8 +16,8 @@ export const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || (() => {
   }
 })();
 
-export const BRAND_NAME = "Plynk";
-export const BRAND_NAME_UPPER = "PLYNK";
+export const BRAND_NAME = "plynk.in";
+export const BRAND_NAME_UPPER = "PLYNK.IN";
 
 export const APP_THEME_STORAGE_KEY = "theme";
 
