@@ -111,14 +111,14 @@ export function SignInForm() {
           {/* Remember & Forgot */}
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center gap-2 cursor-pointer group">
-              <input
+              {/* <input
                 type="checkbox"
                 className="w-4 h-4 rounded accent-primary cursor-pointer"
                 defaultChecked
               />
               <span className="text-slate-600 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
                 Remember me for 30 days
-              </span>
+              </span> */}
             </label>
             <Link
               href="/auth/forgot-password"

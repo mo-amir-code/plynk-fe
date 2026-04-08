@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
 import { APP_THEME_STORAGE_KEY, BRAND_NAME } from "@/config/app-config";
+import { GlobalBackground } from "@/components/layout/GlobalBackground";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,7 +31,8 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                var theme = localStorage.getItem('${APP_THEME_STORAGE_KEY}') === 'dark' ? 'dark' : 'light';
+                var stored = localStorage.getItem('${APP_THEME_STORAGE_KEY}');
+                var theme = stored === 'light' ? 'light' : 'dark';
                 localStorage.setItem('${APP_THEME_STORAGE_KEY}', theme);
                 document.documentElement.classList.toggle('dark', theme === 'dark');
               } catch (_) {}
@@ -39,6 +41,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 transition-colors duration-300">
+        <GlobalBackground />
         <Providers>
           <Toaster richColors position="top-right" />
           {children}

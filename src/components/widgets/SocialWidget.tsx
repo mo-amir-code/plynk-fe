@@ -18,7 +18,7 @@ export function SocialWidget({
     <a 
       href={url} 
       onClick={(e) => { if(url === '#') e.preventDefault(); }}
-      className={`group relative col-span-1 row-span-1 rounded-[2.5rem] flex flex-col items-center justify-center transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 cursor-pointer min-h-[160px] overflow-hidden shadow-lg ${containerClass}`}
+      className={`group relative col-span-1 row-span-1 aspect-square rounded-[2rem] sm:rounded-[2.5rem] flex flex-col items-center justify-center transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 cursor-pointer overflow-hidden shadow-lg ${containerClass}`}
     >
       {/* Light Reflection / Glass Sheen Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { AuthLayout } from "@/components/auth/AuthLayout";
@@ -45,7 +45,7 @@ function setAuthCookie(token: string) {
   document.cookie = `${COOKIE_NAME}=${encodeURIComponent(token)}; path=/; max-age=${ONE_WEEK_IN_SECONDS}`;
 }
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -82,5 +82,21 @@ export default function AuthCallbackPage() {
         </div>
       </div>
     </AuthLayout>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense 
+      fallback={
+        <AuthLayout>
+          <div className="max-w-lg mx-auto w-full min-h-80 flex items-center justify-center">
+            <Loader2 className="size-5 animate-spin text-slate-400" />
+          </div>
+        </AuthLayout>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
