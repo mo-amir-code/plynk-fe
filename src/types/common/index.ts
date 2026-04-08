@@ -44,12 +44,15 @@ export type PublicThemeResult = {
 
 export type PublicWidgetApiItem = {
 	id: string;
+	pageId?: string;
 	type: SocialPlatform;
 	handle: string;
+	fullURL?: string;
 	startCol: number;
 	startRow: number;
 	colSize: number;
 	rowSize: number;
+	icon?: string;
 };
 
 export type PublicWidgetsResult = {

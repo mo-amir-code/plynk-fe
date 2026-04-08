@@ -2,6 +2,7 @@
 
 import { PublicPageClient } from "@/components/public/PublicPageClient";
 import { useGetPageBySlug, useGetPublicThemeBySlug, useGetPublicWidgetsBySlug } from "@/hooks/usePage";
+import type { PublicPageClientPageData } from "@/types/components/public";
 
 export function PublicPageContainer({ slug }: { slug: string }) {
   const pageQuery = useGetPageBySlug(slug);
@@ -21,8 +22,31 @@ export function PublicPageContainer({ slug }: { slug: string }) {
     );
   }
 
-  const pageData = pageQuery.data || themeQuery.data?.result?.page || { slug, title: slug };
-  const isNotFound = !pageData && !themeQuery.data?.success;
+  const pageFromQuery =
+    pageQuery.data && typeof pageQuery.data === "object"
+      ? (pageQuery.data as Record<string, unknown>)
+      : null;
+
+  const pageFromTheme =
+    themeQuery.data?.result?.page && typeof themeQuery.data.result.page === "object"
+      ? (themeQuery.data.result.page as Record<string, unknown>)
+      : null;
+
+  const resolvedPageData: PublicPageClientPageData | null = pageFromQuery
+    ? {
+      ...pageFromQuery,
+      slug: String(pageFromQuery.slug ?? slug),
+      title: String(pageFromQuery.title ?? pageFromQuery.slug ?? slug),
+    }
+    : pageFromTheme
+      ? {
+        ...pageFromTheme,
+        slug: String(pageFromTheme.slug ?? slug),
+        title: String(pageFromTheme.title ?? pageFromTheme.slug ?? slug),
+      }
+      : null;
+
+  const isNotFound = !resolvedPageData && themeQuery.data?.success === false;
 
   if (isNotFound) {
     return (
@@ -37,7 +61,7 @@ export function PublicPageContainer({ slug }: { slug: string }) {
 
   return (
     <PublicPageClient
-      pageData={pageData}
+      pageData={resolvedPageData ?? { slug, title: slug }}
       themeResponse={themeQuery.data}
       widgetsResponse={widgetsQuery.data}
     />

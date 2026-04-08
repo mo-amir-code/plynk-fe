@@ -19,8 +19,10 @@ import type {
   AddWidgetOption,
   MobilePlacement,
   ResizeDirection,
+  StyleConfig,
   SyncStatus,
   ThemeConfig,
+  ThemePayload,
   Wallpaper,
 } from "@/types/components/dashboard/your-identity";
 
@@ -48,26 +50,35 @@ const DUMMY_API_DEFAULT_THEMES: ThemeConfig[] = [
   {
     id: "theme_ocean_glass",
     name: "Ocean Glass",
-    frostIntensity: 24,
-    surfaceTint: 65,
-    fontStyle: "modern",
-    wallpaper: "wp1",
+    styleConfig: {
+      frostIntensity: 24,
+      surfaceTint: 65,
+      fontStyle: "modern",
+      wallpaper: "wp1",
+      widgets: {},
+    },
   },
   {
     id: "theme_sunset_soft",
     name: "Sunset Soft",
-    frostIntensity: 18,
-    surfaceTint: 58,
-    fontStyle: "classic",
-    wallpaper: "wp2",
+    styleConfig: {
+      frostIntensity: 18,
+      surfaceTint: 58,
+      fontStyle: "classic",
+      wallpaper: "wp2",
+      widgets: {},
+    },
   },
   {
     id: "theme_electric_bold",
     name: "Electric Bold",
-    frostIntensity: 36,
-    surfaceTint: 72,
-    fontStyle: "technical",
-    wallpaper: "wp6",
+    styleConfig: {
+      frostIntensity: 36,
+      surfaceTint: 72,
+      fontStyle: "technical",
+      wallpaper: "wp6",
+      widgets: {},
+    },
   },
 ];
 
@@ -91,6 +102,9 @@ const initialWidgets: DashboardSocialWidgetData[] = [
     startRow: 1,
     colSize: 3,
     rowSize: 3,
+    pageId: undefined,
+    fullURL: undefined,
+    icon: undefined,
   }
 ];
 
@@ -126,15 +140,21 @@ function normalizeWidget(rawWidget: any, index: number): DashboardSocialWidgetDa
     : "instagram";
 
   const handle = typeof rawWidget?.handle === "string" ? rawWidget.handle : "";
+  const pageId = typeof rawWidget?.pageId === "string" ? rawWidget.pageId : undefined;
+  const fullURL = typeof rawWidget?.fullURL === "string" ? rawWidget.fullURL : undefined;
+  const icon = typeof rawWidget?.icon === "string" ? rawWidget.icon : undefined;
 
   return {
     id: typeof rawWidget?.id === "string" && rawWidget.id.trim() ? rawWidget.id : `w${index + 1}`,
+    pageId,
     type,
     handle,
+    fullURL,
     startCol,
     startRow,
     colSize,
     rowSize,
+    icon,
   };
 }
 
@@ -348,6 +368,7 @@ export function YourIdentityClient() {
   const [frostIntensity, setFrostIntensity] = useState(24);
   const [surfaceTint, setSurfaceTint] = useState(65);
   const [activeFont, setActiveFont] = useState("modern");
+  const [activeRoundness, setActiveRoundness] = useState(16);
   const [customThemes, setCustomThemes] = useState<ThemeConfig[]>([]);
   const [selectedDefaultThemeId, setSelectedDefaultThemeId] = useState<string | null>(null);
   const [selectedCustomThemeId, setSelectedCustomThemeId] = useState<string | null>(null);
@@ -365,19 +386,24 @@ export function YourIdentityClient() {
   const [wasThemeStudioOpen, setWasThemeStudioOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
+  const [isStatusUpdating, setIsStatusUpdating] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [localSaveStatus, setLocalSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const localSaveStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const customPromptShownRef = useRef(false);
   const WALLPAPER_UPLOAD_API = "/api/upload/wallpaper";
 
   const DUMMY_API_WALLPAPERS = wallpaperOptions;
 
   const applyThemeConfig = (theme: ThemeConfig, source: "default" | "custom") => {
-    setActiveWallpaper(theme.wallpaper);
-    setFrostIntensity(theme.frostIntensity);
-    setSurfaceTint(theme.surfaceTint);
-    setActiveFont(theme.fontStyle);
+    const { wallpaper, frostIntensity, surfaceTint, fontStyle, roundness } = theme.styleConfig;
+
+    setActiveWallpaper(wallpaper);
+    setFrostIntensity(frostIntensity);
+    setSurfaceTint(surfaceTint);
+    setActiveFont(fontStyle);
+    setActiveRoundness(typeof roundness === 'string' ? parseInt(roundness) : roundness || 16);
 
     if (source === "default") {
       setSelectedDefaultThemeId(theme.id);
@@ -477,10 +503,14 @@ export function YourIdentityClient() {
     const newTheme: ThemeConfig = {
       id: `theme_custom_${Date.now()}`,
       name: trimmedName,
-      frostIntensity,
-      surfaceTint,
-      fontStyle: activeFont,
-      wallpaper: activeWallpaper,
+      styleConfig: {
+        frostIntensity,
+        surfaceTint,
+        fontStyle: activeFont,
+        wallpaper: activeWallpaper,
+        roundness: activeRoundness,
+        widgets: {},
+      },
     };
 
     setCustomThemes((prev) => [newTheme, ...prev]);
@@ -566,6 +596,12 @@ export function YourIdentityClient() {
     handleThemeValueCustomization();
   };
 
+  const handleRoundnessChange = (value: number) => {
+    if (value === activeRoundness) return;
+    setActiveRoundness(value);
+    handleThemeValueCustomization();
+  };
+
   useEffect(() => {
     if (!selectedCustomThemeId) return;
 
@@ -575,11 +611,14 @@ export function YourIdentityClient() {
       const next = prev.map((theme) => {
         if (theme.id !== selectedCustomThemeId) return theme;
 
+        const { wallpaper: themeWallpaper, frostIntensity: themeFrost, surfaceTint: themeTint, fontStyle: themeFont, roundness: themeRoundness } = theme.styleConfig;
+
         if (
-          theme.wallpaper === activeWallpaper &&
-          theme.frostIntensity === frostIntensity &&
-          theme.surfaceTint === surfaceTint &&
-          theme.fontStyle === activeFont
+          themeWallpaper === activeWallpaper &&
+          themeFrost === frostIntensity &&
+          themeTint === surfaceTint &&
+          themeFont === activeFont &&
+          (typeof themeRoundness === 'string' ? parseInt(themeRoundness) : themeRoundness) === activeRoundness
         ) {
           return theme;
         }
@@ -587,16 +626,20 @@ export function YourIdentityClient() {
         changed = true;
         return {
           ...theme,
-          wallpaper: activeWallpaper,
-          frostIntensity,
-          surfaceTint,
-          fontStyle: activeFont,
+          styleConfig: {
+            ...theme.styleConfig,
+            wallpaper: activeWallpaper,
+            frostIntensity,
+            surfaceTint,
+            fontStyle: activeFont,
+            roundness: activeRoundness,
+          },
         };
       });
 
       return changed ? next : prev;
     });
-  }, [selectedCustomThemeId, activeWallpaper, frostIntensity, surfaceTint, activeFont]);
+  }, [selectedCustomThemeId, activeWallpaper, frostIntensity, surfaceTint, activeFont, activeRoundness]);
 
   // 1. Initial state load from localStorage
   useEffect(() => {
@@ -610,15 +653,12 @@ export function YourIdentityClient() {
       if (pageData) {
 
         // 1. Theme Sync
-        if (pageData.theme?.styleConfig) {
-          const cfg = pageData.theme.styleConfig;
-          if (cfg.activeWallpaper) setActiveWallpaper(cfg.activeWallpaper);
+        if (pageData.styleConfig) {
+          const cfg = pageData.styleConfig;
+          if (cfg.wallpaper) setActiveWallpaper(cfg.wallpaper);
           if (cfg.frostIntensity !== undefined) setFrostIntensity(cfg.frostIntensity);
           if (cfg.surfaceTint !== undefined) setSurfaceTint(cfg.surfaceTint);
-          if (cfg.activeFont) setActiveFont(cfg.activeFont);
-          if (Array.isArray(cfg.customThemes)) setCustomThemes(cfg.customThemes);
-          if (cfg.selectedDefaultThemeId) setSelectedDefaultThemeId(cfg.selectedDefaultThemeId);
-          if (cfg.selectedCustomThemeId) setSelectedCustomThemeId(cfg.selectedCustomThemeId);
+          if (cfg.fontStyle) setActiveFont(cfg.fontStyle);
         }
 
         // 1.5 State check
@@ -628,12 +668,15 @@ export function YourIdentityClient() {
         if (Array.isArray(pageData.widgets) && pageData.widgets.length > 0) {
           const mappedWidgets = normalizeWidgets(pageData.widgets.map((w: any) => ({
             id: w.id,
+            pageId: w.pageId,
             type: w.type,
-            handle: w.config?.data?.handle,
+            handle: w.handle,
+            fullURL: w.fullURL,
             startCol: Number(w.startCol),
             startRow: Number(w.startRow),
             colSize: w.colSize,
             rowSize: w.rowSize,
+            icon: w.icon,
           })));
           setWidgets(mappedWidgets);
         } else {
@@ -675,7 +718,7 @@ export function YourIdentityClient() {
     loadInitialState();
   }, [userId, getMyPageQuery.data, getMyPageQuery.isLoading, isInitialized]);
 
-  // 2. Auto-save to localStorage and debounce API simulation
+  // 2. Auto-save to localStorage only (DB sync happens only on explicit submit/update)
   useEffect(() => {
     if (!isInitialized || !userId) return;
 
@@ -701,44 +744,26 @@ export function YourIdentityClient() {
     const themeKey = STORAGE_KEYS.themeByUser(userId);
     const widgetsKey = STORAGE_KEYS.widgetsByUser(userId);
 
+    if (localSaveStatusTimeoutRef.current) {
+      clearTimeout(localSaveStatusTimeoutRef.current);
+    }
+
+    setLocalSaveStatus("saving");
     localStorage.setItem(themeKey, JSON.stringify(themeConfig));
     localStorage.setItem(widgetsKey, normalizedString);
 
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    localSaveStatusTimeoutRef.current = setTimeout(() => {
+      setLocalSaveStatus("saved");
 
-    // Set status to idle if no changes for a bit, OR keep showing 'saved'
-    // Let's set it to saving as soon as a change is detected (and timeout starts)
-    setSyncStatus("saving");
-
-    saveTimeoutRef.current = setTimeout(async () => {
-      const syncData = {
-        themeConfig,
-        widgets: normalizedWidgets.map(w => ({
-          type: w.type.toUpperCase(),
-          startCol: w.startCol,
-          startRow: w.startRow,
-          colSize: w.colSize,
-          rowSize: w.rowSize,
-          config: {
-            data: {
-              handle: w.handle,
-            }
-          }
-        }))
-      };
-
-      try {
-        await syncPageMutation.mutateAsync(syncData);
-        setSyncStatus("saved");
-        console.log("✅ Sync: Successfully saved to DB");
-      } catch (error) {
-        setSyncStatus("error");
-        console.error("❌ Sync: Failed to save to DB", error);
-      }
-    }, 2000);
+      localSaveStatusTimeoutRef.current = setTimeout(() => {
+        setLocalSaveStatus("idle");
+      }, 1800);
+    }, 220);
 
     return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      if (localSaveStatusTimeoutRef.current) {
+        clearTimeout(localSaveStatusTimeoutRef.current);
+      }
     };
   }, [widgets, activeWallpaper, frostIntensity, surfaceTint, activeFont, customThemes, selectedDefaultThemeId, selectedCustomThemeId, isInitialized]);
 
@@ -1314,6 +1339,9 @@ export function YourIdentityClient() {
         rowSize: 3,
         startCol: 1,
         startRow: 1,
+        pageId: undefined,
+        fullURL: undefined,
+        icon: undefined,
       };
 
       const nextPos = findFirstFit(template, prev);
@@ -1345,47 +1373,51 @@ export function YourIdentityClient() {
   };
 
   const submitWidgets = async () => {
+    const widgetsMissingHandle = widgets.filter((widget) => !widget.handle.trim());
+    if (widgetsMissingHandle.length > 0) {
+      const missingWidgetsText = widgetsMissingHandle
+        .map((widget) => `${widget.type} (${widget.id})`)
+        .join(", ");
+
+      toast.error(`Missing handle for: ${missingWidgetsText}`);
+      return;
+    }
+
     setIsSubmitting(true);
+    setSyncStatus("saving");
+
+    const isUpdatingLivePage = isPublished;
+
     try {
       const selectedDefaultTheme = DUMMY_API_DEFAULT_THEMES.find((theme) => theme.id === selectedDefaultThemeId);
       const selectedCustomTheme = customThemes.find((theme) => theme.id === selectedCustomThemeId);
-      const currentThemeJson: ThemeConfig = {
+
+      // 1. Theme Payload - follows API structure: { id, name, styleConfig: {...} }
+      const themePayload: ThemePayload = {
         id: selectedCustomTheme?.id || selectedDefaultTheme?.id || "theme_manual",
         name: selectedCustomTheme?.name || selectedDefaultTheme?.name || "Manual Theme",
-        frostIntensity,
-        surfaceTint,
-        fontStyle: activeFont,
-        wallpaper: activeWallpaper,
+        styleConfig: {
+          frostIntensity,
+          surfaceTint,
+          fontStyle: activeFont,
+          wallpaper: activeWallpaper,
+          roundness: activeRoundness,
+          widgets: {}, // Placeholder for widget-specific overrides
+        },
       };
 
-      // 1. Separate Theme Payload (Page + Styling options)
-      const themePayload = {
-        theme: currentThemeJson,
-        page: {
-          background: activeWallpaper,
-          font: activeFont
-        },
-        widget: {
-          frostIntensity: frostIntensity,
-          surfaceTint: surfaceTint,
-          // Placeholder for base widget overrides
-        },
-        widgets: {
-          // Placeholder for specific widget type overrides
-        }
-      };
-
-      // 2. Separate Layout + Data Payload (No styling included!)
+      // 2. Widget Payload (Flat structure per API spec)
       const widgetsPayload = widgets.map(w => ({
         id: w.id,
+        pageId: w.pageId,
         type: w.type,
+        handle: w.handle,
+        fullURL: w.fullURL,
         startCol: w.startCol,
         startRow: w.startRow,
         colSize: w.colSize,
         rowSize: w.rowSize,
-        config: {
-          handle: w.handle,
-        }
+        icon: w.icon,
       }));
 
       const syncData = {
@@ -1398,7 +1430,11 @@ export function YourIdentityClient() {
 
       setSyncStatus("saved");
       setIsPublished(true);
-      setIsSuccessModalOpen(true);
+      if (isUpdatingLivePage) {
+        toast.success("Page updated successfully");
+      } else {
+        setIsSuccessModalOpen(true);
+      }
       console.group(`Submitting ${BRAND_NAME} Page State`);
       console.log('1️⃣ THEME_JSON (style_config) ->', themePayload);
       console.log('2️⃣ PUBLIC_STATUS ->', true);
@@ -1412,8 +1448,35 @@ export function YourIdentityClient() {
     }
   };
 
+  const togglePublishStatus = async () => {
+    const nextIsPublished = !isPublished;
+
+    setIsStatusUpdating(true);
+    setSyncStatus("saving");
+
+    try {
+      await syncPageMutation.mutateAsync({ isPublished: nextIsPublished });
+      setIsPublished(nextIsPublished);
+      setSyncStatus("saved");
+      toast.success(nextIsPublished ? "Page Published Live!" : "Page set to Private Draft", {
+        icon: nextIsPublished
+          ? <Check className="text-emerald-500" size={16} />
+          : <Lock className="text-amber-500" size={16} />,
+      });
+    } catch {
+      setSyncStatus("error");
+      toast.error("Failed to update page visibility");
+    } finally {
+      setIsStatusUpdating(false);
+    }
+  };
+
   const activeBackground = DUMMY_API_WALLPAPERS.find(w => w.id === activeWallpaper)?.background || DUMMY_API_WALLPAPERS[0].background;
   const currentFont = DUMMY_API_FONT_STYLES.find(f => f.id === activeFont)?.family || 'inherit';
+  const widgetsMissingHandle = widgets.filter((widget) => !widget.handle.trim());
+  const hasMissingWidgetHandles = widgetsMissingHandle.length > 0;
+  const submitButtonLabel = isPublished ? "Update" : "Submit";
+  const submitButtonLoadingLabel = isPublished ? "Updating..." : "Submitting...";
 
   return (
     <div
@@ -1422,9 +1485,9 @@ export function YourIdentityClient() {
     >
       {/* Premium Cloud Sync Status Indicator - Relocated to Top Right */}
       <div className={`fixed top-10 right-8 z-60 pointer-events-none transition-all duration-500 ease-in-out flex flex-row items-center gap-3 ${isPreview ? "opacity-0 scale-90 translate-x-4" :
-        syncStatus === "saving" ? "opacity-100 translate-x-0" :
-          syncStatus === "saved" ? "opacity-90 translate-x-0" :
-            syncStatus === "error" ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
+        syncStatus === "saving" || syncStatus === "saved" || syncStatus === "error" || localSaveStatus !== "idle"
+          ? "opacity-100 translate-x-0"
+          : "opacity-0 translate-x-4"
         }`}>
         {/* Privacy Status Badge */}
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-xl transition-all duration-700 bg-white/95 dark:bg-slate-900/90 ${isPublished
@@ -1437,24 +1500,43 @@ export function YourIdentityClient() {
           </span>
         </div>
 
-        <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-900/80 dark:bg-black/60 backdrop-blur-xl border border-white/10 shadow-xl">
-          <div className="relative flex items-center justify-center">
-            {syncStatus === "saving" && (
-              <div className="size-3.5 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
-            )}
-            {syncStatus === "saved" && (
-              <span className="material-symbols-outlined text-[16px] text-emerald-400">cloud_done</span>
-            )}
-            {syncStatus === "error" && (
-              <span className="material-symbols-outlined text-[16px] text-red-400">cloud_off</span>
-            )}
+        {localSaveStatus !== "idle" && (
+          <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-900/80 dark:bg-black/60 backdrop-blur-xl border border-white/10 shadow-xl">
+            <div className="relative flex items-center justify-center">
+              {localSaveStatus === "saving" && (
+                <div className="size-3.5 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+              )}
+              {localSaveStatus === "saved" && (
+                <Save size={14} className="text-cyan-300" />
+              )}
+            </div>
+            <span className="text-[11px] font-bold tracking-wide text-white/90 drop-shadow-sm">
+              {localSaveStatus === "saving" && "Saving locally..."}
+              {localSaveStatus === "saved" && "Saved locally"}
+            </span>
           </div>
-          <span className="text-[11px] font-bold tracking-wide text-white/90 drop-shadow-sm">
-            {syncStatus === "saving" && "Syncing..."}
-            {syncStatus === "saved" && "Synced"}
-            {syncStatus === "error" && "Offline"}
-          </span>
-        </div>
+        )}
+
+        {(syncStatus === "saving" || syncStatus === "saved" || syncStatus === "error") && (
+          <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-900/80 dark:bg-black/60 backdrop-blur-xl border border-white/10 shadow-xl">
+            <div className="relative flex items-center justify-center">
+              {syncStatus === "saving" && (
+                <div className="size-3.5 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+              )}
+              {syncStatus === "saved" && (
+                <span className="material-symbols-outlined text-[16px] text-emerald-400">cloud_done</span>
+              )}
+              {syncStatus === "error" && (
+                <span className="material-symbols-outlined text-[16px] text-red-400">cloud_off</span>
+              )}
+            </div>
+            <span className="text-[11px] font-bold tracking-wide text-white/90 drop-shadow-sm">
+              {syncStatus === "saving" && "Syncing..."}
+              {syncStatus === "saved" && "Synced"}
+              {syncStatus === "error" && "Offline"}
+            </span>
+          </div>
+        )}
       </div>
 
       <div
@@ -1555,6 +1637,7 @@ export function YourIdentityClient() {
                   onDeleteClick={() => deleteWidget(w.id)}
                   frostIntensity={frostIntensity}
                   surfaceTint={surfaceTint}
+                  roundness={activeRoundness}
                 />
               </div>
             );
@@ -1604,6 +1687,7 @@ export function YourIdentityClient() {
               onDeleteClick={() => deleteWidget(w.id)}
               frostIntensity={frostIntensity}
               surfaceTint={surfaceTint}
+              roundness={activeRoundness}
             />
           ))}
         </div>
@@ -1653,6 +1737,13 @@ export function YourIdentityClient() {
           {isPreview ? "Edit Mode" : "Preview"}
         </button>
 
+        {hasMissingWidgetHandles && !isPreview && (
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-500/12 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 text-[11px] font-bold">
+            <Lock size={12} />
+            Missing handles in {widgetsMissingHandle.length} widget{widgetsMissingHandle.length > 1 ? "s" : ""}
+          </div>
+        )}
+
         <button
           type="button"
           onClick={submitWidgets}
@@ -1660,7 +1751,7 @@ export function YourIdentityClient() {
           className={`cursor-pointer inline-flex items-center gap-2 rounded-full bg-blue-500 text-white px-5 py-2.5 text-xs sm:text-sm font-black shadow-lg shadow-blue-500/30 transition-all ml-1 ${isSubmitting || isPreview ? 'opacity-40 cursor-not-allowed hidden sm:flex' : 'hover:scale-105 hover:bg-blue-600 active:scale-95'}`}
         >
           {isSubmitting ? <RefreshCcw size={16} className="animate-spin" /> : <Check size={18} strokeWidth={3} />}
-          {isSubmitting ? "Submitting..." : "Submit"}
+          {isSubmitting ? submitButtonLoadingLabel : submitButtonLabel}
         </button>
       </div>
 
@@ -1702,7 +1793,8 @@ export function YourIdentityClient() {
               </h3>
               <div className="space-y-2.5">
                 {DUMMY_API_DEFAULT_THEMES.map((theme) => {
-                  const wallpaper = DUMMY_API_WALLPAPERS.find((wp) => wp.id === theme.wallpaper);
+                  const { wallpaper: wallpaperId, fontStyle } = theme.styleConfig;
+                  const wallpaper = DUMMY_API_WALLPAPERS.find((wp) => wp.id === wallpaperId);
                   const isActive = selectedDefaultThemeId === theme.id;
 
                   return (
@@ -1718,7 +1810,7 @@ export function YourIdentityClient() {
                         <span className="size-7 rounded-full border border-white/30 shadow-sm" style={{ background: wallpaper?.background || DUMMY_API_WALLPAPERS[0].background }} />
                         <div className="flex flex-col items-start">
                           <span className="text-sm font-bold text-slate-900 dark:text-white">{theme.name}</span>
-                          <span className="text-[11px] text-slate-500 dark:text-slate-500">{theme.fontStyle}</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-500">{fontStyle}</span>
                         </div>
                       </div>
                       <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isActive ? 'bg-blue-500 border-blue-500 transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
@@ -1745,7 +1837,8 @@ export function YourIdentityClient() {
               ) : (
                 <div className="space-y-2.5">
                   {customThemes.map((theme) => {
-                    const wallpaper = DUMMY_API_WALLPAPERS.find((wp) => wp.id === theme.wallpaper);
+                    const { wallpaper: wallpaperId, fontStyle } = theme.styleConfig;
+                    const wallpaper = DUMMY_API_WALLPAPERS.find((wp) => wp.id === wallpaperId);
                     const isActive = selectedCustomThemeId === theme.id;
 
                     return (
@@ -1765,7 +1858,7 @@ export function YourIdentityClient() {
                             <span className="size-7 rounded-full border border-white/30 shadow-sm" style={{ background: wallpaper?.background || DUMMY_API_WALLPAPERS[0].background }} />
                             <div className="flex flex-col items-start">
                               <span className="text-sm font-bold text-slate-900 dark:text-white">{theme.name}</span>
-                              <span className="text-[11px] text-slate-500 dark:text-slate-500">{theme.fontStyle}</span>
+                              <span className="text-[11px] text-slate-500 dark:text-slate-500">{fontStyle}</span>
                             </div>
                           </div>
                           <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isActive ? 'bg-blue-500 border-blue-500 transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
@@ -1869,6 +1962,23 @@ export function YourIdentityClient() {
                     className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-95 transition-all"
                   />
                 </div>
+
+                <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-3.5">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 font-medium">
+                      <span className="material-symbols-outlined text-[16px] text-slate-400 dark:text-slate-500">rounded_corner</span>
+                      Roundness
+                    </span>
+                    <span className="text-xs font-bold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-0.5 rounded-md">{activeRoundness}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0" max="32"
+                    value={activeRoundness}
+                    onChange={(e) => handleRoundnessChange(Number(e.target.value))}
+                    className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-95 transition-all"
+                  />
+                </div>
               </div>
             </div>
 
@@ -1925,15 +2035,10 @@ export function YourIdentityClient() {
                   </div>
 
                   <button
-                    onClick={() => {
-                      setIsPublished(!isPublished);
-                      toast.success(isPublished ? "Page set to Private Draft" : "Page Published Live!", {
-                        icon: isPublished ? <Lock className="text-amber-500" size={16} /> : <Check className="text-emerald-500" size={16} />
-
-                      });
-                    }}
+                    onClick={togglePublishStatus}
+                    disabled={isStatusUpdating}
                     className={`relative w-10 h-6 shrink-0 rounded-full transition-colors duration-300 outline-none focus:ring-2 focus:ring-blue-500/50 ${isPublished ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'
-                      }`}
+                      } ${isStatusUpdating ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     <div className={`absolute top-1 left-1 size-4 rounded-full bg-white shadow-sm transition-all duration-300 ease-in-out ${isPublished ? 'translate-x-4' : 'translate-x-0'
                       }`} />

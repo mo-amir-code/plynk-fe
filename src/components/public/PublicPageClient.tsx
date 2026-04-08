@@ -82,12 +82,15 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
 
     return {
       id: String(widget?.id ?? `widget-${index}`),
+      pageId: widget?.pageId ? String(widget.pageId) : undefined,
       type: String(widget?.type ?? "instagram").toLowerCase() as DashboardSocialWidgetData["type"],
       handle: String(widget?.handle ?? ""),
+      fullURL: widget?.fullURL ? String(widget.fullURL) : undefined,
       startCol,
       startRow,
       colSize,
       rowSize,
+      icon: widget?.icon ? String(widget.icon) : undefined,
     };
   });
 

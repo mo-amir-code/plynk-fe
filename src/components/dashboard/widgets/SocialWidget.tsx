@@ -39,6 +39,7 @@ export function DashboardSocialWidget({
   onDeleteClick,
   frostIntensity = 24,
   surfaceTint = 65,
+  roundness = 16,
   forceShowLabel = false,
 }: DashboardSocialWidgetProps) {
   const { type, handle, startCol, startRow, colSize, rowSize } = data;
@@ -71,11 +72,13 @@ export function DashboardSocialWidget({
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className={`group relative block overflow-hidden rounded-2xl sm:rounded-3xl lg:rounded-4xl transition-all duration-200 transform-gpu shadow-lg sm:shadow-xl sm:hover:shadow-2xl sm:hover:ring-2 sm:hover:ring-white/60 dark:sm:hover:ring-white/30 w-full h-full ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
-        } ${isDragging ? "opacity-60 scale-95" : ""} ${isResizing ? "ring-2 ring-primary/60" : ""}`}
+      className={`group relative block overflow-hidden transition-all duration-200 transform-gpu shadow-lg sm:shadow-xl sm:hover:shadow-2xl sm:hover:ring-2 sm:hover:ring-white/60 dark:sm:hover:ring-white/30 w-full h-full ${
+        draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+      } ${isDragging ? "opacity-60 scale-95" : ""} ${isResizing ? "ring-2 ring-primary/60" : ""}`}
       style={{
         gridColumn: `${startCol} / span ${colSize}`,
         gridRow: `${startRow} / span ${rowSize}`,
+        borderRadius: `${roundness}px`,
         transform: motionOffset
           ? `translate3d(${motionOffset.x}px, ${motionOffset.y}px, 0)`
           : undefined,
