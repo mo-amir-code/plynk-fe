@@ -17,6 +17,8 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: "/auth/login",
     REGISTER: "/auth/register",
+    LOGOUT: "/auth/logout",
+    GOOGLE: "/auth/google",
     CHECK_USERNAME: (username: string) => `/auth/check-username/${username}`,
     CLAIM_USERNAME: "/auth/claim-username",
   },

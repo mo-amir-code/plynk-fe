@@ -11,22 +11,12 @@ const useAuthStore = create<AuthState>()(
         error: null,
         isAuthenticated: false,
 
-        login: async (email: string, password: string) => {
+        login: async (user: AuthUser) => {
           set({ isLoading: true, error: null });
           try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            // Mock successful login
-            const mockUser: AuthUser = {
-              id: "1",
-              email,
-              username: email.split("@")[0],
-              fullName: "User Name",
-            };
 
             set({
-              user: mockUser,
+              user: user,
               isAuthenticated: true,
               isLoading: false,
             });
@@ -39,22 +29,12 @@ const useAuthStore = create<AuthState>()(
           }
         },
 
-        signup: async (email: string, password: string, fullName: string) => {
+        signup: async (user: AuthUser) => {
           set({ isLoading: true, error: null });
           try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-
-            // Mock successful signup
-            const mockUser: AuthUser = {
-              id: "1",
-              email,
-              username: "", // To be claimed during onboarding
-              fullName,
-            };
 
             set({
-              user: mockUser,
+              user: user,
               isAuthenticated: true,
               isLoading: false,
             });

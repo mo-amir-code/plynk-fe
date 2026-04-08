@@ -46,6 +46,7 @@ async function request<T>(
 
   const config: RequestInit = {
     ...rest,
+    credentials: "include",
     headers: {
       ...(!isFormData ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

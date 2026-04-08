@@ -8,10 +8,12 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 import { toast } from "sonner";
 import { useLogin } from "@/hooks/useAuth";
 import useAuthStore from "@/stores/authStore";
+import { redirectToGoogleAuth } from "@/lib/google-auth";
 
 export function SignInForm() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const router = useRouter();
   const { setUser } = useAuthStore();
   const loginMutation = useLogin();
@@ -46,6 +48,16 @@ export function SignInForm() {
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Invalid credentials";
       toast.error(msg);
+    }
+  };
+
+  const handleGoogleAuth = () => {
+    try {
+      setIsGoogleLoading(true);
+      redirectToGoogleAuth();
+    } catch {
+      setIsGoogleLoading(false);
+      toast.error("Unable to continue with Google. Please try again.");
     }
   };
 
@@ -146,9 +158,16 @@ export function SignInForm() {
         </div>
 
         {/* OAuth Button */}
-        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-semibold text-slate-900 dark:text-slate-100 cursor-pointer">
+        <button
+          type="button"
+          onClick={handleGoogleAuth}
+          disabled={isGoogleLoading}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-semibold text-slate-900 dark:text-slate-100 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+        >
           <i className="devicon-google-plain text-lg" />
-          <span className="text-sm">Continue with Google</span>
+          <span className="text-sm">
+            {isGoogleLoading ? "Redirecting..." : "Continue with Google"}
+          </span>
         </button>
         <div className="mb-8 mt-3" />
 
