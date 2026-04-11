@@ -134,7 +134,7 @@ export function Sidebar() {
           
           <div className="absolute bottom-0 left-full ml-4 py-2 px-3 bg-slate-900 dark:bg-slate-700 text-white rounded-lg opacity-0 -translate-x-4 pointer-events-none transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 whitespace-nowrap z-100 shadow-xl border border-white/10 flex flex-col items-start gap-0.5">
             <span className="text-sm font-bold tracking-tight">{user?.fullName || "User"}</span>
-            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Pro Plan</span>
+            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Early Access</span>
             <span className="absolute bottom-4 -left-1.25 border-[5px] border-transparent border-r-slate-900 dark:border-r-slate-700" />
           </div>
         </div>

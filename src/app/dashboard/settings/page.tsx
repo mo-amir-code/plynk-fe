@@ -172,24 +172,24 @@ export default function SettingsPage() {
                         </div>
                       )}
                       
-                      <button 
+                      {/* <button 
                         onClick={() => fileRef.current?.click()}
                         className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
                       >
                         <Camera className="size-5" />
-                      </button>
+                      </button> */}
                     </div>
-                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                    {/* <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} /> */}
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold text-slate-950 dark:text-white">Profile Photo</h4>
                     <p className="text-xs text-slate-500 mt-1">PNG, JPG or GIF. Max 3MB.</p>
-                    <button 
+                    {/* <button 
                       onClick={() => fileRef.current?.click()}
                       className="mt-2 text-xs font-bold text-primary hover:underline"
                     >
                       Upload new photo
-                    </button>
+                    </button> */}
                   </div>
                 </section>
 
