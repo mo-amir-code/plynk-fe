@@ -26,7 +26,7 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(COOKIE_NAME)?.value;
   const payload = token ? getPayload(token) : null;
-  console.log("Payload from token:", payload);
+  // console.log("Payload from token:", payload);
   const isValid = payload && !isTokenExpired(payload);
   const hasUsername = isValid && !!payload.username;
 

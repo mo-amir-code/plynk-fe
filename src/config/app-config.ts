@@ -44,6 +44,7 @@ export function applyThemeModeToDocument(mode: AppThemeMode) {
 export const STORAGE_KEYS = {
   themeByUser: (userId: string) => `plynk_theme_${userId}`,
   widgetsByUser: (userId: string) => `plynk_widgets_${userId}`,
+  customWallpapersByUser: (userId: string) => `plynk_custom_wallpapers_${userId}`,
   legacyTheme: "plynk_theme",
   legacyWidgets: "plynk_widgets",
 } as const;

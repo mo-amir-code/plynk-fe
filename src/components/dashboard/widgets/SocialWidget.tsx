@@ -57,7 +57,7 @@ export function DashboardSocialWidget({
         ? "sm:group-hover:-translate-y-8"
         : "sm:group-hover:-translate-y-6";
 
-  console.log('URL generated for widget:', { type, handle, href });
+  // console.log('URL generated for widget:', { type, handle, href });
 
   return (
     <a

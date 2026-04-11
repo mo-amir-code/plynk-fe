@@ -67,8 +67,11 @@ export type ThemeConfig = {
   id: string;
   name: string;
   description?: string;
+  type?: ThemeType;
   styleConfig: StyleConfig;
 };
+
+export type ThemeType = "LINKS" | "SHOP";
 
 /**
  * Theme payload for API submit/update operations
@@ -78,6 +81,7 @@ export type ThemePayload = {
   id: string;
   name: string;
   description?: string;
+  type?: ThemeType;
   styleConfig: StyleConfig;
 };
 

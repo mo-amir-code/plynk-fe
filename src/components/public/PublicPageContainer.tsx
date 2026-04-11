@@ -1,15 +1,13 @@
 "use client";
 
 import { PublicPageClient } from "@/components/public/PublicPageClient";
-import { useGetPageBySlug, useGetPublicThemeBySlug, useGetPublicWidgetsBySlug } from "@/hooks/usePage";
+import { useGetPageBySlug } from "@/hooks/usePage";
 import type { PublicPageClientPageData } from "@/types/components/public";
 
 export function PublicPageContainer({ slug }: { slug: string }) {
   const pageQuery = useGetPageBySlug(slug);
-  const themeQuery = useGetPublicThemeBySlug(slug);
-  const widgetsQuery = useGetPublicWidgetsBySlug(slug);
 
-  const isLoading = pageQuery.isLoading || themeQuery.isLoading || widgetsQuery.isLoading;
+  const isLoading = pageQuery.isLoading;
 
   if (isLoading) {
     return (
@@ -27,26 +25,15 @@ export function PublicPageContainer({ slug }: { slug: string }) {
       ? (pageQuery.data as Record<string, unknown>)
       : null;
 
-  const pageFromTheme =
-    themeQuery.data?.result?.page && typeof themeQuery.data.result.page === "object"
-      ? (themeQuery.data.result.page as Record<string, unknown>)
-      : null;
-
   const resolvedPageData: PublicPageClientPageData | null = pageFromQuery
     ? {
       ...pageFromQuery,
-      slug: String(pageFromQuery.slug ?? slug),
-      title: String(pageFromQuery.title ?? pageFromQuery.slug ?? slug),
+      username: String(pageFromQuery.username ?? pageFromQuery.slug ?? slug),
+      title: String(pageFromQuery.title ?? pageFromQuery.username ?? pageFromQuery.slug ?? slug),
     }
-    : pageFromTheme
-      ? {
-        ...pageFromTheme,
-        slug: String(pageFromTheme.slug ?? slug),
-        title: String(pageFromTheme.title ?? pageFromTheme.slug ?? slug),
-      }
-      : null;
+    : null;
 
-  const isNotFound = !resolvedPageData && themeQuery.data?.success === false;
+  const isNotFound = !resolvedPageData && pageQuery.isError;
 
   if (isNotFound) {
     return (
@@ -61,9 +48,7 @@ export function PublicPageContainer({ slug }: { slug: string }) {
 
   return (
     <PublicPageClient
-      pageData={resolvedPageData ?? { slug, title: slug }}
-      themeResponse={themeQuery.data}
-      widgetsResponse={widgetsQuery.data}
+      pageData={resolvedPageData ?? { username: slug, title: slug }}
     />
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import Image from "next/image";
 import useAuthStore from "@/stores/authStore";
 import { useAppTheme } from "@/components/theme/ThemeProvider";
 import { useLogout } from "@/hooks/useAuth";
@@ -65,12 +66,10 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
           <Link href="/" onClick={onClose} className="flex items-center gap-2">
-            <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-md shadow-primary/30">
-              <span className="material-symbols-outlined text-xl leading-none">widgets</span>
+            <div className="size-8 rounded-lg overflow-hidden">
+              <Image src="/logo.svg" alt="plynk logo" width={32} height={32} className="w-full h-full object-cover" />
             </div>
-            <span className="text-xl font-black tracking-tight text-slate-900 dark:text-slate-100">
-              mok<span className="text-primary">U</span>
-            </span>
+            <span className="text-xl font-bold tracking-[-0.03em] text-slate-900 dark:text-slate-100">plynk</span>
           </Link>
           <button
             onClick={onClose}

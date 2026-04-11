@@ -38,6 +38,11 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/widget/${id}`,
     DELETE: (id: string) => `/widget/${id}`,
   },
+  THEME: {
+    CREATE: "/themes",
+    DEFAULT: "/themes/default",
+    CUSTOM: "/themes/custom",
+  },
 } as const;
 
 /**
@@ -64,5 +69,10 @@ export const QUERY_KEYS = {
   },
   WIDGET: {
     ALL: ["widget"] as const,
+  },
+  THEME: {
+    ALL: ["theme"] as const,
+    DEFAULTS: ["theme", "default"] as const,
+    CUSTOM: ["theme", "custom"] as const,
   },
 } as const;

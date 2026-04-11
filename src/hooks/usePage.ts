@@ -7,6 +7,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { API_ENDPOINTS, QUERY_KEYS } from "@/lib/api-config";
 import type { ApiResponse, PublicThemeResult, PublicWidgetsResult } from "@/types/common";
+import type { ThemeConfig } from "@/types/components/dashboard/your-identity";
+import type { ThemeType } from "@/types/components/dashboard/your-identity";
 
 const HttpMessage: Record<number, string> = {
   200: "OK",
@@ -33,6 +35,55 @@ export const useGetMyPage = () => {
     queryKey: QUERY_KEYS.PAGE.ME,
     queryFn: async () => await api.get(API_ENDPOINTS.PAGE.ME),
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+/**
+ * Hook: useGetDefaultThemes
+ * Query hook to fetch default themes
+ */
+export const useGetDefaultThemes = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.THEME.DEFAULTS,
+    queryFn: async (): Promise<ThemeConfig[]> => {
+
+      const result = await api.get<ThemeConfig[]>(API_ENDPOINTS.THEME.DEFAULT);
+
+      return result;
+    },
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+};
+
+/**
+ * Hook: useGetCustomThemes
+ * Query hook to fetch user's custom themes
+ */
+export const useGetCustomThemes = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.THEME.CUSTOM,
+    queryFn: async (): Promise<ThemeConfig[]> => {
+      const result = await api.get<ThemeConfig[]>(API_ENDPOINTS.THEME.CUSTOM);
+      return result;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+/**
+ * Hook: useCreateTheme
+ * Mutation hook to create a new custom theme
+ */
+export const useCreateTheme = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { name: string; description: string; type: ThemeType; styleConfig: ThemeConfig["styleConfig"] }) => {
+      return await api.post<ThemeConfig>(API_ENDPOINTS.THEME.CREATE, data);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.THEME.ALL });
+    },
   });
 };
 
@@ -94,7 +145,7 @@ export const useSyncPage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { themeConfig?: any; widgets?: any[]; isPublished?: boolean }) => {
+    mutationFn: async (data: { themeId?: string; themeConfig?: any; widgets?: any[]; isPublished?: boolean }) => {
       return await api.post(API_ENDPOINTS.PAGE.SYNC, data);
     },
     onSuccess: async () => {
