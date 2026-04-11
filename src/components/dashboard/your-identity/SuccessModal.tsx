@@ -22,7 +22,7 @@ export function SuccessModal({ isOpen, onClose, username }: SuccessModalProps) {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(fullUrl);
+      await navigator.clipboard.writeText(publicUrl);
       setCopied(true);
       toast.success("Link copied to clipboard!");
     } catch (err) {
