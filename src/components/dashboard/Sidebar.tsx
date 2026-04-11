@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 import useAuthStore from "@/stores/authStore";
 import { STORAGE_KEYS } from "@/config/app-config";
 import { useLogout } from "@/hooks/useAuth";
@@ -80,8 +81,8 @@ export function Sidebar() {
     <aside className="hidden lg:flex flex-col items-center w-22 py-6 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen sticky top-0 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-none">
       {/* Logo */}
       <Link href="/" className="group mb-10 flex items-center justify-center relative">
-        <div className="size-12 bg-linear-to-br from-primary to-orange-500 rounded-[14px] flex items-center justify-center text-white shadow-lg shadow-primary/30 transition-all duration-300 group-hover:scale-105 group-hover:shadow-primary/50 group-hover:-translate-y-0.5">
-          <span className="material-symbols-outlined text-[26px] leading-none text-white/95 group-hover:scale-110 transition-transform duration-300">widgets</span>
+        <div className="size-12 rounded-[14px] overflow-hidden shadow-lg shadow-primary/20 transition-all duration-300 group-hover:scale-105 group-hover:-translate-y-0.5">
+          <Image src="/logo.svg" alt="plynk logo" width={48} height={48} className="w-full h-full object-cover" />
         </div>
       </Link>
 

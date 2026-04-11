@@ -11,7 +11,7 @@ import { AddWidgetModal } from "./AddWidgetModal";
 import { EditWidgetModal } from "./EditWidgetModal";
 import { WallpaperUploadModal } from "./WallpaperUploadModal";
 import useAuthStore from "@/stores/authStore";
-import { useGetMyPage, useSyncPage } from "@/hooks/usePage";
+import { useCreateTheme, useGetCustomThemes, useGetDefaultThemes, useGetMyPage, useSyncPage } from "@/hooks/usePage";
 import { SuccessModal } from "./SuccessModal";
 import { BRAND_NAME, STORAGE_KEYS, getPublicProfileDisplay } from "@/config/app-config";
 import type { DashboardSocialWidgetData, SocialPlatform } from "@/types/components/dashboard/widgets";
@@ -23,18 +23,17 @@ import type {
   SyncStatus,
   ThemeConfig,
   ThemePayload,
-  Wallpaper,
 } from "@/types/components/dashboard/your-identity";
 
-export const WALLPAPERS: Wallpaper[] = [
-  { id: "wp1", background: "linear-gradient(135deg, #6E85F0, #614CF5)" },
-  { id: "wp2", background: "linear-gradient(135deg, #FFD28A, #FFA366)" },
-  { id: "wp3", background: "linear-gradient(135deg, #82DBFF, #489EFF)" },
-  { id: "wp4", background: "linear-gradient(135deg, #FFB6C1, #FF8DA1)" },
-  { id: "wp5", background: "linear-gradient(135deg, #CDD0FF, #9BB0FF)" },
-  { id: "wp6", background: "linear-gradient(135deg, #18D1FF, #0099FF)" },
-  { id: "wp7", background: "linear-gradient(135deg, #5EE689, #25CC97)" },
-  { id: "wp8", background: "linear-gradient(135deg, #FFB966, #FF6600)" }
+export const WALLPAPERS: string[] = [
+  "linear-gradient(135deg, #6E85F0, #614CF5)",
+  "linear-gradient(135deg, #FFD28A, #FFA366)",
+  "linear-gradient(135deg, #82DBFF, #489EFF)",
+  "linear-gradient(135deg, #FFB6C1, #FF8DA1)",
+  "linear-gradient(135deg, #CDD0FF, #9BB0FF)",
+  "linear-gradient(135deg, #18D1FF, #0099FF)",
+  "linear-gradient(135deg, #5EE689, #25CC97)",
+  "linear-gradient(135deg, #FFB966, #FF6600)",
 ];
 
 export const FONTS = [
@@ -44,43 +43,55 @@ export const FONTS = [
 ];
 
 
-const DUMMY_API_WALLPAPERS: Wallpaper[] = WALLPAPERS;
 const DUMMY_API_FONT_STYLES = FONTS;
-const DUMMY_API_DEFAULT_THEMES: ThemeConfig[] = [
-  {
-    id: "theme_ocean_glass",
-    name: "Ocean Glass",
-    styleConfig: {
-      frostIntensity: 24,
-      surfaceTint: 65,
-      fontStyle: "modern",
-      wallpaper: "wp1",
-      widgets: {},
-    },
-  },
-  {
-    id: "theme_sunset_soft",
-    name: "Sunset Soft",
-    styleConfig: {
-      frostIntensity: 18,
-      surfaceTint: 58,
-      fontStyle: "classic",
-      wallpaper: "wp2",
-      widgets: {},
-    },
-  },
-  {
-    id: "theme_electric_bold",
-    name: "Electric Bold",
-    styleConfig: {
-      frostIntensity: 36,
-      surfaceTint: 72,
-      fontStyle: "technical",
-      wallpaper: "wp6",
-      widgets: {},
-    },
-  },
-];
+const DEFAULT_WALLPAPER_BACKGROUND = WALLPAPERS[0] || "linear-gradient(135deg, #6E85F0, #614CF5)";
+const THEME_WALLPAPER_COUNT = 7;
+const MAX_WALLPAPER_OPTIONS = 11;
+const MAX_CUSTOM_WALLPAPERS = MAX_WALLPAPER_OPTIONS - THEME_WALLPAPER_COUNT;
+
+function resolveWallpaperBackground(value: string | undefined | null) {
+  if (!value) return DEFAULT_WALLPAPER_BACKGROUND;
+  const presetByLegacyId = /^wp(\d+)$/.exec(value.trim().toLowerCase());
+  if (presetByLegacyId) {
+    const idx = Number(presetByLegacyId[1]) - 1;
+    return WALLPAPERS[idx] || value;
+  }
+
+  return value;
+}
+
+function isImageWallpaper(value: string) {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return false;
+
+  return (
+    normalized.startsWith("url(") ||
+    normalized.startsWith("http://") ||
+    normalized.startsWith("https://") ||
+    normalized.startsWith("data:image/") ||
+    normalized.startsWith("blob:") ||
+    normalized.startsWith("/")
+  );
+}
+
+function getWallpaperStyle(wallpaper: string) {
+  const value = resolveWallpaperBackground(wallpaper);
+
+  if (value.trim().startsWith("url(")) {
+    return { background: value };
+  }
+
+  if (isImageWallpaper(value)) {
+    return {
+      backgroundImage: `url("${value}")`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+    };
+  }
+
+  return { background: value };
+}
 
 /* ─────────────────────────────────────────
    Widget data — id, type, handle,
@@ -333,6 +344,9 @@ function useSquareCellSize(gridCols: number, gapPx: number) {
 export function YourIdentityClient() {
   const { user } = useAuthStore();
   const getMyPageQuery = useGetMyPage();
+  const getDefaultThemesQuery = useGetDefaultThemes();
+  const getCustomThemesQuery = useGetCustomThemes();
+  const createThemeMutation = useCreateTheme();
   const syncPageMutation = useSyncPage();
   const userId = user?.id || "guest";
   const { ref, cellPx } = useSquareCellSize(GRID_COLS, GAP_PX);
@@ -364,7 +378,7 @@ export function YourIdentityClient() {
   const [editHandle, setEditHandle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [activeWallpaper, setActiveWallpaper] = useState("wp1");
+  const [activeWallpaper, setActiveWallpaper] = useState(DEFAULT_WALLPAPER_BACKGROUND);
   const [frostIntensity, setFrostIntensity] = useState(24);
   const [surfaceTint, setSurfaceTint] = useState(65);
   const [activeFont, setActiveFont] = useState("modern");
@@ -377,11 +391,15 @@ export function YourIdentityClient() {
   const [isEditCustomThemeModalOpen, setIsEditCustomThemeModalOpen] = useState(false);
   const [editingCustomThemeId, setEditingCustomThemeId] = useState<string | null>(null);
   const [editingCustomThemeName, setEditingCustomThemeName] = useState("");
-  const [wallpaperOptions, setWallpaperOptions] = useState<Wallpaper[]>(WALLPAPERS);
+  const [wallpaperOptions, setWallpaperOptions] = useState<string[]>(WALLPAPERS);
   const [isWallpaperUploadModalOpen, setIsWallpaperUploadModalOpen] = useState(false);
   const [selectedWallpaperFile, setSelectedWallpaperFile] = useState<File | null>(null);
   const [selectedWallpaperPreview, setSelectedWallpaperPreview] = useState<string | null>(null);
   const [isWallpaperUploading, setIsWallpaperUploading] = useState(false);
+  const [customWallpapers, setCustomWallpapers] = useState<string[]>([]);
+  const [customWallpaperColor, setCustomWallpaperColor] = useState("#6E85F0");
+  const [customWallpaperValue, setCustomWallpaperValue] = useState("");
+  const [isCustomWallpaperPopupOpen, setIsCustomWallpaperPopupOpen] = useState(false);
   const [isThemeStudioOpen, setIsThemeStudioOpen] = useState(true);
   const [wasThemeStudioOpen, setWasThemeStudioOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -394,12 +412,202 @@ export function YourIdentityClient() {
   const customPromptShownRef = useRef(false);
   const WALLPAPER_UPLOAD_API = "/api/upload/wallpaper";
 
-  const DUMMY_API_WALLPAPERS = wallpaperOptions;
+  const defaultThemes = (getDefaultThemesQuery.data?.length
+    ? getDefaultThemesQuery.data
+    : []
+  ).map((theme) => ({
+    ...theme,
+    styleConfig: {
+      ...theme.styleConfig,
+      wallpaper: resolveWallpaperBackground(theme.styleConfig.wallpaper),
+    },
+  }));
+
+  const apiCustomThemes = (getCustomThemesQuery.data?.length
+    ? getCustomThemesQuery.data
+    : []
+  ).map((theme) => ({
+    ...theme,
+    styleConfig: {
+      ...theme.styleConfig,
+      wallpaper: resolveWallpaperBackground(theme.styleConfig.wallpaper),
+    },
+  }));
+
+  useEffect(() => {
+    if (!userId || typeof window === "undefined") return;
+
+    const storageKey = STORAGE_KEYS.customWallpapersByUser(userId);
+    const savedCustomWallpapers = localStorage.getItem(storageKey);
+
+    if (!savedCustomWallpapers) {
+      setCustomWallpapers([]);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(savedCustomWallpapers);
+
+      if (!Array.isArray(parsed)) {
+        setCustomWallpapers([]);
+        return;
+      }
+
+      const normalized = parsed
+        .filter((wallpaper): wallpaper is string => typeof wallpaper === "string")
+        .map((wallpaper) => resolveWallpaperBackground(wallpaper).trim())
+        .filter(Boolean);
+
+      const unique = Array.from(new Set(normalized));
+      const limited = unique.length > MAX_CUSTOM_WALLPAPERS
+        ? unique.slice(unique.length - MAX_CUSTOM_WALLPAPERS)
+        : unique;
+
+      setCustomWallpapers(limited);
+    } catch {
+      setCustomWallpapers([]);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId || typeof window === "undefined") return;
+    const storageKey = STORAGE_KEYS.customWallpapersByUser(userId);
+    localStorage.setItem(storageKey, JSON.stringify(customWallpapers));
+  }, [userId, customWallpapers]);
+
+  useEffect(() => {
+    const wallpapersFromThemes = [...defaultThemes, ...apiCustomThemes]
+      .map((theme) => resolveWallpaperBackground(theme.styleConfig?.wallpaper))
+      .filter((wallpaper) => {
+        const normalized = wallpaper?.trim().toLowerCase();
+        if (!normalized) return false;
+        if (isImageWallpaper(normalized)) return false;
+        return (
+          normalized.startsWith("#") ||
+          normalized.startsWith("rgb(") ||
+          normalized.startsWith("rgba(") ||
+          normalized.startsWith("hsl(") ||
+          normalized.startsWith("hsla(") ||
+          normalized.startsWith("linear-gradient(") ||
+          normalized.startsWith("radial-gradient(")
+        );
+      });
+
+    const uniqueThemeWallpapers = Array.from(new Set(wallpapersFromThemes));
+
+    const fallbackThemeWallpapers = WALLPAPERS
+      .map((wallpaper) => resolveWallpaperBackground(wallpaper))
+      .filter((wallpaper) => {
+        const normalized = wallpaper?.trim().toLowerCase();
+        if (!normalized) return false;
+        return !isImageWallpaper(normalized);
+      });
+
+    const pickedThemeWallpapers = [...uniqueThemeWallpapers, ...fallbackThemeWallpapers]
+      .map((wallpaper) => resolveWallpaperBackground(wallpaper).trim())
+      .filter(Boolean);
+
+    const normalizedThemeWallpapers = Array.from(new Set(pickedThemeWallpapers)).slice(0, THEME_WALLPAPER_COUNT);
+
+    const normalizedCustomWallpapers = customWallpapers
+      .map((wallpaper) => resolveWallpaperBackground(wallpaper).trim())
+      .filter(Boolean)
+      .filter((wallpaper) => !normalizedThemeWallpapers.includes(wallpaper));
+
+    const limitedCustomWallpapers = normalizedCustomWallpapers.length > MAX_CUSTOM_WALLPAPERS
+      ? normalizedCustomWallpapers.slice(normalizedCustomWallpapers.length - MAX_CUSTOM_WALLPAPERS)
+      : normalizedCustomWallpapers;
+
+    const finalWallpapers = [...normalizedThemeWallpapers, ...limitedCustomWallpapers];
+
+    if (finalWallpapers.length === 0) {
+      setWallpaperOptions(WALLPAPERS.slice(0, THEME_WALLPAPER_COUNT));
+      return;
+    }
+
+    setWallpaperOptions((prev) => {
+      if (
+        prev.length === finalWallpapers.length &&
+        prev.every((wallpaper, index) => wallpaper === finalWallpapers[index])
+      ) {
+        return prev;
+      }
+
+      return finalWallpapers;
+    });
+  }, [defaultThemes, apiCustomThemes, customWallpapers]);
+
+  const wallpaperChoices = wallpaperOptions.slice(0, MAX_WALLPAPER_OPTIONS);
+
+  const toRoundnessNumber = (value: unknown) => {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string") {
+      const parsed = parseInt(value, 10);
+      return Number.isFinite(parsed) ? parsed : 16;
+    }
+    return 16;
+  };
+
+  const doesThemeMatchStyleConfig = (theme: ThemeConfig, styleConfig: any) => {
+    if (!styleConfig) return false;
+
+    const themeWallpaper = resolveWallpaperBackground(theme.styleConfig?.wallpaper);
+    const pageWallpaper = resolveWallpaperBackground(styleConfig?.wallpaper);
+
+    return (
+      themeWallpaper === pageWallpaper &&
+      Number(theme.styleConfig?.frostIntensity) === Number(styleConfig?.frostIntensity) &&
+      Number(theme.styleConfig?.surfaceTint) === Number(styleConfig?.surfaceTint) &&
+      (theme.styleConfig?.fontStyle || "") === (styleConfig?.fontStyle || "") &&
+      toRoundnessNumber(theme.styleConfig?.roundness) === toRoundnessNumber(styleConfig?.roundness)
+    );
+  };
+
+  const extractPageStyleConfig = (pageData: any) => {
+    const candidates = [
+      pageData?.styleConfig,
+      pageData?.themeConfig?.styleConfig,
+      pageData?.theme?.styleConfig?.styleConfig,
+      pageData?.theme?.styleConfig,
+      pageData?.themeConfig,
+      pageData?.theme,
+    ];
+
+    for (const candidate of candidates) {
+      if (!candidate || typeof candidate !== "object") continue;
+
+      const nested = candidate?.styleConfig;
+      if (nested && typeof nested === "object") {
+        if (
+          nested.wallpaper !== undefined ||
+          nested.frostIntensity !== undefined ||
+          nested.surfaceTint !== undefined ||
+          nested.fontStyle !== undefined ||
+          nested.roundness !== undefined
+        ) {
+          return nested;
+        }
+      }
+
+      if (
+        candidate.wallpaper !== undefined ||
+        candidate.frostIntensity !== undefined ||
+        candidate.surfaceTint !== undefined ||
+        candidate.fontStyle !== undefined ||
+        candidate.roundness !== undefined
+      ) {
+        return candidate;
+      }
+    }
+
+    return null;
+  };
 
   const applyThemeConfig = (theme: ThemeConfig, source: "default" | "custom") => {
     const { wallpaper, frostIntensity, surfaceTint, fontStyle, roundness } = theme.styleConfig;
+    const normalizedWallpaper = resolveWallpaperBackground(wallpaper);
 
-    setActiveWallpaper(wallpaper);
+    setActiveWallpaper(normalizedWallpaper);
     setFrostIntensity(frostIntensity);
     setSurfaceTint(surfaceTint);
     setActiveFont(fontStyle);
@@ -467,13 +675,17 @@ export function YourIdentityClient() {
         throw new Error("Upload response did not include a URL");
       }
 
-      const uploadedWallpaper: Wallpaper = {
-        id: `wp_uploaded_${Date.now()}`,
-        background: `url("${uploadedUrl}") center/cover no-repeat`,
-      };
+      const uploadedWallpaper = uploadedUrl as string;
 
-      setWallpaperOptions((prev) => [uploadedWallpaper, ...prev]);
-      setActiveWallpaper(uploadedWallpaper.id);
+      setCustomWallpapers((prev) => {
+        const normalized = resolveWallpaperBackground(uploadedWallpaper).trim();
+        const deduped = prev.filter((wallpaper) => wallpaper !== normalized);
+        const next = [...deduped, normalized];
+        return next.length > MAX_CUSTOM_WALLPAPERS
+          ? next.slice(next.length - MAX_CUSTOM_WALLPAPERS)
+          : next;
+      });
+      setActiveWallpaper(uploadedWallpaper);
       toast.success("Wallpaper uploaded successfully");
       closeWallpaperUploadModal();
     } catch (error: any) {
@@ -493,32 +705,48 @@ export function YourIdentityClient() {
     }
   };
 
-  const saveCustomTheme = () => {
+  const saveCustomTheme = async () => {
     const trimmedName = customThemeName.trim();
     if (!trimmedName) {
       toast.error("Please enter a theme name");
       return;
     }
 
-    const newTheme: ThemeConfig = {
-      id: `theme_custom_${Date.now()}`,
-      name: trimmedName,
-      styleConfig: {
-        frostIntensity,
-        surfaceTint,
-        fontStyle: activeFont,
-        wallpaper: activeWallpaper,
-        roundness: activeRoundness,
-        widgets: {},
-      },
-    };
+    try {
+      const createdTheme = await createThemeMutation.mutateAsync({
+        name: trimmedName,
+        description: `Custom theme: ${trimmedName}`,
+        type: "LINKS",
+        styleConfig: {
+          frostIntensity,
+          surfaceTint,
+          fontStyle: activeFont,
+          wallpaper: activeWallpaper,
+          roundness: activeRoundness,
+          widgets: {},
+        },
+      });
 
-    setCustomThemes((prev) => [newTheme, ...prev]);
-    setSelectedCustomThemeId(newTheme.id);
-    setSelectedDefaultThemeId(null);
-    setIsCustomThemeModalOpen(false);
-    setCustomThemeName("");
-    toast.success("Custom theme saved");
+      const normalizedTheme: ThemeConfig = {
+        ...createdTheme,
+        styleConfig: {
+          ...createdTheme.styleConfig,
+          wallpaper: resolveWallpaperBackground(createdTheme.styleConfig?.wallpaper),
+        },
+      };
+
+      setCustomThemes((prev) => {
+        const deduped = prev.filter((theme) => theme.id !== normalizedTheme.id);
+        return [normalizedTheme, ...deduped];
+      });
+      setSelectedCustomThemeId(normalizedTheme.id);
+      setSelectedDefaultThemeId(null);
+      setIsCustomThemeModalOpen(false);
+      setCustomThemeName("");
+      toast.success("Custom theme saved");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to create theme");
+    }
   };
 
   const closeCustomThemeModal = () => {
@@ -572,10 +800,31 @@ export function YourIdentityClient() {
     toast.success("Customized theme deleted");
   };
 
-  const handleWallpaperChange = (wallpaperId: string) => {
-    if (wallpaperId === activeWallpaper) return;
-    setActiveWallpaper(wallpaperId);
+  const handleWallpaperChange = (wallpaperBackground: string) => {
+    if (wallpaperBackground === activeWallpaper) return;
+    setActiveWallpaper(wallpaperBackground);
     handleThemeValueCustomization();
+  };
+
+  const applyCustomWallpaper = () => {
+    const candidate = (customWallpaperValue.trim() || customWallpaperColor).trim();
+
+    if (!candidate) {
+      toast.error("Please enter a valid color or gradient");
+      return;
+    }
+
+    const normalizedCandidate = resolveWallpaperBackground(candidate);
+
+    setCustomWallpapers((prev) => {
+      const deduped = prev.filter((wallpaper) => wallpaper !== normalizedCandidate);
+      const next = [...deduped, normalizedCandidate];
+      return next.length > MAX_CUSTOM_WALLPAPERS
+        ? next.slice(next.length - MAX_CUSTOM_WALLPAPERS)
+        : next;
+    });
+    handleWallpaperChange(normalizedCandidate);
+    setIsCustomWallpaperPopupOpen(false);
   };
 
   const handleFrostIntensityChange = (value: number) => {
@@ -646,19 +895,68 @@ export function YourIdentityClient() {
     if (isInitialized) return;
 
     if (getMyPageQuery.isLoading) return;
+    if (getDefaultThemesQuery.isLoading) return;
+    if (getCustomThemesQuery.isLoading) return;
 
     const loadInitialState = () => {
       const pageData = getMyPageQuery.data as any;
+      const hasApiCustomThemes = apiCustomThemes.length > 0;
+
+      if (hasApiCustomThemes) {
+        setCustomThemes(apiCustomThemes);
+      }
 
       if (pageData) {
 
         // 1. Theme Sync
-        if (pageData.styleConfig) {
-          const cfg = pageData.styleConfig;
-          if (cfg.wallpaper) setActiveWallpaper(cfg.wallpaper);
+        const cfg = extractPageStyleConfig(pageData);
+        if (cfg) {
+          if (cfg.wallpaper) {
+            const normalizedWallpaper = resolveWallpaperBackground(cfg.wallpaper);
+            setActiveWallpaper(normalizedWallpaper);
+          }
           if (cfg.frostIntensity !== undefined) setFrostIntensity(cfg.frostIntensity);
           if (cfg.surfaceTint !== undefined) setSurfaceTint(cfg.surfaceTint);
           if (cfg.fontStyle) setActiveFont(cfg.fontStyle);
+          if (cfg.roundness !== undefined) setActiveRoundness(toRoundnessNumber(cfg.roundness));
+
+          const pageTheme = pageData.themeConfig || pageData.theme;
+          const pageThemeId =
+            typeof pageData?.themeId === "string"
+              ? pageData.themeId
+              : typeof pageTheme?.id === "string"
+                ? pageTheme.id
+                : null;
+
+          let matchedCustomTheme: ThemeConfig | undefined;
+          let matchedDefaultTheme: ThemeConfig | undefined;
+
+          if (pageThemeId) {
+            matchedCustomTheme = apiCustomThemes.find((theme) => theme.id === pageThemeId);
+            matchedDefaultTheme = defaultThemes.find((theme) => theme.id === pageThemeId);
+          }
+
+          if (!matchedCustomTheme) {
+            matchedCustomTheme = apiCustomThemes.find((theme) => doesThemeMatchStyleConfig(theme, cfg));
+          }
+
+          if (!matchedDefaultTheme) {
+            matchedDefaultTheme = defaultThemes.find((theme) => doesThemeMatchStyleConfig(theme, cfg));
+          }
+
+          if (matchedCustomTheme) {
+            setSelectedCustomThemeId(matchedCustomTheme.id);
+            setSelectedDefaultThemeId(null);
+            customPromptShownRef.current = true;
+          } else if (matchedDefaultTheme) {
+            setSelectedDefaultThemeId(matchedDefaultTheme.id);
+            setSelectedCustomThemeId(null);
+            customPromptShownRef.current = false;
+          } else {
+            setSelectedCustomThemeId(null);
+            setSelectedDefaultThemeId(null);
+            customPromptShownRef.current = false;
+          }
         }
 
         // 1.5 State check
@@ -693,11 +991,24 @@ export function YourIdentityClient() {
         if (savedTheme) {
           try {
             const parsed = JSON.parse(savedTheme);
-            if (parsed.activeWallpaper) setActiveWallpaper(parsed.activeWallpaper);
+            if (parsed.activeWallpaper) {
+              const normalizedWallpaper = resolveWallpaperBackground(parsed.activeWallpaper);
+              setActiveWallpaper(normalizedWallpaper);
+            }
             if (parsed.frostIntensity !== undefined) setFrostIntensity(parsed.frostIntensity);
             if (parsed.surfaceTint !== undefined) setSurfaceTint(parsed.surfaceTint);
             if (parsed.activeFont) setActiveFont(parsed.activeFont);
-            if (Array.isArray(parsed.customThemes)) setCustomThemes(parsed.customThemes);
+            if (!hasApiCustomThemes && Array.isArray(parsed.customThemes)) {
+              const normalizedCustomThemes = parsed.customThemes.map((theme: ThemeConfig) => ({
+                ...theme,
+                styleConfig: {
+                  ...theme.styleConfig,
+                  wallpaper: resolveWallpaperBackground(theme.styleConfig?.wallpaper),
+                },
+              }));
+
+              setCustomThemes(normalizedCustomThemes);
+            }
             if (parsed.selectedDefaultThemeId) setSelectedDefaultThemeId(parsed.selectedDefaultThemeId);
             if (parsed.selectedCustomThemeId) setSelectedCustomThemeId(parsed.selectedCustomThemeId);
           } catch (e) { }
@@ -716,7 +1027,7 @@ export function YourIdentityClient() {
     };
 
     loadInitialState();
-  }, [userId, getMyPageQuery.data, getMyPageQuery.isLoading, isInitialized]);
+  }, [userId, getMyPageQuery.data, getMyPageQuery.isLoading, getDefaultThemesQuery.isLoading, getCustomThemesQuery.isLoading, defaultThemes, apiCustomThemes, isInitialized]);
 
   // 2. Auto-save to localStorage only (DB sync happens only on explicit submit/update)
   useEffect(() => {
@@ -1389,13 +1700,16 @@ export function YourIdentityClient() {
     const isUpdatingLivePage = isPublished;
 
     try {
-      const selectedDefaultTheme = DUMMY_API_DEFAULT_THEMES.find((theme) => theme.id === selectedDefaultThemeId);
+      const selectedDefaultTheme = defaultThemes.find((theme) => theme.id === selectedDefaultThemeId);
       const selectedCustomTheme = customThemes.find((theme) => theme.id === selectedCustomThemeId);
+      const selectedThemeId = selectedCustomTheme?.id || selectedDefaultTheme?.id || undefined;
 
       // 1. Theme Payload - follows API structure: { id, name, styleConfig: {...} }
       const themePayload: ThemePayload = {
         id: selectedCustomTheme?.id || selectedDefaultTheme?.id || "theme_manual",
         name: selectedCustomTheme?.name || selectedDefaultTheme?.name || "Manual Theme",
+        description: selectedCustomTheme?.description || selectedDefaultTheme?.description || "Manual theme configuration",
+        type: selectedCustomTheme?.type || selectedDefaultTheme?.type || "LINKS",
         styleConfig: {
           frostIntensity,
           surfaceTint,
@@ -1408,7 +1722,6 @@ export function YourIdentityClient() {
 
       // 2. Widget Payload (Flat structure per API spec)
       const widgetsPayload = widgets.map(w => ({
-        id: w.id,
         pageId: w.pageId,
         type: w.type,
         handle: w.handle,
@@ -1421,6 +1734,7 @@ export function YourIdentityClient() {
       }));
 
       const syncData = {
+        themeId: selectedThemeId,
         themeConfig: themePayload,
         isPublished: true, // Crucial: Explicitly publish on Submit
         widgets: widgetsPayload
@@ -1450,12 +1764,16 @@ export function YourIdentityClient() {
 
   const togglePublishStatus = async () => {
     const nextIsPublished = !isPublished;
+    const selectedThemeId = selectedCustomThemeId || selectedDefaultThemeId || undefined;
 
     setIsStatusUpdating(true);
     setSyncStatus("saving");
 
     try {
-      await syncPageMutation.mutateAsync({ isPublished: nextIsPublished });
+      await syncPageMutation.mutateAsync({
+        themeId: selectedThemeId,
+        isPublished: nextIsPublished,
+      });
       setIsPublished(nextIsPublished);
       setSyncStatus("saved");
       toast.success(nextIsPublished ? "Page Published Live!" : "Page set to Private Draft", {
@@ -1471,7 +1789,7 @@ export function YourIdentityClient() {
     }
   };
 
-  const activeBackground = DUMMY_API_WALLPAPERS.find(w => w.id === activeWallpaper)?.background || DUMMY_API_WALLPAPERS[0].background;
+  const activeBackground = resolveWallpaperBackground(activeWallpaper);
   const currentFont = DUMMY_API_FONT_STYLES.find(f => f.id === activeFont)?.family || 'inherit';
   const widgetsMissingHandle = widgets.filter((widget) => !widget.handle.trim());
   const hasMissingWidgetHandles = widgetsMissingHandle.length > 0;
@@ -1791,10 +2109,9 @@ export function YourIdentityClient() {
                 Default Themes
                 <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
               </h3>
-              <div className="space-y-2.5">
-                {DUMMY_API_DEFAULT_THEMES.map((theme) => {
-                  const { wallpaper: wallpaperId, fontStyle } = theme.styleConfig;
-                  const wallpaper = DUMMY_API_WALLPAPERS.find((wp) => wp.id === wallpaperId);
+              <div className="space-y-2.5 max-h-64 overflow-auto">
+                {defaultThemes.map((theme) => {
+                  const { wallpaper, fontStyle } = theme.styleConfig;
                   const isActive = selectedDefaultThemeId === theme.id;
 
                   return (
@@ -1807,7 +2124,7 @@ export function YourIdentityClient() {
                         }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="size-7 rounded-full border border-white/30 shadow-sm" style={{ background: wallpaper?.background || DUMMY_API_WALLPAPERS[0].background }} />
+                        <span className="size-7 rounded-full border border-white/30 shadow-sm" style={getWallpaperStyle(wallpaper)} />
                         <div className="flex flex-col items-start">
                           <span className="text-sm font-bold text-slate-900 dark:text-white">{theme.name}</span>
                           <span className="text-[11px] text-slate-500 dark:text-slate-500">{fontStyle}</span>
@@ -1837,8 +2154,7 @@ export function YourIdentityClient() {
               ) : (
                 <div className="space-y-2.5">
                   {customThemes.map((theme) => {
-                    const { wallpaper: wallpaperId, fontStyle } = theme.styleConfig;
-                    const wallpaper = DUMMY_API_WALLPAPERS.find((wp) => wp.id === wallpaperId);
+                    const { wallpaper, fontStyle } = theme.styleConfig;
                     const isActive = selectedCustomThemeId === theme.id;
 
                     return (
@@ -1855,7 +2171,7 @@ export function YourIdentityClient() {
                           className="w-full flex items-center justify-between px-1 py-1"
                         >
                           <div className="flex items-center gap-3">
-                            <span className="size-7 rounded-full border border-white/30 shadow-sm" style={{ background: wallpaper?.background || DUMMY_API_WALLPAPERS[0].background }} />
+                            <span className="size-7 rounded-full border border-white/30 shadow-sm" style={getWallpaperStyle(wallpaper)} />
                             <div className="flex flex-col items-start">
                               <span className="text-sm font-bold text-slate-900 dark:text-white">{theme.name}</span>
                               <span className="text-[11px] text-slate-500 dark:text-slate-500">{fontStyle}</span>
@@ -1904,20 +2220,84 @@ export function YourIdentityClient() {
                   Upload
                 </button>
               </div>
-              <div className="grid grid-cols-4 gap-3 content-start">
-                {DUMMY_API_WALLPAPERS.map(wp => (
+              <div className="relative grid grid-cols-4 gap-3 content-start">
+                {wallpaperChoices.map((wp, index) => (
                   <button
-                    key={wp.id}
-                    onClick={() => handleWallpaperChange(wp.id)}
-                    className={`relative aspect-square rounded-full flex items-center justify-center transition-all duration-300 ${activeWallpaper === wp.id ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900 scale-100 shadow-md' : 'hover:scale-[1.08] opacity-90 hover:opacity-100 shadow-sm'
+                    key={`${wp}-${index}`}
+                    onClick={() => handleWallpaperChange(wp)}
+                    className={`relative aspect-square rounded-full flex items-center justify-center transition-all duration-300 ${activeWallpaper === wp ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900 scale-100 shadow-md' : 'hover:scale-[1.08] opacity-90 hover:opacity-100 shadow-sm'
                       }`}
-                    style={{ background: wp.background }}
+                    style={getWallpaperStyle(wp)}
                   >
-                    {activeWallpaper === wp.id && (
+                    {activeWallpaper === wp && (
                       <span className="material-symbols-outlined text-white text-[18px] animate-in zoom-in-50 duration-200">check</span>
                     )}
                   </button>
                 ))}
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomWallpaperPopupOpen((prev) => !prev)}
+                    className="relative aspect-square w-full rounded-full p-0.5 transition-all duration-300 hover:scale-[1.08] shadow-sm"
+                    style={{ background: "conic-gradient(from 210deg, #22c55e, #3b82f6, #a855f7, #ec4899, #f59e0b, #22c55e)" }}
+                    aria-label="Open custom color picker"
+                  >
+                    <span className="absolute inset-1 rounded-full bg-white dark:bg-slate-950 flex items-center justify-center text-xl font-semibold text-fuchsia-500 dark:text-fuchsia-400">
+                      +
+                    </span>
+                  </button>
+                </div>
+
+                {isCustomWallpaperPopupOpen && (
+                  <div className="col-span-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-3 shadow-xl">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={customWallpaperColor}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setCustomWallpaperColor(value);
+                          if (!customWallpaperValue.trim() || customWallpaperValue.trim().startsWith("#")) {
+                            setCustomWallpaperValue(value);
+                          }
+                        }}
+                        className="h-9 w-11 rounded-lg border border-slate-300/80 dark:border-slate-600 bg-transparent cursor-pointer"
+                        aria-label="Pick wallpaper color"
+                      />
+                      <input
+                        type="text"
+                        value={customWallpaperValue}
+                        onChange={(event) => setCustomWallpaperValue(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            applyCustomWallpaper();
+                          }
+                        }}
+                        placeholder="Color code or gradient"
+                        className="h-9 flex-1 rounded-lg border border-slate-300/80 dark:border-slate-600 bg-white dark:bg-slate-950 px-3 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
+                      />
+                    </div>
+
+                    <div className="mt-2.5 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomWallpaperPopupOpen(false)}
+                        className="h-8 rounded-lg border border-slate-300/80 dark:border-slate-600 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={applyCustomWallpaper}
+                        className="h-8 rounded-lg bg-blue-500 hover:bg-blue-600 px-3 text-xs font-bold text-white"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -28,7 +28,18 @@ function normalizeSpan(value: number) {
 
 export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: PublicPageClientProps) {
   const styleConfig = themeResponse?.result?.styleConfig;
-  const activeWallpaper = WALLPAPERS.find((wallpaper) => wallpaper.id === styleConfig?.activeWallpaper) || WALLPAPERS[0];
+  const activeWallpaperValue = String(styleConfig?.activeWallpaper ?? "wp1");
+  const activeWallpaper = (() => {
+    const normalized = activeWallpaperValue.trim();
+    const legacyWallpaperMatch = /^wp(\d+)$/i.exec(normalized);
+
+    if (legacyWallpaperMatch) {
+      const index = Number(legacyWallpaperMatch[1]) - 1;
+      return WALLPAPERS[index] || WALLPAPERS[0];
+    }
+
+    return normalized || WALLPAPERS[0];
+  })();
   const activeFont = FONTS.find((font) => font.id === styleConfig?.activeFont) || FONTS[0];
   const themeCfg = {
     frostIntensity: styleConfig?.frostIntensity ?? 24,
@@ -188,7 +199,7 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
     <div
       className="relative min-h-screen overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:px-8"
       style={{
-        background: activeWallpaper.background,
+        background: activeWallpaper,
         fontFamily: activeFont.family,
       }}
     >

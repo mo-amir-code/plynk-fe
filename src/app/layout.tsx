@@ -8,6 +8,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: `${BRAND_NAME} | Your Personal Link Hub`,
   description: "Build Your Personal Link Hub With Widgets",
+  icons: {
+    icon: "/logo.svg",
+  }
 };
 
 export default function RootLayout({
