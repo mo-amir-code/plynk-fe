@@ -66,7 +66,7 @@ export function ExperienceLive() {
                     platform="Dribbble"
                     username="@sarah_ui"
                     icon={<FaDribbble size={42} />}
-                    containerClass="bg-[#ea4c89]"
+                    containerClass="bg-[#ea4c89] hidden lg:flex"
                   />
 
                   {/* LinkedIn Card - 1x1 */}
@@ -74,7 +74,7 @@ export function ExperienceLive() {
                     platform="LinkedIn"
                     username="@sarah-jenkins"
                     icon={<FaLinkedinIn size={42} />}
-                    containerClass="bg-gradient-to-br from-[#4A8BF5] to-[#0a66c2]"
+                    containerClass="bg-gradient-to-br from-[#4A8BF5] to-[#0a66c2] hidden lg:flex"
                   />
 
                   {/* YouTube Card - 2x1 (Wide) */}
@@ -92,7 +92,7 @@ export function ExperienceLive() {
                   <WideWidget
                     title="GitHub Profile"
                     icon={<FaGithub size={20} className="text-white dark:text-slate-900" />}
-                    containerClass="bg-slate-100 dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-xl"
+                    containerClass="bg-slate-100 dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-xl hidden lg:flex"
                     arrowClass="text-slate-500 dark:text-slate-400"
                     iconContainerClass="bg-slate-900 dark:bg-slate-100"
                     iconColorClass="text-white dark:text-slate-900"
@@ -119,7 +119,7 @@ export function ExperienceLive() {
                   <WideWidget
                     title="Read on Medium"
                     icon={<FaMedium size={20} className="text-white dark:text-slate-900" />}
-                    containerClass="bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl"
+                    containerClass="bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl hidden lg:flex"
                     overlayClass="bg-slate-900/5 dark:bg-slate-100/5"
                     arrowClass="text-slate-500 dark:text-slate-400"
                     iconContainerClass="bg-slate-900 dark:bg-slate-100"

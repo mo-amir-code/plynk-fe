@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { api } from "@/lib/api-client";
+import { toast } from "sonner";
 
 export function ContactForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
@@ -33,10 +35,20 @@ export function ContactForm() {
 
     setStatus("sending");
     
-    // Simulating a real submission
-    setTimeout(() => {
+    try {
+      await api.post("/users/contact", {
+        fullName: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message
+      });
       setStatus("success");
-    }, 1500);
+      toast.success("Message sent successfully!");
+    } catch (error: any) {
+      console.error("Contact form error:", error);
+      setStatus("error");
+      toast.error(error.message || "Failed to send message. Please try again later.");
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

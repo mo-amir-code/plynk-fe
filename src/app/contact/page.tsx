@@ -16,7 +16,7 @@ export default function ContactPage() {
       <Navbar />
       
       <main className="min-h-screen pt-16 md:pt-32 pb-16 md:pb-24 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-16 items-start">
           
           {/* Content Side */}
           <div className="animate-fade-in-up">
@@ -28,7 +28,7 @@ export default function ContactPage() {
             </p>
 
             {/* Info Cards - Fixed Responsive Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 gap-6 sm:gap-8">
+            {/* <div className="grid grid-cols-2 sm:grid-cols-2 gap-6 sm:gap-8">
               <div className="space-y-4">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0">
                   <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
@@ -56,11 +56,11 @@ export default function ContactPage() {
                   <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium">Remote first, globally focused.</p>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Form Side */}
-          <div className="relative mt-12 lg:mt-0">
+          <div className="relative mt-0 lg:mt-0">
             <div className="absolute -inset-4 bg-primary/5 dark:bg-primary/20 rounded-[3rem] blur-3xl -z-10" />
             <ContactForm />
           </div>

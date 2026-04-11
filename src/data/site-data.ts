@@ -6,18 +6,21 @@ export const footerSocials = [
     class: "devicon-twitter-original",
     color:
       "hover:text-primary hover:bg-primary/10 hover:border-primary/20 hover:grayscale-0",
+    href: "https://x.com/plynkofficial",
   },
   {
     id: "instagram",
     class: "lucide-instagram",
     color:
       "hover:text-primary hover:bg-primary/10 hover:border-primary/20 hover:grayscale-0",
+    href: "https://www.instagram.com/plynk.in/",
   },
   {
     id: "linkedin",
     class: "devicon-linkedin-plain",
     color:
       "hover:text-primary hover:bg-primary/10 hover:border-primary/20 hover:grayscale-0",
+    href: "https://www.linkedin.com/in/plynk/"
   },
 ];
 

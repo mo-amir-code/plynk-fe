@@ -29,7 +29,7 @@ export function Footer() {
                 </div>
                 <span className="text-xl sm:text-2xl font-bold tracking-[-0.03em] text-slate-900 dark:text-slate-100">plynk</span>
               </Link>
-              <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 max-w-sm font-medium leading-relaxed italic">
+              <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 max-w-sm font-medium leading-relaxed">
                 One Link. Everything you are.
               </p>
             </div>
@@ -60,7 +60,7 @@ export function Footer() {
                 <h4 className="font-bold mb-4 sm:mb-6 text-slate-900 dark:text-slate-100 uppercase tracking-wider text-xs">Social</h4>
                 <div className="flex gap-3">
                   {footerSocials.map((icon) => (
-                    <a key={icon.id} href="#" target="_blank" rel="noopener noreferrer" className={`size-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-slate-400 border border-slate-200 dark:border-slate-800 transition-all duration-300 hover:-translate-y-1 shadow-sm group ${icon.color}`}>
+                    <a key={icon.id} href={icon.href} target="_blank" rel="noopener noreferrer" className={`size-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-slate-400 border border-slate-200 dark:border-slate-800 transition-all duration-300 hover:-translate-y-1 shadow-sm group ${icon.color}`}>
                       {icon.id === 'instagram' ? (
                         <Instagram size={18} className="transition-colors duration-300 grayscale group-hover:grayscale-0" />
                       ) : (

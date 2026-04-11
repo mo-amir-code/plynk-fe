@@ -2229,13 +2229,13 @@ export function YourIdentityClient() {
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-75 fill-mode-both px-6 py-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase">Wallpaper</h3>
-                <button
+                {/* <button
                   type="button"
                   onClick={openWallpaperUploadModal}
                   className="text-xs font-semibold text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   Upload
-                </button>
+                </button> */}
               </div>
               <div className="relative grid grid-cols-4 gap-3 content-start">
                 {wallpaperChoices.map((wp, index) => (

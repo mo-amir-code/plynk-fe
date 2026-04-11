@@ -9,18 +9,18 @@ export function Hero() {
       <div className="pointer-events-none absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] animate-blob" />
       <div className="pointer-events-none absolute -bottom-40 -left-40 w-[400px] h-[400px] bg-orange-300/10 rounded-full blur-[100px] animate-blob delay-300" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-10 items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-10 items-center">
         {/* Text */}
         <div className="flex flex-col gap-6 md:gap-8">
-          <h1 className="animate-fade-up delay-100 text-4xl sm:text-5xl md:text-6xl lg:text-[4.2rem] xl:text-7xl font-black leading-[1.08] tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="animate-fade-up delay-100 text-5xl sm:text-5xl md:text-6xl lg:text-[4.2rem] xl:text-7xl font-black leading-[1.08] tracking-tight text-slate-900 dark:text-slate-100">
             Showcase your world, <br />
-            <span className="gradient-text">exactly your way.</span>
+            <span className="gradient-text">Exactly your way.</span>
           </h1>
           <p className="animate-fade-up delay-200 text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-[500px]">
             Ditch the boring lists. Snap your socials, videos, and projects into a stunning, interactive widget grid in minutes.
           </p>
           <div className="animate-fade-up delay-300 flex flex-wrap gap-4">
-            <Link href="/auth/signup" className="inline-block btn-primary px-10 sm:px-12 py-4 sm:py-5 bg-primary text-white rounded-full text-lg sm:text-xl font-bold shadow-2xl shadow-primary/30 transition-transform hover:scale-105 cursor-pointer">
+            <Link href="/auth/signup" className="inline-block btn-primary px-8 sm:px-12 py-3 sm:py-5 bg-primary text-white rounded-full text-lg sm:text-xl font-bold shadow-2xl shadow-primary/30 transition-transform hover:scale-105 cursor-pointer">
               Get Started
             </Link>
           </div>
@@ -62,7 +62,7 @@ export function Hero() {
             </div>
 
             {/* Dribbble Card - 1x1 */}
-            <div className="col-span-1 row-span-1 aspect-square sm:aspect-auto border border-white/10 dark:border-white/5 bg-[#ea4c89] rounded-[2rem] sm:rounded-4xl flex flex-col items-center justify-center shadow-xl transition-all duration-300 hover:scale-[1.03] overflow-hidden group relative cursor-pointer">
+            <div className=" col-span-1 row-span-1 aspect-square sm:aspect-auto border border-white/10 dark:border-white/5 bg-[#ea4c89] rounded-[2rem] sm:rounded-4xl flex flex-col items-center justify-center shadow-xl transition-all duration-300 hover:scale-[1.03] overflow-hidden group relative cursor-pointer">
               <div className="absolute inset-0 bg-linear-to-b from-white/20 to-transparent pointer-events-none" />
               <div className="relative z-10 size-12 sm:size-16 rounded-full flex items-center justify-center shadow-xl backdrop-blur-md border border-white/20 transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-1 sm:group-hover:-translate-y-2 bg-white/20 dark:bg-white/10">
                 <FaDribbble className="text-[24px] sm:text-[30px] text-white" />

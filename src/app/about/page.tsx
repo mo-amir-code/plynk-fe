@@ -146,7 +146,7 @@ export default function AboutPage() {
                       <Linkedin size={18} className="sm:size-5" />
                     </Link>
                   </div>
-                  <p className="text-primary font-bold text-[10px] sm:text-xs uppercase tracking-[0.2em] italic">Product Design & Strategy</p>
+                  <p className="text-primary font-bold text-[9px] sm:text-xs uppercase tracking-[0.2em] ">Product Design & Strategy</p>
                 </div>
               </div>
               <p className="relative z-10 text-base sm:text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-sm">
@@ -178,7 +178,7 @@ export default function AboutPage() {
                       <Linkedin size={18} className="sm:size-5" />
                     </Link>
                   </div>
-                  <p className="text-primary font-bold text-[10px] sm:text-xs uppercase tracking-[0.2em] italic">Engineering & Product Vision</p>
+                  <p className="text-primary font-bold text-[9px] sm:text-xs uppercase tracking-[0.2em] ">Engineering & Product Vision</p>
                 </div>
               </div>
               <p className="relative z-10 text-base sm:text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed max-w-sm">
