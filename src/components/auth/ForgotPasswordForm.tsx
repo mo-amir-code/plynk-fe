@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FormInput } from "@/components/auth/FormInput";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { toast } from "sonner";
+import { api } from "@/lib/api-client";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -28,8 +29,7 @@ export function ForgotPasswordForm() {
 
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await api.post("/auth/forgot-password", { email });
       setSubmitted(true);
       toast.success("Password reset link sent!");
     } catch (err: any) {
@@ -179,7 +179,7 @@ export function ForgotPasswordForm() {
             <p className="text-center text-sm text-slate-600 dark:text-slate-400">
               Still need help?{" "}
               <a
-                href="/support"
+                href="/contact"
                 className="text-primary hover:text-primary/80 font-semibold transition-colors"
               >
                 Contact Support
