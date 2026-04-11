@@ -26,9 +26,18 @@ function normalizeSpan(value: number) {
   return Math.ceil(value / 3) * 3;
 }
 
-export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: PublicPageClientProps) {
-  const styleConfig = themeResponse?.result?.styleConfig;
-  const activeWallpaperValue = String(styleConfig?.activeWallpaper ?? "wp1");
+export function PublicPageClient({ pageData }: PublicPageClientProps) {
+  const rawStyleConfig =
+    (pageData?.theme && typeof pageData.theme === "object"
+      ? pageData.theme.styleConfig
+      : null) ||
+    ((pageData as any)?.themeConfig?.styleConfig ?? (pageData as any)?.themeConfig ?? null);
+
+  const styleConfig = rawStyleConfig && typeof rawStyleConfig === "object"
+    ? (rawStyleConfig as Record<string, unknown>)
+    : null;
+
+  const activeWallpaperValue = String(styleConfig?.wallpaper ?? styleConfig?.activeWallpaper ?? "wp1");
   const activeWallpaper = (() => {
     const normalized = activeWallpaperValue.trim();
     const legacyWallpaperMatch = /^wp(\d+)$/i.exec(normalized);
@@ -40,10 +49,12 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
 
     return normalized || WALLPAPERS[0];
   })();
-  const activeFont = FONTS.find((font) => font.id === styleConfig?.activeFont) || FONTS[0];
+  const activeFontId = String(styleConfig?.fontStyle ?? styleConfig?.activeFont ?? "modern");
+  const activeFont = FONTS.find((font) => font.id === activeFontId) || FONTS[0];
   const themeCfg = {
-    frostIntensity: styleConfig?.frostIntensity ?? 24,
-    surfaceTint: styleConfig?.surfaceTint ?? 65,
+    frostIntensity: Number(styleConfig?.frostIntensity ?? 24),
+    surfaceTint: Number(styleConfig?.surfaceTint ?? 65),
+    roundness: Number(styleConfig?.roundness ?? 8),
   };
 
   const gridRef = React.useRef<HTMLDivElement>(null);
@@ -66,9 +77,7 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
     };
   }, []);
 
-  const apiWidgets = Array.isArray(widgetsResponse?.result?.widgets)
-    ? widgetsResponse?.result?.widgets
-    : Array.isArray(pageData?.widgets)
+  const apiWidgets = Array.isArray(pageData?.widgets)
       ? pageData.widgets
       : [];
 
@@ -190,10 +199,12 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
   }, [effectiveGridCols]);
 
   const totalRows = Math.max(...widgets.map((w) => w.startRow + w.rowSize - 1), 6);
-  const pageSlug = String(themeResponse?.result?.page?.slug || pageData?.slug || "user");
-  const pageTitle = String(themeResponse?.result?.page?.title || pageData?.title || pageSlug);
+  const pageSlug = String(pageData?.username || pageData?.slug || "user");
+  const pageTitle = String(pageData?.fullName || pageSlug);
   const profileHandle = `@${pageSlug}`;
   const profileInitial = pageTitle.charAt(0).toUpperCase();
+
+  console.log("Active Wallpaper:", activeWallpaper);
 
   return (
     <div
@@ -201,6 +212,7 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
       style={{
         background: activeWallpaper,
         fontFamily: activeFont.family,
+        transition: "background 240ms ease, color 240ms ease",
       }}
     >
       <div className="pointer-events-none absolute inset-0 bg-slate-950/25" />
@@ -210,20 +222,14 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
       <div className="relative z-10 mx-auto w-full max-w-200 px-4 sm:px-6 lg:px-8">
         {/* Centered Profile Bar */}
         <div className="mb-10 flex justify-center animate-in fade-in duration-700 sm:mb-12">
-          <div className="flex items-center gap-3 rounded-full bg-white/95 px-2 py-1.5 backdrop-blur-lg border border-slate-200/60 shadow-lg hover:shadow-xl transition-shadow w-fit sm:px-3 sm:py-2">
-            <div className="flex size-10 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-blue-600 text-sm font-black text-white shadow-md sm:size-12">
+          <div className="flex w-fit min-w-52 items-center gap-3 rounded-full border border-white/20 bg-white/10 px-3 py-2 shadow-md shadow-black/20 backdrop-blur-md transition-all duration-300 ease-out hover:scale-[1.01] hover:shadow-lg hover:shadow-black/25 sm:min-w-72 sm:px-5 sm:py-3 lg:min-w-80">
+            <div className="flex size-10 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-blue-600 text-sm font-black text-white shadow-md ring-2 ring-white/20 transition-all duration-300 ease-out hover:scale-105 sm:size-12 sm:text-base">
               {profileInitial}
             </div>
-            <div className="min-w-0 pr-1">
-              <p className="text-xs font-bold text-slate-900 truncate sm:text-sm">{pageTitle}</p>
-              <p className="text-[10px] font-medium text-slate-500 truncate sm:text-xs">{profileHandle}</p>
+            <div className="min-w-0 pr-1 leading-tight">
+              <p className="truncate text-base font-semibold text-white sm:text-lg">{pageTitle}</p>
+              <p className="truncate text-xs text-white/60 sm:text-sm">{profileHandle}</p>
             </div>
-            <button
-              type="button"
-              className="rounded-full bg-blue-500 hover:bg-blue-600 px-5 py-1.5 text-xs font-bold text-white shadow-md transition-all hover:shadow-lg active:scale-95"
-            >
-              Follow
-            </button>
           </div>
         </div>
 
@@ -244,6 +250,7 @@ export function PublicPageClient({ pageData, themeResponse, widgetsResponse }: P
               showEditButton={false}
               frostIntensity={themeCfg.frostIntensity}
               surfaceTint={themeCfg.surfaceTint}
+              roundness={themeCfg.roundness}
             />
           ))}
         </div>
