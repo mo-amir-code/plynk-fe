@@ -88,6 +88,41 @@ export const useCreateTheme = () => {
 };
 
 /**
+ * Hook: useUpdateTheme
+ * Mutation hook to update an existing custom theme
+ */
+export const useUpdateTheme = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { id: string; name: string }) => {
+      const { id, ...rest } = data;
+      return await api.patch<ThemeConfig>(API_ENDPOINTS.THEME.UPDATE(id), rest);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.THEME.ALL });
+    },
+  });
+};
+
+/**
+ * Hook: useDeleteTheme
+ * Mutation hook to delete an existing custom theme
+ */
+export const useDeleteTheme = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return await api.delete(API_ENDPOINTS.THEME.DELETE(id));
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.THEME.ALL });
+    },
+  });
+};
+
+/**
  * Hook: useGetPageBySlug
  * Query hook to fetch page by slug
  */

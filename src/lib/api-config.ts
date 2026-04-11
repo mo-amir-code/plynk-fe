@@ -42,6 +42,8 @@ export const API_ENDPOINTS = {
     CREATE: "/themes",
     DEFAULT: "/themes/default",
     CUSTOM: "/themes/custom",
+    UPDATE: (id: string) => `/themes/${id}`,
+    DELETE: (id: string) => `/themes/${id}`,
   },
 } as const;
 

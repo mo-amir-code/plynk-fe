@@ -288,35 +288,100 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Billing Pro section */}
-            <div className="mt-20 p-10 rounded-3xl bg-linear-to-br from-slate-900 via-slate-950 to-black text-white relative overflow-hidden group border border-white/10 shadow-2xl dark:shadow-none">
-              {/* Mesh Gradient Glows */}
-              <div className="absolute -top-32 -right-32 size-80 bg-primary/20 rounded-full blur-[100px] group-hover:bg-primary/30 transition-all duration-1000" />
-              <div className="absolute -bottom-32 -left-32 size-80 bg-orange-500/10 rounded-full blur-[100px] group-hover:bg-orange-500/20 transition-all duration-1000" />
-              
-              <div className="relative z-10 space-y-8">
-                <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full w-fit backdrop-blur-md border border-white/10">
-                  <ShieldCheck className="size-3.5 text-primary" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Enterprise Access</span>
+            {activeTab === "notifications" && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-400">
+                <header>
+                  <h2 className="text-2xl font-bold text-slate-950 dark:text-white tracking-tight">Notifications</h2>
+                  <p className="text-sm text-slate-500 mt-1">Control how and when we notify you.</p>
+                </header>
+
+                <div className="rounded-3xl border border-slate-200 bg-white px-6 py-8 text-left shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <div className="mb-4 inline-flex items-center rounded-full border border-amber-300/60 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
+                    Coming Soon
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Notification preferences are under active development</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    We’re building granular controls for product updates, account alerts, and security notifications.
+                  </p>
+                  <p className="mt-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    This section will be enabled automatically once it launches.
+                  </p>
                 </div>
-                
-                <div className="space-y-3">
-                  <h3 className="text-4xl font-black tracking-tighter flex items-center gap-3">
-                    Plynk <span className="bg-linear-to-r from-primary to-orange-400 bg-clip-text text-transparent italic">PRO</span>
-                  </h3>
-                  <p className="text-slate-400 text-base font-medium max-w-sm leading-relaxed">
-                    Deploy unlimited widgets, unlock global analytics, and get priority developer support.
+              </div>
+            )}
+
+            {activeTab === "security" && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-400">
+                <header>
+                  <h2 className="text-2xl font-bold text-slate-950 dark:text-white tracking-tight">Security</h2>
+                  <p className="text-sm text-slate-500 mt-1">Protect your account and access.</p>
+                </header>
+
+                <div className="rounded-3xl border border-slate-200 bg-white px-6 py-8 text-left shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <div className="mb-4 inline-flex items-center rounded-full border border-amber-300/60 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
+                    Coming Soon
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Security controls are under active development</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    We’re preparing features like session management, sign-in protection, and account recovery controls.
+                  </p>
+                  <p className="mt-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    You’ll get access here as soon as rollout is complete.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "billing" && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-400">
+                <header>
+                  <h2 className="text-2xl font-bold text-slate-950 dark:text-white tracking-tight">Billing</h2>
+                  <p className="text-sm text-slate-500 mt-1">Manage your subscription and invoices.</p>
+                </header>
+
+                <div className="rounded-3xl border border-slate-200 bg-white px-6 py-8 text-left shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  <div className="mb-4 inline-flex items-center rounded-full border border-amber-300/60 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
+                    Coming Soon
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Billing portal is under active development</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    We’re finalizing subscription management, invoice history, and payment method controls.
+                  </p>
+                  <p className="mt-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Billing tools will appear here once rollout is complete.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <button className="cursor-pointer flex items-center gap-2.5 px-8 py-3.5 bg-white text-slate-950 rounded-xl text-xs font-black transition-all hover:bg-slate-100 hover:-translate-y-0.5 active:translate-y-0 shadow-xl shadow-black/20">
-                    <CreditCard className="size-4" />
-                    Manage Subscription
-                  </button>
+                {/* Billing Pro section */}
+                <div className="mt-6 rounded-3xl border border-white/10 bg-linear-to-br from-slate-900 via-slate-950 to-black p-10 text-white relative overflow-hidden group shadow-2xl dark:shadow-none">
+                  <div className="absolute -top-32 -right-32 size-80 bg-primary/20 rounded-full blur-[100px] group-hover:bg-primary/30 transition-all duration-1000" />
+                  <div className="absolute -bottom-32 -left-32 size-80 bg-orange-500/10 rounded-full blur-[100px] group-hover:bg-orange-500/20 transition-all duration-1000" />
+
+                  <div className="relative z-10 space-y-8">
+                    <div className="flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 backdrop-blur-md">
+                      <ShieldCheck className="size-3.5 text-primary" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Enterprise Access</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-4xl font-black tracking-tighter flex items-center gap-3">
+                        Plynk <span className="bg-linear-to-r from-primary to-orange-400 bg-clip-text text-transparent italic">PRO</span>
+                      </h3>
+                      <p className="max-w-sm text-base font-medium leading-relaxed text-slate-400">
+                        Deploy unlimited widgets, unlock global analytics, and get priority developer support.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <button className="cursor-pointer flex items-center gap-2.5 px-8 py-3.5 bg-white text-slate-950 rounded-xl text-xs font-black transition-all hover:bg-slate-100 hover:-translate-y-0.5 active:translate-y-0 shadow-xl shadow-black/20">
+                        <CreditCard className="size-4" />
+                        Manage Subscription
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </main>
 
         </div>

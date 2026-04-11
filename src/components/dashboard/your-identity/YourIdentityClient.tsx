@@ -11,7 +11,7 @@ import { AddWidgetModal } from "./AddWidgetModal";
 import { EditWidgetModal } from "./EditWidgetModal";
 import { WallpaperUploadModal } from "./WallpaperUploadModal";
 import useAuthStore from "@/stores/authStore";
-import { useCreateTheme, useGetCustomThemes, useGetDefaultThemes, useGetMyPage, useSyncPage } from "@/hooks/usePage";
+import { useCreateTheme, useDeleteTheme, useGetCustomThemes, useGetDefaultThemes, useGetMyPage, useSyncPage, useUpdateTheme } from "@/hooks/usePage";
 import { SuccessModal } from "./SuccessModal";
 import { BRAND_NAME, STORAGE_KEYS, getPublicProfileDisplay } from "@/config/app-config";
 import type { DashboardSocialWidgetData, SocialPlatform } from "@/types/components/dashboard/widgets";
@@ -346,6 +346,8 @@ export function YourIdentityClient() {
   const getDefaultThemesQuery = useGetDefaultThemes();
   const getCustomThemesQuery = useGetCustomThemes();
   const createThemeMutation = useCreateTheme();
+  const updateThemeMutation = useUpdateTheme();
+  const deleteThemeMutation = useDeleteTheme();
   const syncPageMutation = useSyncPage();
   const userId = user?.id || "guest";
   const { ref, cellPx } = useSquareCellSize(GRID_COLS, GAP_PX);
@@ -765,7 +767,7 @@ export function YourIdentityClient() {
     setEditingCustomThemeName("");
   };
 
-  const saveCustomThemeName = () => {
+  const saveCustomThemeName = async () => {
     if (!editingCustomThemeId) return;
 
     const trimmedName = editingCustomThemeName.trim();
@@ -774,19 +776,36 @@ export function YourIdentityClient() {
       return;
     }
 
-    setCustomThemes((prev) =>
-      prev.map((theme) =>
-        theme.id === editingCustomThemeId
-          ? { ...theme, name: trimmedName }
-          : theme,
-      ),
-    );
+    try {
+      const updatedTheme = await updateThemeMutation.mutateAsync({
+        id: editingCustomThemeId,
+        name: trimmedName,
+      });
 
-    closeEditCustomThemeModal();
-    toast.success("Theme name updated");
+      setCustomThemes((prev) =>
+        prev.map((theme) =>
+          theme.id === editingCustomThemeId
+            ? {
+                ...theme,
+                ...updatedTheme,
+                styleConfig: {
+                  ...theme.styleConfig,
+                  ...updatedTheme.styleConfig,
+                  wallpaper: resolveWallpaperBackground(updatedTheme.styleConfig?.wallpaper || theme.styleConfig?.wallpaper),
+                },
+              }
+            : theme,
+        ),
+      );
+
+      closeEditCustomThemeModal();
+      toast.success("Theme name updated");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update theme name");
+    }
   };
 
-  const deleteCustomTheme = (themeId: string) => {
+  const deleteCustomTheme = async (themeId: string) => {
     if (selectedCustomThemeId === themeId) {
       toast.error("Cannot delete selected customized theme");
       return;
@@ -795,8 +814,13 @@ export function YourIdentityClient() {
     const confirmed = window.confirm("Are you sure you want to delete this customized theme?");
     if (!confirmed) return;
 
-    setCustomThemes((prev) => prev.filter((theme) => theme.id !== themeId));
-    toast.success("Customized theme deleted");
+    try {
+      await deleteThemeMutation.mutateAsync(themeId);
+      setCustomThemes((prev) => prev.filter((theme) => theme.id !== themeId));
+      toast.success("Customized theme deleted");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to delete theme");
+    }
   };
 
   const handleWallpaperChange = (wallpaperBackground: string) => {
