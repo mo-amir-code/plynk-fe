@@ -22,7 +22,6 @@ import type {
   StyleConfig,
   SyncStatus,
   ThemeConfig,
-  ThemePayload,
 } from "@/types/components/dashboard/your-identity";
 
 export const WALLPAPERS: string[] = [
@@ -1704,20 +1703,14 @@ export function YourIdentityClient() {
       const selectedCustomTheme = customThemes.find((theme) => theme.id === selectedCustomThemeId);
       const selectedThemeId = selectedCustomTheme?.id || selectedDefaultTheme?.id || undefined;
 
-      // 1. Theme Payload - follows API structure: { id, name, styleConfig: {...} }
-      const themePayload: ThemePayload = {
-        id: selectedCustomTheme?.id || selectedDefaultTheme?.id || "theme_manual",
-        name: selectedCustomTheme?.name || selectedDefaultTheme?.name || "Manual Theme",
-        description: selectedCustomTheme?.description || selectedDefaultTheme?.description || "Manual theme configuration",
-        type: selectedCustomTheme?.type || selectedDefaultTheme?.type || "LINKS",
-        styleConfig: {
-          frostIntensity,
-          surfaceTint,
-          fontStyle: activeFont,
-          wallpaper: activeWallpaper,
-          roundness: activeRoundness,
-          widgets: {}, // Placeholder for widget-specific overrides
-        },
+      // 1. Theme Config Payload - style config only (no theme metadata)
+      const themeConfigPayload: StyleConfig = {
+        frostIntensity,
+        surfaceTint,
+        fontStyle: activeFont,
+        wallpaper: activeWallpaper,
+        roundness: activeRoundness,
+        widgets: {},
       };
 
       // 2. Widget Payload (Flat structure per API spec)
@@ -1735,7 +1728,7 @@ export function YourIdentityClient() {
 
       const syncData = {
         themeId: selectedThemeId,
-        themeConfig: themePayload,
+        themeConfig: themeConfigPayload,
         isPublished: true, // Crucial: Explicitly publish on Submit
         widgets: widgetsPayload
       };
@@ -1750,7 +1743,7 @@ export function YourIdentityClient() {
         setIsSuccessModalOpen(true);
       }
       console.group(`Submitting ${BRAND_NAME} Page State`);
-      console.log('1️⃣ THEME_JSON (style_config) ->', themePayload);
+      console.log('1️⃣ THEME_JSON (style_config) ->', themeConfigPayload);
       console.log('2️⃣ PUBLIC_STATUS ->', true);
       console.log('3️⃣ WIDGETS_JSON (layout + data)->', widgetsPayload);
       console.groupEnd();
