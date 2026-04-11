@@ -31,7 +31,7 @@ export function SuccessModal({ isOpen, onClose, username }: SuccessModalProps) {
   };
 
   const shareTwitter = () => {
-    const text = encodeURIComponent(`Check out my new ${BRAND_NAME} profile! 🚀\n\n${fullUrl}`);
+    const text = encodeURIComponent(`Check out my new ${BRAND_NAME} profile! 🚀\n\n${publicUrl}`);
     window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
   };
 
@@ -100,7 +100,7 @@ export function SuccessModal({ isOpen, onClose, username }: SuccessModalProps) {
           {/* Share Grid */}
           <div className="grid grid-cols-2 gap-3 mb-8">
             <a 
-              href={fullUrl} 
+              href={publicUrl} 
               target="_blank" 
               className="flex items-center justify-center gap-2.5 p-3.5 rounded-2xl bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-500/25 hover:bg-blue-600 hover:scale-[1.02] active:scale-95 transition-all"
             >
