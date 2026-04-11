@@ -146,9 +146,9 @@ export function ContactForm() {
             className="w-full px-5 py-3.5 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-hidden transition-all text-slate-900 dark:text-white font-medium appearance-none cursor-pointer text-sm sm:text-base"
           >
             <option>General Inquiry</option>
-            <option>Premium Support</option>
             <option>Feature Request</option>
-            <option>Billing Question</option>
+            <option>Feedback / Suggestion</option>
+            <option>Report Issue</option>
           </select>
           <div className="absolute right-5 sm:right-6 top-1/2 -translate-y-1/2 pointer-events-none opacity-50 text-slate-900 dark:text-white">
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>

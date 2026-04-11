@@ -98,7 +98,7 @@ export function ForgotPasswordForm() {
               <FormInput
                 label="Email address"
                 type="email"
-                placeholder="name@company.com"
+                placeholder="john@example.com"
                 value={email}
                 onChange={setEmail}
                 icon="mail"
