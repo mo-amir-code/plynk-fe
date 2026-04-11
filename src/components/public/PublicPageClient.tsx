@@ -218,31 +218,19 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
 
   return (
     <div
-      className="relative min-h-screen overflow-x-hidden px-4 py-6 pb-20 sm:px-6 sm:py-10 sm:pb-24 lg:px-8"
+      className="relative min-h-screen flex flex-col overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:px-8 transition-colors duration-300"
       style={{
         background: activeWallpaper,
         fontFamily: activeFont.family,
-        transition: "background 240ms ease, color 240ms ease",
       }}
     >
-      {/* Floating Logo Top-Left that disappears on scroll */}
-      <Link
-        href="/"
-        className={`fixed left-4 top-4 z-50 transition-all duration-500 ease-in-out ${
-          scrolled ? "pointer-events-none -translate-y-8 opacity-0" : "translate-y-0 opacity-100 hover:scale-105"
-        }`}
-        aria-label="Go to Plynk homepage"
-      >
-        <div className="flex overflow-hidden items-center justify-center rounded-full bg-black/20 shadow-lg backdrop-blur-md border border-white/10">
-          <img src="/logo.svg" alt="Plynk logo" className="size-6 object-contain sm:size-7" />
-        </div>
-      </Link>
+
 
       <div className="pointer-events-none absolute inset-0 bg-slate-950/25" />
       <div className="pointer-events-none absolute -left-20 top-20 h-72 w-72 rounded-full bg-blue-400/20 blur-3xl" />
       <div className="pointer-events-none absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-indigo-500/25 blur-3xl" />
 
-      <div className="relative z-10 mx-auto w-full max-w-200 px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto w-full max-w-200 px-4 flex-1 flex flex-col sm:px-6 lg:px-8">
         {/* Centered Profile Bar */}
         <div className="mb-10 flex justify-center animate-in fade-in duration-700 sm:mb-12">
           <div className="flex w-fit min-w-52 items-center gap-3 rounded-full border border-white/20 bg-white/10 px-3 py-2 shadow-md shadow-black/20 backdrop-blur-md transition-all duration-300 ease-out hover:scale-[1.01] hover:shadow-lg hover:shadow-black/25 sm:min-w-72 sm:px-5 sm:py-3 lg:min-w-80">
@@ -278,18 +266,26 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
           ))}
         </div>
 
-        {/* Bottom CTA / Branding replacing fixed logo on scroll -> in-flow bottom text */}
-        <div className="my-12 flex w-full justify-center pb-8 sm:mt-16 text-center">
+        {/* Bottom CTA / Branding - Pushed to bottom with mt-auto */}
+        <div className="mt-auto mb-8 pt-12 flex flex-col items-center text-center">
            <Link
              href="/"
              className="group flex flex-col items-center gap-2 hover:opacity-100 opacity-70 transition-opacity"
            >
-             <div className="flex items-center gap-1.5 text-xs font-medium text-white/50 tracking-wider uppercase transition-colors group-hover:text-white/90">
+             <div className="flex items-center gap-1 text-xs sm:text-sm font-medium text-white/50 tracking-wider transition-colors group-hover:text-white/90 lowercase">
                <span>Powered by</span>
                <img src="/logo.svg" alt="" className="size-4 opacity-70 group-hover:opacity-100 transition-opacity drop-shadow-sm" />
                <span className="font-bold text-white/80 group-hover:text-white transition-colors">Plynk</span>
              </div>
            </Link>
+
+           <div className="mt-4 flex items-center justify-center gap-3 text-[10px] sm:text-xs font-medium text-white/30">
+             <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy</Link>
+             <span className="size-1 rounded-full bg-white/10" />
+             <Link href="/terms" className="hover:text-white/60 transition-colors">Terms</Link>
+             <span className="size-1 rounded-full bg-white/10" />
+             <Link href="/contact" className="hover:text-white/60 transition-colors">Report</Link>
+           </div>
         </div>
       </div>
     </div>

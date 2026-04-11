@@ -127,7 +127,7 @@ export function SignUpForm() {
           <FormInput
             label="Full Name"
             type="text"
-            placeholder="Alex Rivera"
+            placeholder="John Doe"
             value={fullName}
             onChange={(val) => {
               setFullName(val);
@@ -140,7 +140,7 @@ export function SignUpForm() {
           <FormInput
             label="Email Address"
             type="email"
-            placeholder="alex@example.com"
+            placeholder="john@example.com"
             value={email}
             onChange={(val) => {
               setEmail(val);

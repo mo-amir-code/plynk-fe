@@ -84,7 +84,7 @@ export function SignInForm() {
           <FormInput
             label="Email Address"
             type="email"
-            placeholder="name@example.com"
+            placeholder="johne@example.com"
             value={formData.email}
             onChange={(val) => {
               setFormData((prev) => ({ ...prev, email: val }));
