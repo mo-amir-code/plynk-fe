@@ -1,16 +1,51 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
-import { APP_THEME_STORAGE_KEY, BRAND_NAME } from "@/config/app-config";
+import { APP_ORIGIN, APP_THEME_STORAGE_KEY, BRAND_NAME } from "@/config/app-config";
 import { GlobalBackground } from "@/components/layout/GlobalBackground";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: `${BRAND_NAME} | Your Personal Link Hub`,
-  description: "Build Your Personal Link Hub With Widgets",
+  metadataBase: new URL(APP_ORIGIN),
+  title: {
+    default: `${BRAND_NAME} | Your Personal Link Hub`,
+    template: `%s | ${BRAND_NAME}`,
+  },
+  description: "Create a beautiful, personalized link hub with widgets to showcase your digital identity. All in one place, all for you.",
+  keywords: ["Link Hub", "Bio Link", "Portfolio", "Personal Site", "Widgets", "Plynk"],
+  authors: [{ name: "shubham" }],
+  creator: "shubham",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: APP_ORIGIN,
+    siteName: BRAND_NAME,
+    title: `${BRAND_NAME} | Your Personal Link Hub`,
+    description: "Build Your Personal Link Hub With Widgets. Show the world who you are with a single link.",
+    images: [
+      {
+        url: "/full-logo.png",
+        width: 1200,
+        height: 630,
+        alt: `${BRAND_NAME} Logo`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${BRAND_NAME} | Your Personal Link Hub`,
+    description: "Build Your Personal Link Hub With Widgets. Show the world who you are with a single link.",
+    images: ["/full-logo.png"],
+  },
   icons: {
     icon: "/logo.svg",
-  }
+    apple: "/logo.svg",
+  },
+  manifest: "/manifest.json",
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

@@ -214,8 +214,6 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
   const profileHandle = `@${pageSlug}`;
   const profileInitial = pageTitle.charAt(0).toUpperCase();
 
-  console.log("Active Wallpaper:", activeWallpaper);
-
   return (
     <div
       className="relative min-h-screen flex flex-col overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:px-8 transition-colors duration-300"

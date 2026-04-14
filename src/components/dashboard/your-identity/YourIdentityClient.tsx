@@ -1766,11 +1766,6 @@ export function YourIdentityClient() {
       } else {
         setIsSuccessModalOpen(true);
       }
-      console.group(`Submitting ${BRAND_NAME} Page State`);
-      console.log('1️⃣ THEME_JSON (style_config) ->', themeConfigPayload);
-      console.log('2️⃣ PUBLIC_STATUS ->', true);
-      console.log('3️⃣ WIDGETS_JSON (layout + data)->', widgetsPayload);
-      console.groupEnd();
     } catch (err) {
       setSyncStatus("error");
       toast.error("Failed to publish your page");
