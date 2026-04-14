@@ -30,8 +30,6 @@ async function request<T>(
   const { params, headers, ...rest } = options;
   let url = endpoint.startsWith("http") ? endpoint : `${API_CONFIG.BASE_URL}${endpoint}`;
 
-  console.log(`URL called: ${url} with options:`, options);
-
   if (params) {
     const search = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) =>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import useAuthStore from "@/stores/authStore";
@@ -15,8 +15,15 @@ export default function OnboardingPage() {
   const { user, setUser } = useAuthStore();
 
   const [username, setUsername] = useState("");
-  const debouncedUsername = useDeferredValue(username);
+  const [debouncedUsername, setDebouncedUsername] = useState("");
   const claimUsernameMutation = useClaimUsername();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedUsername(username);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [username]);
 
   const isFormatValid =
     debouncedUsername.length >= 3 &&
@@ -26,7 +33,10 @@ export default function OnboardingPage() {
   const checkUsernameQuery = useCheckUsername(isFormatValid ? debouncedUsername : null);
 
   let status: UsernameStatus = "idle";
-  if (username.length > 0 && (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_-]+$/.test(username))) {
+
+  if (claimUsernameMutation.isPending || claimUsernameMutation.isSuccess) {
+    status = "available";
+  } else if (username.length > 0 && (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_-]+$/.test(username))) {
     status = "invalid";
   } else if (username.length > 0 && username !== debouncedUsername) {
     status = "checking";
@@ -48,7 +58,6 @@ export default function OnboardingPage() {
 
     try {
       const auth = await claimUsernameMutation.mutateAsync(username);
-      console.log(auth)
       
       if (auth?.user) {
         setUser(auth.user);
