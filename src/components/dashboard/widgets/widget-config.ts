@@ -42,7 +42,7 @@ export const WIDGET_TYPE_CONFIG: Record<SocialPlatform, WidgetTypeConfig> = {
   },
   tiktok: {
     label: "TikTok",
-    hint: "Short-form content",
+    hint: "Short clips",
     defaultHandle: "yourname",
     background: "linear-gradient(135deg, #111111 0%, #25F4EE 50%, #FE2C55 100%)",
     url: (handle) => `https://tiktok.com/@${handle}`,

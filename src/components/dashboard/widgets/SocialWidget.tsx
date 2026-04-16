@@ -3,23 +3,57 @@ import { Pencil, Trash2 } from "lucide-react";
 import { WIDGET_TYPE_CONFIG } from "./widget-config";
 import type { DashboardSocialWidgetProps } from "@/types/components/dashboard/widgets";
 
-/* ─── Scale icon container + text size based on widget area ─── */
-function getContainerSize(colSize: number, rowSize: number): string {
-  const area = colSize * rowSize;
-  if (area >= 36) return "size-48";  // 192px (huge)
-  if (area >= 18) return "size-36";  // 144px
-  if (area >= 9) return "size-28";  // 112px
-  if (area >= 4) return "size-20";  // 80px
-  return "size-16";                 // 64px
+function getBackgroundPosition(position?: string): string {
+  switch (position) {
+    case "top-left":
+      return "0% 0%";
+    case "top-center":
+      return "50% 0%";
+    case "top-right":
+      return "100% 0%";
+    case "center":
+      return "center";
+    case "bottom-left":
+      return "0% 100%";
+    case "bottom-center":
+      return "50% 100%";
+    case "bottom-right":
+      return "100% 100%";
+    default:
+      return "center";
+  }
 }
 
-function getIconTextSize(colSize: number, rowSize: number): string {
-  const area = colSize * rowSize;
-  if (area >= 36) return "text-[80px]";
-  if (area >= 18) return "text-[64px]";
-  if (area >= 9) return "text-[48px]";
-  if (area >= 4) return "text-[36px]";
-  return "text-[28px]";
+function getIconTileSize(area: number): string {
+  if (area >= 36) return "size-20";
+  if (area >= 18) return "size-16";
+  if (area >= 9) return "size-12";
+  if (area >= 4) return "size-11";
+  return "size-10";
+}
+
+function getIconSize(area: number): string {
+  if (area >= 36) return "text-5xl";
+  if (area >= 18) return "text-4xl";
+  if (area >= 9) return "text-2xl";
+  if (area >= 4) return "text-xl";
+  return "text-lg";
+}
+
+function getTitleSize(area: number): string {
+  if (area >= 36) return "text-2xl";
+  if (area >= 18) return "text-xl";
+  if (area >= 9) return "text-lg";
+  if (area >= 4) return "text-base";
+  return "text-xs";
+}
+
+function getSubtitleSize(area: number): string {
+  if (area >= 36) return "text-sm";
+  if (area >= 18) return "text-xs";
+  if (area >= 9) return "text-[11px]";
+  if (area >= 4) return "text-[10px]";
+  return "text-[8px]";
 }
 
 export function DashboardSocialWidget({
@@ -42,20 +76,17 @@ export function DashboardSocialWidget({
   roundness = 16,
   forceShowLabel = false,
 }: DashboardSocialWidgetProps) {
-  const { type, handle, startCol, startRow, colSize, rowSize } = data;
+  const { type, handle, startCol, startRow, colSize, rowSize, widgetBackground } = data;
   const cfg = WIDGET_TYPE_CONFIG[type];
   const area = colSize * rowSize;
-  const containerSize = getContainerSize(colSize, rowSize);
-  const iconTextSize = getIconTextSize(colSize, rowSize);
+  const iconTileSize = getIconTileSize(area);
+  const iconSize = getIconSize(area);
+  const titleSize = getTitleSize(area);
+  const subtitleSize = getSubtitleSize(area);
   const href = cfg.url(handle.trim());
   const displayName = cfg.label;
-  const isMobileWidget = forceShowLabel || (colSize === 1 && rowSize === 1);
-  const desktopHoverLiftClass =
-    area >= 18
-      ? "sm:group-hover:-translate-y-10"
-      : area >= 9
-        ? "sm:group-hover:-translate-y-8"
-        : "sm:group-hover:-translate-y-6";
+  const subtitle = cfg.hint.toUpperCase();
+  const isCompactCard = forceShowLabel || (colSize === 1 && rowSize === 1);
 
   // console.log('URL generated for widget:', { type, handle, href });
 
@@ -72,9 +103,8 @@ export function DashboardSocialWidget({
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className={`group relative block overflow-hidden transition-all duration-200 transform-gpu shadow-lg sm:shadow-xl sm:hover:shadow-2xl sm:hover:ring-2 sm:hover:ring-white/60 dark:sm:hover:ring-white/30 w-full h-full ${
-        draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
-      } ${isDragging ? "opacity-60 scale-95" : ""} ${isResizing ? "ring-2 ring-primary/60" : ""}`}
+      className={`group relative block overflow-hidden transition-all duration-200 transform-gpu shadow-lg sm:shadow-xl sm:hover:shadow-2xl sm:hover:ring-2 sm:hover:ring-white/60 dark:sm:hover:ring-white/30 w-full h-full bg-slate-100/95 dark:bg-slate-800/85 border border-white/55 dark:border-white/10 ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+        } ${isDragging ? "opacity-60 scale-95" : ""} ${isResizing ? "ring-2 ring-primary/60" : ""}`}
       style={{
         gridColumn: `${startCol} / span ${colSize}`,
         gridRow: `${startRow} / span ${rowSize}`,
@@ -88,35 +118,56 @@ export function DashboardSocialWidget({
         willChange: motionOffset ? "transform" : undefined,
       }}
     >
-      {/* Deepest layer: Glass Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backdropFilter: frostIntensity > 0 ? `blur(${frostIntensity}px)` : "none",
           WebkitBackdropFilter: frostIntensity > 0 ? `blur(${frostIntensity}px)` : "none",
-          backgroundColor: "rgba(255, 255, 255, 0.03)",
+          backgroundColor: "rgba(255, 255, 255, 0.02)",
         }}
       />
 
-      {/* Gradient background */}
-      <div 
+      <div
         className="absolute inset-0 transition-opacity duration-200 pointer-events-none"
         style={{
-          opacity: surfaceTint / 100,
-          background: cfg.background,
+          opacity: Math.min(surfaceTint / 140, 0.65),
+          background: "linear-gradient(165deg, rgba(255, 255, 255, 0.55) 0%, rgba(241, 245, 249, 0.86) 100%)",
         }}
       />
 
-      {/* Overlay on hover for depth — desktop only */}
-      <div className="absolute inset-0 bg-black/0 sm:group-hover:bg-black/10 transition-colors duration-500 z-5" />
+      <div className="absolute inset-0 bg-white/35 dark:bg-slate-900/18 pointer-events-none" />
+      <div className="absolute inset-0 bg-black/0 sm:group-hover:bg-black/5 transition-colors duration-500 z-5" />
 
-      {/* Subtle noise texture */}
       <div
         className="absolute inset-0 opacity-[0.08]"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
         }}
       />
+
+      {widgetBackground ? (
+        widgetBackground.type === "color" ? (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundColor: widgetBackground.source,
+              opacity: 0.6,
+            }}
+          />
+        ) : (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `url('${widgetBackground.source}')`,
+              backgroundSize: "cover",
+              backgroundPosition: getBackgroundPosition(widgetBackground.position),
+              backgroundRepeat: "no-repeat",
+              backgroundAttachment: widgetBackground.type === "video" ? "fixed" : "scroll",
+              opacity: widgetBackground.type === "video" ? 0.7 : 0.5,
+            }}
+          />
+        )
+      ) : ""}
 
       {showEditButton && (
         <button
@@ -147,53 +198,29 @@ export function DashboardSocialWidget({
         </button>
       )}
 
-      {isMobileWidget ? (
-        // Mobile layout - flex with always visible content
-        <div className="relative z-10 w-full h-full flex flex-col items-center justify-between p-3 gap-2">
-          {/* Icon container */}
-          <div className="flex-1 flex items-center justify-center w-full">
+      <div className={`relative z-10 w-full h-full ${isCompactCard ? "p-3" : "p-4 sm:p-5"}`}>
+        <div className="h-full flex flex-col justify-between">
+          <div>
             <div
-              className={`${containerSize} rounded-full bg-white/20 flex items-center justify-center shadow-lg transition-all duration-300 border border-white/30`}
+              className={`${iconTileSize} rounded-2xl text-white flex items-center justify-center shadow-md transition-transform duration-300 sm:group-hover:scale-105`}
+              style={{ background: cfg.background }}
             >
-              <PlatformIcon platform={type} className={`${iconTextSize} text-white drop-shadow-lg`} />
+              <PlatformIcon platform={type} className={iconSize} />
             </div>
           </div>
 
-          {/* Text content - always visible on mobile */}
-          <div className="flex flex-col items-center justify-center gap-0.5 px-1 text-center w-full">
-            <span className="font-black text-white leading-tight truncate max-w-full drop-shadow-lg text-[9px] sm:text-xs">
+          <div className="text-left">
+            <p className={`${titleSize} font-extrabold text-slate-900 dark:text-slate-100 leading-none truncate`}>
               {displayName}
-            </span>
-            <span className="text-white/80 font-semibold truncate max-w-full drop-shadow-md text-[7px] sm:text-[8px]">
-              @{handle}
-            </span>
+            </p>
+            <p className={`${subtitleSize} mt-1 font-semibold tracking-wide text-slate-500 dark:text-slate-300 uppercase truncate`}>
+              {subtitle}
+            </p>
           </div>
         </div>
-      ) : (
-        // Desktop layout - centered icon with stable internal reveal
-        <div className="relative z-10 w-full h-full flex items-center justify-center">
-          {/* Icon container - Stationary for stability */}
-          <div
-            className={`${containerSize} rounded-full bg-white/20 flex items-center justify-center shadow-lg sm:shadow-xl sm:group-hover:shadow-2xl sm:group-hover:bg-white/30 transition-all duration-500 border border-white/30 sm:group-hover:border-white/50 sm:group-hover:scale-105`}
-          >
-            <PlatformIcon platform={type} className={`${iconTextSize} text-white drop-shadow-lg`} />
-          </div>
- 
-          {/* Text content - Stable reveal slide-up (Stationary parent) */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center justify-center rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 py-1.5 px-4 gap-0 opacity-0 sm:group-hover:opacity-100 translate-y-2 sm:group-hover:translate-y-0 transition-all duration-500 text-center min-w-[120px] max-w-[85%] pointer-events-none shadow-2xl">
-            <span className={`font-bold text-white leading-tight truncate max-w-full drop-shadow-lg ${area >= 4 ? "text-xs sm:text-sm" : "text-[10px] sm:text-xs"
-              }`}>
-              {displayName}
-            </span>
-            <span className={`text-white/60 font-medium truncate max-w-full drop-shadow-md ${area >= 4 ? "text-[10px] sm:text-[11px]" : "text-[8px] sm:text-[10px]"
-              }`}>
-              @{handle}
-            </span>
-          </div>
-        </div>
-      )}
+      </div>
 
-      {!isMobileWidget && showResizeHandles && (
+      {!isCompactCard && showResizeHandles && (
         <>
           <button
             type="button"
