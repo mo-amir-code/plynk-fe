@@ -10,6 +10,21 @@ export type SocialPlatform =
   | "github"
   | "dribbble";
 
+export type BackgroundPosition =
+  | "top-center"
+  | "bottom-center"
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right"
+  | "center";
+
+export type WidgetBackground = {
+  type: "color" | "gif" | "image" | "video";
+  source: string;
+  position?: BackgroundPosition;
+};
+
 export type WidgetTypeConfig = {
   label: string;
   hint: string;
@@ -29,6 +44,7 @@ export interface DashboardSocialWidgetData {
   colSize: number;
   rowSize: number;
   icon?: string;
+  widgetBackground?: WidgetBackground;
 }
 
 export interface DashboardSocialWidgetProps {

@@ -1,4 +1,4 @@
-import type { SocialPlatform } from "@/types/components/dashboard/widgets";
+import type { SocialPlatform, WidgetBackground } from "@/types/components/dashboard/widgets";
 
 export type ApiResponse<T> = {
 	success: boolean;
@@ -53,6 +53,7 @@ export type PublicWidgetApiItem = {
 	colSize: number;
 	rowSize: number;
 	icon?: string;
+	widgetBackground?: WidgetBackground;
 };
 
 export type PublicWidgetsResult = {
