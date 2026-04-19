@@ -23,6 +23,15 @@ export type WidgetBackground = {
   type: "color" | "gif" | "image" | "video";
   source: string;
   position?: BackgroundPosition;
+  fontFamily?: string;
+  wallpaper?: string;
+  wallpaperOpacity?: number;
+  cornerRoundness?: {
+    topLeft?: number;
+    topRight?: number;
+    bottomLeft?: number;
+    bottomRight?: number;
+  };
 };
 
 export type WidgetTypeConfig = {
@@ -69,4 +78,16 @@ export interface DashboardSocialWidgetProps {
   surfaceTint?: number;
   roundness?: number;
   forceShowLabel?: boolean;
+  fontFamily?: string;
+  disableTransitions?: boolean;
+  widgetWallpaper?: string;
+  widgetWallpaperOpacity?: number;
+  cornerRoundness?: {
+    topLeft?: number;
+    topRight?: number;
+    bottomLeft?: number;
+    bottomRight?: number;
+  };
+  isSelected?: boolean;
+  onSelect?: () => void;
 }

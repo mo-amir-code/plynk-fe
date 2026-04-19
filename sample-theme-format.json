@@ -12,7 +12,12 @@
             "widget_id": {
                 "wallpaper": "widget_wallpaper(color_or_image_value)",
                 "fontStyle": "widget_font_style_value",
-                "roundness": "widget_roundness_value"
+                "roundness": {
+                    "topLeft": "widget_top_left_roundness_value",
+                    "topRight": "widget_top_right_roundness_value",
+                    "bottomLeft": "widget_bottom_left_roundness_value",
+                    "bottomRight": "widget_bottom_right_roundness_value"
+                }
             }
         }
     }

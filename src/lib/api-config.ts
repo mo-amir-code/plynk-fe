@@ -34,7 +34,7 @@ export const API_ENDPOINTS = {
     SYNC: "/page/sync",
   },
   WIDGET: {
-    CREATE: "/widget",
+    CREATE: "/widgets",
     UPDATE: (id: string) => `/widget/${id}`,
     DELETE: (id: string) => `/widget/${id}`,
   },
@@ -44,6 +44,11 @@ export const API_ENDPOINTS = {
     CUSTOM: "/themes/custom",
     UPDATE: (id: string) => `/themes/${id}`,
     DELETE: (id: string) => `/themes/${id}`,
+  },
+  ASSET: {
+    DEFAULT: "/assets/default",
+    USER: "/assets/user",
+    UPLOAD: "/assets/upload",
   },
 } as const;
 
@@ -76,5 +81,10 @@ export const QUERY_KEYS = {
     ALL: ["theme"] as const,
     DEFAULTS: ["theme", "default"] as const,
     CUSTOM: ["theme", "custom"] as const,
+  },
+  ASSET: {
+    ALL: ["asset"] as const,
+    DEFAULT: ["asset", "default"] as const,
+    USER: ["asset", "user"] as const,
   },
 } as const;

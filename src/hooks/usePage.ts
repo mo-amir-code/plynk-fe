@@ -6,9 +6,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { API_ENDPOINTS, QUERY_KEYS } from "@/lib/api-config";
-import type { ApiResponse, PublicThemeResult, PublicWidgetsResult } from "@/types/common";
+import type { ApiResponse, AssetItem, PublicThemeResult, PublicWidgetsResult } from "@/types/common";
 import type { ThemeConfig } from "@/types/components/dashboard/your-identity";
 import type { ThemeType } from "@/types/components/dashboard/your-identity";
+import { DashboardSocialWidgetData } from "@/types/components/dashboard/widgets";
 
 const HttpMessage: Record<number, string> = {
   200: "OK",
@@ -67,6 +68,28 @@ export const useGetCustomThemes = () => {
       return result;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetDefaultAssets = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.ASSET.DEFAULT,
+    queryFn: async (): Promise<AssetItem[]> => {
+      const result = await api.get<AssetItem[]>(API_ENDPOINTS.ASSET.DEFAULT);
+      return result;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+export const useGetUserAssets = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.ASSET.USER,
+    queryFn: async (): Promise<AssetItem[]> => {
+      const result = await api.get<AssetItem[]>(API_ENDPOINTS.ASSET.USER);
+      return result;
+    },
+    staleTime: 1000 * 60 * 5,
   });
 };
 
@@ -162,7 +185,7 @@ export const useUpdatePage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { id: string; [key: string]: any }) => {
+    mutationFn: async (data: { id: string;[key: string]: any }) => {
       const { id, ...rest } = data;
       return await api.patch(API_ENDPOINTS.PAGE.UPDATE(id), rest);
     },
@@ -201,7 +224,7 @@ export const useCreateWidget = () => {
 
   return useMutation({
     mutationFn: async (data: any) => {
-      return await api.post(API_ENDPOINTS.WIDGET.CREATE, data);
+      return await api.post<DashboardSocialWidgetData>(API_ENDPOINTS.WIDGET.CREATE, data);
     },
     onSuccess: async () => {
       await Promise.all([
@@ -220,7 +243,7 @@ export const useUpdateWidget = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { id: string; [key: string]: any }) => {
+    mutationFn: async (data: { id: string;[key: string]: any }) => {
       const { id, ...rest } = data;
       return await api.patch(API_ENDPOINTS.WIDGET.UPDATE(id), rest);
     },

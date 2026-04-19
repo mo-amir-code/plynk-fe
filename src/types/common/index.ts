@@ -25,6 +25,16 @@ export interface AuthResponse {
 	token: string;
 }
 
+export type OwnerType = "DEFAULT" | "USER";
+
+export type AssetItem = {
+	id: string;
+	createdAt: string;
+	url: string;
+	ownerType: OwnerType;
+	uploadedBy: string | null;
+};
+
 export type PublicPageInfo = {
 	slug: string;
 	title: string;
