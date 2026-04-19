@@ -7,6 +7,38 @@ import { WALLPAPERS, FONTS } from "../dashboard/your-identity/YourIdentityClient
 import type { DashboardSocialWidgetData } from "@/types/components/dashboard/widgets";
 import type { PublicPageClientProps } from "@/types/components/public";
 
+// Helper functions for wallpaper handling
+function isImageWallpaper(value: string) {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return false;
+
+  return (
+    normalized.startsWith("url(") ||
+    normalized.startsWith("http://") ||
+    normalized.startsWith("https://") ||
+    normalized.startsWith("data:image/") ||
+    normalized.startsWith("blob:") ||
+    normalized.startsWith("/")
+  );
+}
+
+function getWallpaperStyle(wallpaper: string) {
+  if (wallpaper.trim().startsWith("url(")) {
+    return { background: wallpaper };
+  }
+
+  if (isImageWallpaper(wallpaper)) {
+    return {
+      backgroundImage: `url("${wallpaper}")`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+    };
+  }
+
+  return { background: wallpaper };
+}
+
 const GRID_COLS = 12;
 const MOBILE_GRID_COLS = 6;
 const SMALL_SCREEN_BREAKPOINT = 600;
@@ -38,6 +70,10 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
     ? (rawStyleConfig as Record<string, unknown>)
     : null;
 
+  const widgetStyleMap = styleConfig?.widgets && typeof styleConfig.widgets === "object"
+    ? (styleConfig.widgets as Record<string, Record<string, unknown>>)
+    : {};
+
   const activeWallpaperValue = String(styleConfig?.wallpaper ?? styleConfig?.activeWallpaper ?? "wp1");
   const activeWallpaper = (() => {
     const normalized = activeWallpaperValue.trim();
@@ -59,7 +95,7 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
   };
 
   const gridRef = React.useRef<HTMLDivElement>(null);
-  const [cellPx, setCellPx] = React.useState(96);
+  const [cellPx, setCellPx] = React.useState<number | null>(null);
   const [isSmallScreen, setIsSmallScreen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
   const effectiveGridCols = isSmallScreen ? MOBILE_GRID_COLS : GRID_COLS;
@@ -195,6 +231,7 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
   }, [baseWidgets, isSmallScreen]);
 
   React.useEffect(() => {
+    setCellPx(null);
     const el = gridRef.current;
     if (!el) return;
     const compute = () => {
@@ -216,11 +253,8 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
 
   return (
     <div
-      className="relative min-h-screen flex flex-col overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:px-8 transition-colors duration-300"
-      style={{
-        background: activeWallpaper,
-        fontFamily: activeFont.family,
-      }}
+      className="relative min-h-screen flex flex-col overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:px-8"
+      style={getWallpaperStyle(activeWallpaper)}
     >
 
 
@@ -230,7 +264,7 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
 
       <div className="relative z-10 mx-auto w-full max-w-200 px-4 flex-1 flex flex-col sm:px-6 lg:px-8">
         {/* Centered Profile Bar */}
-        <div className="mb-10 flex justify-center animate-in fade-in duration-700 sm:mb-12">
+        <div className="mb-10 flex justify-center sm:mb-12">
           <div className="flex w-fit min-w-52 items-center gap-3 rounded-full border border-white/20 bg-white/10 px-3 py-2 shadow-md shadow-black/20 backdrop-blur-md transition-all duration-300 ease-out hover:scale-[1.01] hover:shadow-lg hover:shadow-black/25 sm:min-w-72 sm:px-5 sm:py-3 lg:min-w-80">
             <div className="flex size-10 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-blue-600 text-sm font-black text-white shadow-md ring-2 ring-white/20 transition-all duration-300 ease-out hover:scale-105 sm:size-12 sm:text-base">
               {profileInitial}
@@ -244,14 +278,39 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
 
         <div
           ref={gridRef}
-          className="grid w-full animate-in fade-in duration-1000 delay-150"
+          className="grid w-full"
           style={{
             gridTemplateColumns: `repeat(${effectiveGridCols}, 1fr)`,
-            gridTemplateRows: `repeat(${totalRows}, ${cellPx}px)`,
+            gridTemplateRows: cellPx !== null ? `repeat(${totalRows}, ${cellPx}px)` : undefined,
             gap: `${GAP_PX}px`,
+            visibility: cellPx !== null ? "visible" : "hidden",
           }}
         >
-          {widgets.map((widget) => (
+          {cellPx !== null && widgets.map((widget) => (
+            (() => {
+              const widgetStyleRaw = widgetStyleMap[widget.id];
+              const widgetStyle =
+                widgetStyleRaw && typeof widgetStyleRaw === "object"
+                  ? (widgetStyleRaw as Record<string, unknown>)
+                  : {};
+              const widgetFontId = typeof widgetStyle.fontStyle === "string" ? widgetStyle.fontStyle : activeFontId;
+              const widgetFont = FONTS.find((font) => font.id === widgetFontId) || activeFont;
+              const roundness = widgetStyle.roundness;
+              const widgetWallpaper = typeof widgetStyle.wallpaper === "string" ? widgetStyle.wallpaper : undefined;
+              const widgetWallpaperOpacity = Number.isFinite(Number(widgetStyle.wallpaperOpacity))
+                ? Number(widgetStyle.wallpaperOpacity)
+                : undefined;
+
+              const cornerRoundness = roundness && typeof roundness === "object"
+                ? {
+                    topLeft: Number((roundness as Record<string, unknown>).topLeft ?? themeCfg.roundness),
+                    topRight: Number((roundness as Record<string, unknown>).topRight ?? themeCfg.roundness),
+                    bottomLeft: Number((roundness as Record<string, unknown>).bottomLeft ?? themeCfg.roundness),
+                    bottomRight: Number((roundness as Record<string, unknown>).bottomRight ?? themeCfg.roundness),
+                  }
+                : undefined;
+
+              return (
             <DashboardSocialWidget
               key={widget.id}
               data={widget}
@@ -260,7 +319,14 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
               frostIntensity={themeCfg.frostIntensity}
               surfaceTint={themeCfg.surfaceTint}
               roundness={themeCfg.roundness}
+              fontFamily={widgetFont.family}
+              widgetWallpaper={widgetWallpaper}
+              widgetWallpaperOpacity={widgetWallpaperOpacity}
+              cornerRoundness={cornerRoundness}
+              disableTransitions
             />
+              );
+            })()
           ))}
         </div>
 

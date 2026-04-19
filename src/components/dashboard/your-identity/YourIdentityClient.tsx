@@ -1,20 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { X, Palette, Check, RefreshCcw, Save, Eye, Pencil, Shield, Globe, Lock } from "lucide-react";
+import { X, Palette, Check, RefreshCcw, Save, Eye, Pencil, Shield, Globe, Lock, Upload, Percent, Sparkles, ImageOff } from "lucide-react";
 import {
   DashboardSocialWidget,
 } from "@/components/dashboard/widgets/SocialWidget";
-import { SOCIAL_PLATFORMS } from "@/components/dashboard/widgets/widget-config";
+import { SOCIAL_PLATFORMS, WIDGET_TYPE_CONFIG } from "@/components/dashboard/widgets/widget-config";
 import { AddWidgetModal } from "./AddWidgetModal";
 import { EditWidgetModal } from "./EditWidgetModal";
 import { WallpaperUploadModal } from "./WallpaperUploadModal";
 import useAuthStore from "@/stores/authStore";
-import { useCreateTheme, useDeleteTheme, useGetCustomThemes, useGetDefaultThemes, useGetMyPage, useSyncPage, useUpdateTheme } from "@/hooks/usePage";
+import { useCreateTheme, useCreateWidget, useDeleteTheme, useGetCustomThemes, useGetDefaultAssets, useGetDefaultThemes, useGetMyPage, useGetUserAssets, useSyncPage, useUpdateTheme } from "@/hooks/usePage";
 import { SuccessModal } from "./SuccessModal";
 import { BRAND_NAME, STORAGE_KEYS, getPublicProfileDisplay } from "@/config/app-config";
-import type { DashboardSocialWidgetData, SocialPlatform } from "@/types/components/dashboard/widgets";
+import { api } from "@/lib/api-client";
+import { API_ENDPOINTS, QUERY_KEYS } from "@/lib/api-config";
+import type { DashboardSocialWidgetData, SocialPlatform, WidgetTypeConfig } from "@/types/components/dashboard/widgets";
 import type {
   AddWidgetOption,
   MobilePlacement,
@@ -22,6 +25,7 @@ import type {
   StyleConfig,
   SyncStatus,
   ThemeConfig,
+  WidgetStyleConfig,
 } from "@/types/components/dashboard/your-identity";
 
 export const WALLPAPERS: string[] = [
@@ -47,6 +51,62 @@ const DEFAULT_WALLPAPER_BACKGROUND = WALLPAPERS[0] || "linear-gradient(135deg, #
 const THEME_WALLPAPER_COUNT = 7;
 const MAX_WALLPAPER_OPTIONS = 11;
 const MAX_CUSTOM_WALLPAPERS = MAX_WALLPAPER_OPTIONS - THEME_WALLPAPER_COUNT;
+
+function isTemporaryWidgetId(id: string) {
+  return /^w\d+(?:-\d+)?$/i.test(id.trim());
+}
+
+function extractCreatedWidgetId(response: unknown) {
+  if (!response || typeof response !== "object") return null;
+
+  const source = response as Record<string, unknown>;
+  const directId = source.id;
+  if (typeof directId === "string" && directId.trim()) return directId;
+
+  const nestedCandidates = [source.data, source.result, source.widget];
+  for (const candidate of nestedCandidates) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const candidateId = (candidate as Record<string, unknown>).id;
+    if (typeof candidateId === "string" && candidateId.trim()) return candidateId;
+  }
+
+  return null;
+}
+
+function extractCreatedWidgetPageId(response: unknown) {
+  if (!response || typeof response !== "object") return null;
+
+  const source = response as Record<string, unknown>;
+  const directPageId = source.pageId;
+  if (typeof directPageId === "string" && directPageId.trim()) return directPageId;
+
+  const nestedCandidates = [source.data, source.result, source.widget];
+  for (const candidate of nestedCandidates) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const candidatePageId = (candidate as Record<string, unknown>).pageId;
+    if (typeof candidatePageId === "string" && candidatePageId.trim()) return candidatePageId;
+  }
+
+  return null;
+}
+
+function isUuid(value: string | undefined | null) {
+  if (!value) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim());
+}
+
+function toValidUrl(value: string | undefined | null) {
+  if (!value || typeof value !== "string") return undefined;
+  const normalized = value.trim();
+  if (!normalized) return undefined;
+
+  try {
+    const parsed = new URL(normalized);
+    return parsed.toString();
+  } catch {
+    return undefined;
+  }
+}
 
 function resolveWallpaperBackground(value: string | undefined | null) {
   if (!value) return DEFAULT_WALLPAPER_BACKGROUND;
@@ -342,10 +402,14 @@ function useSquareCellSize(gridCols: number, gapPx: number) {
 
 export function YourIdentityClient() {
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const getMyPageQuery = useGetMyPage();
   const getDefaultThemesQuery = useGetDefaultThemes();
   const getCustomThemesQuery = useGetCustomThemes();
+  const getDefaultAssetsQuery = useGetDefaultAssets();
+  const getUserAssetsQuery = useGetUserAssets();
   const createThemeMutation = useCreateTheme();
+  const createWidgetMutation = useCreateWidget();
   const updateThemeMutation = useUpdateTheme();
   const deleteThemeMutation = useDeleteTheme();
   const syncPageMutation = useSyncPage();
@@ -401,7 +465,15 @@ export function YourIdentityClient() {
   const [customWallpaperColor, setCustomWallpaperColor] = useState("#6E85F0");
   const [customWallpaperValue, setCustomWallpaperValue] = useState("");
   const [isCustomWallpaperPopupOpen, setIsCustomWallpaperPopupOpen] = useState(false);
+  const [widgetCustomWallpaperColor, setWidgetCustomWallpaperColor] = useState("#6E85F0");
+  const [widgetCustomWallpaperValue, setWidgetCustomWallpaperValue] = useState("");
+  const [isWidgetCustomWallpaperPopupOpen, setIsWidgetCustomWallpaperPopupOpen] = useState(false);
   const [isThemeStudioOpen, setIsThemeStudioOpen] = useState(true);
+  const [themeWallpaperTab, setThemeWallpaperTab] = useState<"colors" | "prebuilt" | "my">("colors");
+  const [themeStudioTab, setThemeStudioTab] = useState<"theme" | "widget">("theme");
+  const [widgetAssetTab, setWidgetAssetTab] = useState<"prebuilt" | "my" | "colors">("prebuilt");
+  const [selectedWidgetForStyleId, setSelectedWidgetForStyleId] = useState<string | null>(null);
+  const [widgetStyles, setWidgetStyles] = useState<Record<string, WidgetStyleConfig>>({});
   const [wasThemeStudioOpen, setWasThemeStudioOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
@@ -411,7 +483,7 @@ export function YourIdentityClient() {
   const [localSaveStatus, setLocalSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const localSaveStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const customPromptShownRef = useRef(false);
-  const WALLPAPER_UPLOAD_API = "/api/upload/wallpaper";
+  const hasHydratedCustomWallpapersRef = useRef(false);
 
   const defaultThemes = (getDefaultThemesQuery.data?.length
     ? getDefaultThemesQuery.data
@@ -438,41 +510,89 @@ export function YourIdentityClient() {
   useEffect(() => {
     if (!userId || typeof window === "undefined") return;
 
+    hasHydratedCustomWallpapersRef.current = false;
+
     const storageKey = STORAGE_KEYS.customWallpapersByUser(userId);
+    const guestStorageKey = STORAGE_KEYS.customWallpapersByUser("guest");
     const savedCustomWallpapers = localStorage.getItem(storageKey);
+    const savedGuestCustomWallpapers = userId !== "guest"
+      ? localStorage.getItem(guestStorageKey)
+      : null;
 
-    if (!savedCustomWallpapers) {
-      setCustomWallpapers([]);
-      return;
-    }
+    const normalizeWallpapers = (raw: unknown) => {
+      const sourceArray = Array.isArray(raw)
+        ? raw
+        : raw && typeof raw === "object" && Array.isArray((raw as { customWallpapers?: unknown }).customWallpapers)
+          ? (raw as { customWallpapers: unknown[] }).customWallpapers
+          : [];
 
-    try {
-      const parsed = JSON.parse(savedCustomWallpapers);
-
-      if (!Array.isArray(parsed)) {
-        setCustomWallpapers([]);
-        return;
-      }
-
-      const normalized = parsed
+      const normalized = sourceArray
         .filter((wallpaper): wallpaper is string => typeof wallpaper === "string")
         .map((wallpaper) => resolveWallpaperBackground(wallpaper).trim())
         .filter(Boolean);
 
       const unique = Array.from(new Set(normalized));
-      const limited = unique.length > MAX_CUSTOM_WALLPAPERS
+      return unique.length > MAX_CUSTOM_WALLPAPERS
         ? unique.slice(unique.length - MAX_CUSTOM_WALLPAPERS)
         : unique;
+    };
+
+    if (!savedCustomWallpapers && !savedGuestCustomWallpapers) {
+      setCustomWallpapers((prev) => (prev.length ? prev : []));
+      hasHydratedCustomWallpapersRef.current = true;
+      return;
+    }
+
+    try {
+      const source = savedCustomWallpapers || savedGuestCustomWallpapers;
+      if (!source) {
+        hasHydratedCustomWallpapersRef.current = true;
+        return;
+      }
+
+      const parsed = JSON.parse(source);
+      const limited = normalizeWallpapers(parsed);
 
       setCustomWallpapers(limited);
+
+      // If authenticated key is missing but guest key exists, migrate guest wallpapers to user key.
+      if (!savedCustomWallpapers && savedGuestCustomWallpapers && userId !== "guest" && limited.length > 0) {
+        localStorage.setItem(storageKey, JSON.stringify(limited));
+      }
+      hasHydratedCustomWallpapersRef.current = true;
     } catch {
-      setCustomWallpapers([]);
+      setCustomWallpapers((prev) => (prev.length ? prev : []));
+      hasHydratedCustomWallpapersRef.current = true;
     }
   }, [userId]);
 
   useEffect(() => {
     if (!userId || typeof window === "undefined") return;
+    if (!hasHydratedCustomWallpapersRef.current) return;
+
     const storageKey = STORAGE_KEYS.customWallpapersByUser(userId);
+
+    // Prevent wiping an existing non-empty key with [] during page re-entry/hydration races.
+    if (customWallpapers.length === 0) {
+      const existingRaw = localStorage.getItem(storageKey);
+      if (existingRaw) {
+        try {
+          const existingParsed = JSON.parse(existingRaw);
+          const existingArray = Array.isArray(existingParsed)
+            ? existingParsed
+            : existingParsed && typeof existingParsed === "object" && Array.isArray((existingParsed as { customWallpapers?: unknown }).customWallpapers)
+              ? (existingParsed as { customWallpapers: unknown[] }).customWallpapers
+              : [];
+
+          if (existingArray.length > 0) {
+            return;
+          }
+        } catch {
+          return;
+        }
+      }
+    }
+
     localStorage.setItem(storageKey, JSON.stringify(customWallpapers));
   }, [userId, customWallpapers]);
 
@@ -539,6 +659,112 @@ export function YourIdentityClient() {
   }, [defaultThemes, apiCustomThemes, customWallpapers]);
 
   const wallpaperChoices = wallpaperOptions.slice(0, MAX_WALLPAPER_OPTIONS);
+  const colorWallpaperChoices = wallpaperChoices.filter((wallpaper) => !isImageWallpaper(wallpaper));
+  const widgetColorChoices = colorWallpaperChoices.slice(0, THEME_WALLPAPER_COUNT);
+
+  const defaultAssets = getDefaultAssetsQuery.data || [];
+  const userAssets = getUserAssetsQuery.data || [];
+  const selectedWidgetForStyle = selectedWidgetForStyleId
+    ? widgets.find((widget) => widget.id === selectedWidgetForStyleId) || null
+    : null;
+
+  const normalizeWidgetStyleMap = (value: unknown): Record<string, WidgetStyleConfig> => {
+    if (!value || typeof value !== "object") return {};
+
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => typeof key === "string" && key.trim().length > 0)
+      .map(([key, rawConfig]) => {
+        if (!rawConfig || typeof rawConfig !== "object") return [key, {} as WidgetStyleConfig] as const;
+
+        const cfg = rawConfig as Record<string, unknown>;
+        const roundnessRaw = cfg.roundness;
+        const roundness = roundnessRaw && typeof roundnessRaw === "object"
+          ? {
+            topLeft: Number((roundnessRaw as Record<string, unknown>).topLeft ?? 16),
+            topRight: Number((roundnessRaw as Record<string, unknown>).topRight ?? 16),
+            bottomLeft: Number((roundnessRaw as Record<string, unknown>).bottomLeft ?? 16),
+            bottomRight: Number((roundnessRaw as Record<string, unknown>).bottomRight ?? 16),
+          }
+          : undefined;
+
+        return [
+          key,
+          {
+            wallpaper: typeof cfg.wallpaper === "string" ? cfg.wallpaper : undefined,
+            wallpaperOpacity: Number.isFinite(Number(cfg.wallpaperOpacity))
+              ? Math.max(0, Math.min(100, Number(cfg.wallpaperOpacity)))
+              : undefined,
+            fontStyle: typeof cfg.fontStyle === "string" ? cfg.fontStyle : undefined,
+            roundness,
+          } satisfies WidgetStyleConfig,
+        ] as const;
+      });
+
+    return Object.fromEntries(entries);
+  };
+
+  const updateSelectedWidgetStyle = (patch: Partial<WidgetStyleConfig>) => {
+    if (!selectedWidgetForStyleId) return;
+
+    setWidgetStyles((prev) => {
+      const current = prev[selectedWidgetForStyleId] || {};
+      const nextRoundness = patch.roundness
+        ? {
+            ...(current.roundness || {}),
+            ...patch.roundness,
+          }
+        : current.roundness;
+
+      const next = {
+        ...current,
+        ...patch,
+        ...(nextRoundness ? { roundness: nextRoundness } : {}),
+      };
+
+      return {
+        ...prev,
+        [selectedWidgetForStyleId]: next,
+      };
+    });
+
+    handleThemeValueCustomization();
+  };
+
+  const handleSelectWidgetForStyle = (widgetId: string) => {
+    setSelectedWidgetForStyleId(widgetId);
+    setThemeStudioTab("widget");
+    setIsThemeStudioOpen(true);
+  };
+
+  const handleWidgetCornerRoundnessChange = (
+    corner: "topLeft" | "topRight" | "bottomLeft" | "bottomRight",
+    value: number,
+  ) => {
+    updateSelectedWidgetStyle({
+      roundness: {
+        [corner]: value,
+      },
+    });
+  };
+
+  const handleResetWidgetCornerRoundness = () => {
+    if (!selectedWidgetForStyleId) return;
+
+    setWidgetStyles((prev) => {
+      const current = prev[selectedWidgetForStyleId];
+      if (!current || current.roundness === undefined) return prev;
+
+      const next = { ...current };
+      delete next.roundness;
+
+      return {
+        ...prev,
+        [selectedWidgetForStyleId]: next,
+      };
+    });
+
+    handleThemeValueCustomization();
+  };
 
   const toRoundnessNumber = (value: unknown) => {
     if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -560,7 +786,8 @@ export function YourIdentityClient() {
       Number(theme.styleConfig?.frostIntensity) === Number(styleConfig?.frostIntensity) &&
       Number(theme.styleConfig?.surfaceTint) === Number(styleConfig?.surfaceTint) &&
       (theme.styleConfig?.fontStyle || "") === (styleConfig?.fontStyle || "") &&
-      toRoundnessNumber(theme.styleConfig?.roundness) === toRoundnessNumber(styleConfig?.roundness)
+      toRoundnessNumber(theme.styleConfig?.roundness) === toRoundnessNumber(styleConfig?.roundness) &&
+      JSON.stringify(normalizeWidgetStyleMap(theme.styleConfig?.widgets)) === JSON.stringify(normalizeWidgetStyleMap(styleConfig?.widgets))
     );
   };
 
@@ -613,6 +840,7 @@ export function YourIdentityClient() {
     setSurfaceTint(surfaceTint);
     setActiveFont(fontStyle);
     setActiveRoundness(typeof roundness === 'string' ? parseInt(roundness) : roundness || 16);
+    setWidgetStyles(normalizeWidgetStyleMap(theme.styleConfig?.widgets));
 
     if (source === "default") {
       setSelectedDefaultThemeId(theme.id);
@@ -660,16 +888,11 @@ export function YourIdentityClient() {
       const formData = new FormData();
       formData.append("file", selectedWallpaperFile);
 
-      const response = await fetch(WALLPAPER_UPLOAD_API, {
-        method: "POST",
-        body: formData,
-      });
+      const result = await api.post<{ url?: string; data?: { url?: string }; imageUrl?: string; result?: { url?: string } }>(
+        API_ENDPOINTS.ASSET.UPLOAD,
+        formData,
+      );
 
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const result = await response.json();
       const uploadedUrl = result?.url || result?.data?.url || result?.imageUrl || result?.result?.url;
 
       if (!uploadedUrl) {
@@ -686,7 +909,11 @@ export function YourIdentityClient() {
           ? next.slice(next.length - MAX_CUSTOM_WALLPAPERS)
           : next;
       });
-      setActiveWallpaper(uploadedWallpaper);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ASSET.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ASSET.DEFAULT }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ASSET.USER }),
+      ]);
       toast.success("Wallpaper uploaded successfully");
       closeWallpaperUploadModal();
     } catch (error: any) {
@@ -724,7 +951,7 @@ export function YourIdentityClient() {
           fontStyle: activeFont,
           wallpaper: activeWallpaper,
           roundness: activeRoundness,
-          widgets: {},
+          widgets: widgetStyles,
         },
       });
 
@@ -786,14 +1013,14 @@ export function YourIdentityClient() {
         prev.map((theme) =>
           theme.id === editingCustomThemeId
             ? {
-                ...theme,
-                ...updatedTheme,
-                styleConfig: {
-                  ...theme.styleConfig,
-                  ...updatedTheme.styleConfig,
-                  wallpaper: resolveWallpaperBackground(updatedTheme.styleConfig?.wallpaper || theme.styleConfig?.wallpaper),
-                },
-              }
+              ...theme,
+              ...updatedTheme,
+              styleConfig: {
+                ...theme.styleConfig,
+                ...updatedTheme.styleConfig,
+                wallpaper: resolveWallpaperBackground(updatedTheme.styleConfig?.wallpaper || theme.styleConfig?.wallpaper),
+              },
+            }
             : theme,
         ),
       );
@@ -847,7 +1074,31 @@ export function YourIdentityClient() {
         : next;
     });
     handleWallpaperChange(normalizedCandidate);
+    setCustomWallpaperValue("");
     setIsCustomWallpaperPopupOpen(false);
+  };
+
+  const applyCustomWidgetWallpaper = () => {
+    const candidate = (widgetCustomWallpaperValue.trim() || widgetCustomWallpaperColor).trim();
+
+    if (!candidate) {
+      toast.error("Please enter a valid color or gradient");
+      return;
+    }
+
+    const normalizedCandidate = resolveWallpaperBackground(candidate);
+
+    setCustomWallpapers((prev) => {
+      const deduped = prev.filter((wallpaper) => wallpaper !== normalizedCandidate);
+      const next = [...deduped, normalizedCandidate];
+      return next.length > MAX_CUSTOM_WALLPAPERS
+        ? next.slice(next.length - MAX_CUSTOM_WALLPAPERS)
+        : next;
+    });
+
+    updateSelectedWidgetStyle({ wallpaper: normalizedCandidate });
+    setWidgetCustomWallpaperValue("");
+    setIsWidgetCustomWallpaperPopupOpen(false);
   };
 
   const handleFrostIntensityChange = (value: number) => {
@@ -890,7 +1141,8 @@ export function YourIdentityClient() {
           themeFrost === frostIntensity &&
           themeTint === surfaceTint &&
           themeFont === activeFont &&
-          (typeof themeRoundness === 'string' ? parseInt(themeRoundness) : themeRoundness) === activeRoundness
+          (typeof themeRoundness === 'string' ? parseInt(themeRoundness) : themeRoundness) === activeRoundness &&
+          JSON.stringify(theme.styleConfig?.widgets || {}) === JSON.stringify(widgetStyles)
         ) {
           return theme;
         }
@@ -905,13 +1157,14 @@ export function YourIdentityClient() {
             surfaceTint,
             fontStyle: activeFont,
             roundness: activeRoundness,
+            widgets: widgetStyles,
           },
         };
       });
 
       return changed ? next : prev;
     });
-  }, [selectedCustomThemeId, activeWallpaper, frostIntensity, surfaceTint, activeFont, activeRoundness]);
+  }, [selectedCustomThemeId, activeWallpaper, frostIntensity, surfaceTint, activeFont, activeRoundness, widgetStyles]);
 
   // 1. Initial state load from localStorage
   useEffect(() => {
@@ -942,6 +1195,7 @@ export function YourIdentityClient() {
           if (cfg.surfaceTint !== undefined) setSurfaceTint(cfg.surfaceTint);
           if (cfg.fontStyle) setActiveFont(cfg.fontStyle);
           if (cfg.roundness !== undefined) setActiveRoundness(toRoundnessNumber(cfg.roundness));
+          if (cfg.widgets) setWidgetStyles(normalizeWidgetStyleMap(cfg.widgets));
 
           const pageTheme = pageData.themeConfig || pageData.theme;
           const pageThemeId =
@@ -1010,6 +1264,8 @@ export function YourIdentityClient() {
 
         const savedTheme = localStorage.getItem(themeKey);
         const savedWidgets = localStorage.getItem(widgetsKey);
+        const wallpapersKey = STORAGE_KEYS.customWallpapersByUser(userId);
+        const savedWallpapers = localStorage.getItem(wallpapersKey);
 
         if (savedTheme) {
           try {
@@ -1021,6 +1277,7 @@ export function YourIdentityClient() {
             if (parsed.frostIntensity !== undefined) setFrostIntensity(parsed.frostIntensity);
             if (parsed.surfaceTint !== undefined) setSurfaceTint(parsed.surfaceTint);
             if (parsed.activeFont) setActiveFont(parsed.activeFont);
+            if (parsed.widgetStyles) setWidgetStyles(normalizeWidgetStyleMap(parsed.widgetStyles));
             if (!hasApiCustomThemes && Array.isArray(parsed.customThemes)) {
               const normalizedCustomThemes = parsed.customThemes.map((theme: ThemeConfig) => ({
                 ...theme,
@@ -1037,6 +1294,26 @@ export function YourIdentityClient() {
           } catch (e) { }
         }
 
+        // Load custom wallpapers from localStorage
+        if (savedWallpapers) {
+          try {
+            const parsed = JSON.parse(savedWallpapers);
+            if (Array.isArray(parsed)) {
+              const normalized = parsed
+                .filter((wallpaper): wallpaper is string => typeof wallpaper === "string")
+                .map((wallpaper) => resolveWallpaperBackground(wallpaper).trim())
+                .filter(Boolean);
+
+              const unique = Array.from(new Set(normalized));
+              const limited = unique.length > MAX_CUSTOM_WALLPAPERS
+                ? unique.slice(unique.length - MAX_CUSTOM_WALLPAPERS)
+                : unique;
+
+              setCustomWallpapers(limited);
+            }
+          } catch (e) { }
+        }
+
         if (savedWidgets) {
           try {
             const parsed = JSON.parse(savedWidgets);
@@ -1046,6 +1323,7 @@ export function YourIdentityClient() {
           setWidgets(initialWidgets);
         }
       }
+
       setIsInitialized(true);
     };
 
@@ -1070,6 +1348,7 @@ export function YourIdentityClient() {
       frostIntensity,
       surfaceTint,
       activeFont,
+      widgetStyles,
       customThemes,
       selectedDefaultThemeId,
       selectedCustomThemeId,
@@ -1099,7 +1378,7 @@ export function YourIdentityClient() {
         clearTimeout(localSaveStatusTimeoutRef.current);
       }
     };
-  }, [widgets, activeWallpaper, frostIntensity, surfaceTint, activeFont, customThemes, selectedDefaultThemeId, selectedCustomThemeId, isInitialized]);
+  }, [widgets, activeWallpaper, frostIntensity, surfaceTint, activeFont, widgetStyles, customThemes, selectedDefaultThemeId, selectedCustomThemeId, isInitialized]);
 
   useEffect(() => {
     if (!isPreview) return;
@@ -1640,10 +1919,21 @@ export function YourIdentityClient() {
 
   const mobilePlacements = computeMobilePlacements(widgets);
 
+  useEffect(() => {
+    if (!selectedWidgetForStyleId) return;
+
+    const stillExists = widgets.some((widget) => widget.id === selectedWidgetForStyleId);
+    if (!stillExists) {
+      setSelectedWidgetForStyleId(null);
+      setThemeStudioTab("theme");
+    }
+  }, [widgets, selectedWidgetForStyleId]);
+
 
   const openEditModal = (widget: DashboardSocialWidgetData) => {
     setEditingWidgetId(widget.id);
     setEditHandle(widget.handle);
+    handleSelectWidgetForStyle(widget.id);
   };
 
   const closeEditModal = () => {
@@ -1653,6 +1943,17 @@ export function YourIdentityClient() {
 
   const deleteWidget = (id: string) => {
     setWidgets((prev) => prev.filter((w) => w.id !== id));
+    setWidgetStyles((prev) => {
+      if (!prev[id]) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+
+    if (selectedWidgetForStyleId === id) {
+      setSelectedWidgetForStyleId(null);
+      setThemeStudioTab("theme");
+    }
   };
 
   const addWidget = (option: AddWidgetOption) => {
@@ -1723,38 +2024,79 @@ export function YourIdentityClient() {
     const isUpdatingLivePage = isPublished;
 
     try {
+      let widgetsForSync = widgets;
+      let widgetStylesForSync = widgetStyles;
+
+      const tempWidgets = widgets.filter((widget) => isTemporaryWidgetId(widget.id));
+
+      if (tempWidgets.length > 0) {
+        const pageData = getMyPageQuery.data as any;
+
+        const candidatePageId = pageData?.id;
+
+        if (!candidatePageId) {
+          throw new Error("Missing valid page id for widget creation");
+        }
+
+        const createdTempWidgets = await Promise.all(
+          tempWidgets.map(async (tempWidget) => {
+            const computedFullUrl = WIDGET_TYPE_CONFIG[tempWidget.type].url(tempWidget.handle.trim());
+            const createdWidget = await createWidgetMutation.mutateAsync({
+              pageId: candidatePageId,
+              type: tempWidget.type.toUpperCase(),
+              handle: tempWidget.handle,
+              fullURL: toValidUrl(tempWidget.fullURL) || toValidUrl(computedFullUrl),
+              startCol: Math.max(0, tempWidget.startCol - 1),
+              startRow: Math.max(0, tempWidget.startRow - 1),
+              colSize: tempWidget.colSize,
+              rowSize: tempWidget.rowSize,
+              icon: toValidUrl(tempWidget.icon),
+            });
+
+            const officialId = extractCreatedWidgetId(createdWidget);
+
+            if (!officialId) {
+              throw new Error(`Missing widget id in create response for ${tempWidget.id}`);
+            }
+
+            const widgetStyle = widgetStylesForSync[tempWidget.id] || {};
+            delete widgetStylesForSync[tempWidget.id];
+            widgetStylesForSync[officialId] = widgetStyle;
+
+            return {
+              ...tempWidget,
+              id: officialId,
+              pageId: extractCreatedWidgetPageId(createdWidget) || candidatePageId,
+            } satisfies DashboardSocialWidgetData
+          }),
+        );
+
+        const syncedWidgets = widgetsForSync.filter((widget) => !isTemporaryWidgetId(widget.id));
+        widgetsForSync = [...syncedWidgets, ...createdTempWidgets];        
+
+        setWidgets(widgetsForSync);
+        setWidgetStyles(widgetStylesForSync);
+      }
+
       const selectedDefaultTheme = defaultThemes.find((theme) => theme.id === selectedDefaultThemeId);
       const selectedCustomTheme = customThemes.find((theme) => theme.id === selectedCustomThemeId);
       const selectedThemeId = selectedCustomTheme?.id || selectedDefaultTheme?.id || undefined;
 
-      // 1. Theme Config Payload - style config only (no theme metadata)
+      
       const themeConfigPayload: StyleConfig = {
         frostIntensity,
         surfaceTint,
         fontStyle: activeFont,
         wallpaper: activeWallpaper,
         roundness: activeRoundness,
-        widgets: {},
+        widgets: widgetStylesForSync,
       };
-
-      // 2. Widget Payload (Flat structure per API spec)
-      const widgetsPayload = widgets.map(w => ({
-        pageId: w.pageId,
-        type: w.type,
-        handle: w.handle,
-        fullURL: w.fullURL,
-        startCol: w.startCol,
-        startRow: w.startRow,
-        colSize: w.colSize,
-        rowSize: w.rowSize,
-        icon: w.icon,
-      }));
 
       const syncData = {
         themeId: selectedThemeId,
         themeConfig: themeConfigPayload,
         isPublished: true, // Crucial: Explicitly publish on Submit
-        widgets: widgetsPayload
+        widgets: widgetsForSync
       };
 
       await syncPageMutation.mutateAsync(syncData);
@@ -1801,8 +2143,34 @@ export function YourIdentityClient() {
     }
   };
 
-  const activeBackground = resolveWallpaperBackground(activeWallpaper);
   const currentFont = DUMMY_API_FONT_STYLES.find(f => f.id === activeFont)?.family || 'inherit';
+  const getWidgetFontFamily = (widgetId: string) => {
+    const widgetFontId = widgetStyles[widgetId]?.fontStyle || activeFont;
+    return DUMMY_API_FONT_STYLES.find((font) => font.id === widgetFontId)?.family || currentFont;
+  };
+  const getWidgetCornerRoundness = (widgetId: string) => {
+    const roundness = widgetStyles[widgetId]?.roundness;
+    if (!roundness) return undefined;
+
+    return {
+      topLeft: Number(roundness.topLeft ?? activeRoundness),
+      topRight: Number(roundness.topRight ?? activeRoundness),
+      bottomLeft: Number(roundness.bottomLeft ?? activeRoundness),
+      bottomRight: Number(roundness.bottomRight ?? activeRoundness),
+    };
+  };
+  const selectedWidgetStyle = selectedWidgetForStyleId ? (widgetStyles[selectedWidgetForStyleId] || {}) : null;
+  const selectedWidgetWallpaperOpacity = selectedWidgetStyle?.wallpaperOpacity !== undefined
+    ? Math.max(0, Math.min(100, Number(selectedWidgetStyle.wallpaperOpacity)))
+    : 58;
+  const selectedWidgetCornerRoundness = selectedWidgetForStyleId
+    ? (getWidgetCornerRoundness(selectedWidgetForStyleId) || {
+      topLeft: activeRoundness,
+      topRight: activeRoundness,
+      bottomLeft: activeRoundness,
+      bottomRight: activeRoundness,
+    })
+    : null;
   const widgetsMissingHandle = widgets.filter((widget) => !widget.handle.trim());
   const hasMissingWidgetHandles = widgetsMissingHandle.length > 0;
   const submitButtonLabel = isPublished ? "Update" : "Submit";
@@ -1810,8 +2178,8 @@ export function YourIdentityClient() {
 
   return (
     <div
-      className={`min-h-screen transition-all duration-700 relative flex flex-col items-center overflow-x-hidden ${isInitialized ? 'opacity-100' : 'opacity-0'}`}
-      style={{ background: activeBackground, fontFamily: currentFont }}
+      className={`min-h-screen relative flex flex-col items-center overflow-x-hidden ${isInitialized ? 'opacity-100' : 'opacity-0'}`}
+      style={getWallpaperStyle(activeWallpaper)}
     >
       {/* Premium Cloud Sync Status Indicator - Relocated to Top Right */}
       <div className={`fixed top-10 right-8 z-60 pointer-events-none transition-all duration-500 ease-in-out flex flex-row items-center gap-3 ${isPreview ? "opacity-0 scale-90 translate-x-4" :
@@ -1957,6 +2325,7 @@ export function YourIdentityClient() {
                     startRow: 1,
                     colSize: placement.colSpan,
                     rowSize: placement.rowSpan,
+                    widgetBackground: w.widgetBackground,
                   }}
                   motionOffset={layoutOffsets[w.id]}
                   layoutMotionEnabled={layoutMotionEnabled}
@@ -1968,6 +2337,12 @@ export function YourIdentityClient() {
                   frostIntensity={frostIntensity}
                   surfaceTint={surfaceTint}
                   roundness={activeRoundness}
+                  fontFamily={getWidgetFontFamily(w.id)}
+                  widgetWallpaper={widgetStyles[w.id]?.wallpaper}
+                  widgetWallpaperOpacity={widgetStyles[w.id]?.wallpaperOpacity}
+                  cornerRoundness={getWidgetCornerRoundness(w.id)}
+                  isSelected={selectedWidgetForStyleId === w.id}
+                  onSelect={isPreview ? undefined : () => handleSelectWidgetForStyle(w.id)}
                 />
               </div>
             );
@@ -2018,6 +2393,12 @@ export function YourIdentityClient() {
               frostIntensity={frostIntensity}
               surfaceTint={surfaceTint}
               roundness={activeRoundness}
+              fontFamily={getWidgetFontFamily(w.id)}
+              widgetWallpaper={widgetStyles[w.id]?.wallpaper}
+              widgetWallpaperOpacity={widgetStyles[w.id]?.wallpaperOpacity}
+              cornerRoundness={getWidgetCornerRoundness(w.id)}
+              isSelected={selectedWidgetForStyleId === w.id}
+              onSelect={isPreview ? undefined : () => handleSelectWidgetForStyle(w.id)}
             />
           ))}
         </div>
@@ -2100,21 +2481,340 @@ export function YourIdentityClient() {
               </div>
               <div>
                 <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Theme Studio</h2>
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-blue-200/70 dark:border-blue-400/20 bg-blue-50/80 dark:bg-blue-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">
-                  <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
-                  Live appearance
-                </div>
               </div>
             </div>
-            <button
-              onClick={() => setIsThemeStudioOpen(false)}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 outline-none size-9 flex items-center justify-center shrink-0 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-all border border-slate-200/60 dark:border-white/10 shadow-sm hover:shadow-md"
-            >
-              <X size={16} strokeWidth={3} />
-            </button>
+            {themeStudioTab === "widget" && selectedWidgetForStyle ? (
+              <button
+                type="button"
+                aria-label="Back to theme settings"
+                onClick={() => {
+                  setThemeStudioTab("theme");
+                  setSelectedWidgetForStyleId(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 outline-none size-9 flex items-center justify-center shrink-0 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-all border border-slate-200/60 dark:border-white/10 shadow-sm hover:shadow-md"
+              >
+                <span className="material-symbols-outlined text-[18px] leading-none">arrow_back</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsThemeStudioOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 outline-none size-9 flex items-center justify-center shrink-0 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-all border border-slate-200/60 dark:border-white/10 shadow-sm hover:shadow-md"
+              >
+                <X size={16} strokeWidth={3} />
+              </button>
+            )}
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar divide-y divide-slate-200/70 dark:divide-slate-800/80">
+          {themeStudioTab === "widget" && selectedWidgetForStyle && (
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-6 py-6 space-y-6">
+              <>
+                <div className="relative rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 p-3.5">
+                  <div className="text-xs font-black uppercase tracking-[0.16em] text-slate-600 dark:text-slate-300">Selected Widget</div>
+                  <div className="mt-2 text-sm font-bold text-slate-900 dark:text-white">{selectedWidgetForStyle.type}</div>
+                  <div className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">{selectedWidgetForStyle.handle}</div>
+                </div>
+
+                <div>
+                  <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase mb-4 flex items-center gap-3">
+                    Wallpaper
+                    <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                  </h3>
+
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 p-1">
+                      <button
+                        type="button"
+                        onClick={() => setWidgetAssetTab("prebuilt")}
+                        className={`px-3 py-1.5 rounded-full text-[11px] font-bold ${widgetAssetTab === "prebuilt"
+                          ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                          : "text-slate-600 dark:text-slate-300"
+                          }`}
+                      >
+                        Prebuilt
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setWidgetAssetTab("my")}
+                        className={`px-3 py-1.5 rounded-full text-[11px] font-bold ${widgetAssetTab === "my"
+                          ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                          : "text-slate-600 dark:text-slate-300"
+                          }`}
+                      >
+                        My Assets
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setWidgetAssetTab("colors")}
+                        className={`px-3 py-1.5 rounded-full text-[11px] font-bold ${widgetAssetTab === "colors"
+                          ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                          : "text-slate-600 dark:text-slate-300"
+                          }`}
+                      >
+                        Colors
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={openWallpaperUploadModal}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-950/80 px-3 py-2 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm shadow-black/5 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-white dark:hover:bg-slate-900 hover:shadow-md hover:shadow-black/10 active:translate-y-0 active:scale-[0.98]"
+                      aria-label="Upload asset"
+                    >
+                      <Upload size={14} />
+                      Upload
+                    </button>
+                  </div>
+
+                  {widgetAssetTab === "prebuilt" ? (
+                    <div className="grid grid-cols-4 gap-3">
+                      {defaultAssets.map((asset) => (
+                        <button
+                          key={asset.id}
+                          type="button"
+                          onClick={() => updateSelectedWidgetStyle({ wallpaper: asset.url })}
+                          className={`aspect-square rounded-xl border transition-all overflow-hidden ${selectedWidgetStyle?.wallpaper === asset.url
+                            ? "ring-2 ring-blue-500 border-blue-500"
+                            : "border-slate-200 dark:border-slate-700"
+                            }`}
+                          style={{
+                            backgroundImage: `url("${asset.url}")`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : widgetAssetTab === "my" ? (
+                    <div className="grid grid-cols-4 gap-3">
+                      {userAssets.map((asset) => (
+                        <button
+                          key={asset.id}
+                          type="button"
+                          onClick={() => updateSelectedWidgetStyle({ wallpaper: asset.url })}
+                          className={`aspect-square rounded-xl border transition-all overflow-hidden ${selectedWidgetStyle?.wallpaper === asset.url
+                            ? "ring-2 ring-blue-500 border-blue-500"
+                            : "border-slate-200 dark:border-slate-700"
+                            }`}
+                          style={{
+                            backgroundImage: `url("${asset.url}")`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }}
+                        />
+                      ))}
+
+                      {userAssets.length === 0 && (
+                        <div className="col-span-4 rounded-2xl border border-dashed border-slate-300/80 dark:border-slate-700 px-4 py-5 bg-slate-50/60 dark:bg-slate-900/40 flex flex-col items-center justify-center gap-3 text-center">
+                          <span className="inline-flex items-center justify-center size-11 rounded-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-sm">
+                            <ImageOff size={18} />
+                          </span>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No assets uploaded yet</p>
+                            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Upload an image to use it as a widget wallpaper.</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={openWallpaperUploadModal}
+                            className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-950/90 px-3.5 py-2 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm shadow-black/5 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-white dark:hover:bg-slate-900 hover:shadow-md hover:shadow-black/10 active:translate-y-0 active:scale-[0.98]"
+                          >
+                            <Upload size={13} />
+                            Upload asset
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="relative grid grid-cols-4 gap-3">
+                      {widgetColorChoices.map((wp, index) => (
+                        <button
+                          key={`widget-${wp}-${index}`}
+                          type="button"
+                          onClick={() => updateSelectedWidgetStyle({ wallpaper: wp })}
+                          className={`relative aspect-square rounded-full flex items-center justify-center transition-all duration-300 ${selectedWidgetStyle?.wallpaper === wp
+                            ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900 scale-100 shadow-md'
+                            : 'hover:scale-[1.08] opacity-90 hover:opacity-100 shadow-sm'
+                            }`}
+                          style={getWallpaperStyle(wp)}
+                        >
+                          {selectedWidgetStyle?.wallpaper === wp && (
+                            <span className="material-symbols-outlined text-white text-[18px] animate-in zoom-in-50 duration-200">check</span>
+                          )}
+                        </button>
+                      ))}
+
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setIsWidgetCustomWallpaperPopupOpen((prev) => !prev)}
+                          className="relative aspect-square w-full rounded-full p-0.5 transition-all duration-300 hover:scale-[1.08] shadow-sm"
+                          style={{ background: "conic-gradient(from 210deg, #22c55e, #3b82f6, #a855f7, #ec4899, #f59e0b, #22c55e)" }}
+                          aria-label="Open widget custom color picker"
+                        >
+                          <span className="absolute inset-1 rounded-full bg-white dark:bg-slate-950 flex items-center justify-center text-xl font-semibold text-fuchsia-500 dark:text-fuchsia-400">
+                            +
+                          </span>
+                        </button>
+                      </div>
+
+                      {isWidgetCustomWallpaperPopupOpen && (
+                        <div className="col-span-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-3 shadow-xl">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={widgetCustomWallpaperColor}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                setWidgetCustomWallpaperColor(value);
+                                if (!widgetCustomWallpaperValue.trim() || widgetCustomWallpaperValue.trim().startsWith("#")) {
+                                  setWidgetCustomWallpaperValue(value);
+                                }
+                              }}
+                              className="h-9 w-11 rounded-lg border border-slate-300/80 dark:border-slate-600 bg-transparent cursor-pointer"
+                              aria-label="Pick widget wallpaper color"
+                            />
+                            <input
+                              type="text"
+                              value={widgetCustomWallpaperValue}
+                              onChange={(event) => setWidgetCustomWallpaperValue(event.target.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") {
+                                  event.preventDefault();
+                                  applyCustomWidgetWallpaper();
+                                }
+                              }}
+                              placeholder="Color code or gradient"
+                              className="h-9 flex-1 rounded-lg border border-slate-300/80 dark:border-slate-600 bg-white dark:bg-slate-950 px-3 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
+                            />
+                          </div>
+
+                          <div className="mt-2.5 flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setIsWidgetCustomWallpaperPopupOpen(false)}
+                              className="h-8 rounded-lg border border-slate-300/80 dark:border-slate-600 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={applyCustomWidgetWallpaper}
+                              className="h-8 rounded-lg bg-blue-500 hover:bg-blue-600 px-3 text-xs font-bold text-white"
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-3.5">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 font-medium">
+                        <span className="inline-flex items-center justify-center size-5 rounded-full bg-blue-500/10 text-blue-500 dark:text-blue-300 dark:bg-blue-500/15">
+                          <Percent size={12} strokeWidth={3} />
+                        </span>
+                        Background Opacity
+                      </span>
+                      <span className="text-xs font-bold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-0.5 rounded-md">{selectedWidgetWallpaperOpacity}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={selectedWidgetWallpaperOpacity}
+                      onChange={(event) => updateSelectedWidgetStyle({ wallpaperOpacity: Number(event.target.value) })}
+                      className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase mb-4 flex items-center gap-3">
+                    Roundness
+                    <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                    <button
+                      type="button"
+                      onClick={handleResetWidgetCornerRoundness}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-300 transition-all hover:bg-slate-50 dark:hover:bg-slate-800"
+                    >
+                      Reset
+                    </button>
+                  </h3>
+
+                  <div className="space-y-3">
+                    {([
+                      ["topLeft", "Top Left"],
+                      ["topRight", "Top Right"],
+                      ["bottomLeft", "Bottom Left"],
+                      ["bottomRight", "Bottom Right"],
+                    ] as const).map(([cornerKey, cornerLabel]) => (
+                      <div key={cornerKey} className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{cornerLabel}</span>
+                          <span className="text-xs font-bold text-blue-500">{selectedWidgetCornerRoundness?.[cornerKey] ?? activeRoundness}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="48"
+                          value={selectedWidgetCornerRoundness?.[cornerKey] ?? activeRoundness}
+                          onChange={(event) => handleWidgetCornerRoundnessChange(cornerKey, Number(event.target.value))}
+                          className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase mb-4 flex items-center gap-3">
+                    Typography
+                    <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                  </h3>
+
+                  <div className="space-y-2.5">
+                    {DUMMY_API_FONT_STYLES.map((font) => {
+                      const isActiveFont = selectedWidgetStyle?.fontStyle === font.id;
+
+                      return (
+                        <button
+                          key={font.id}
+                          type="button"
+                          onClick={() => updateSelectedWidgetStyle({ fontStyle: font.id })}
+                          className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 ${isActiveFont
+                            ? "border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-sm"
+                            : "border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white/70 dark:bg-slate-900/70 hover:bg-white dark:hover:bg-slate-800/70"
+                            }`}
+                        >
+                          <div className="flex flex-col items-start gap-1">
+                            <span
+                              className={`text-[15px] font-bold ${isActiveFont ? "text-slate-900 dark:text-white" : "text-slate-800 dark:text-slate-300"}`}
+                              style={{ fontFamily: font.family }}
+                            >
+                              {font.name}
+                            </span>
+                            <span
+                              className="text-[11px] text-slate-500 dark:text-slate-500 uppercase tracking-wide"
+                              style={{ fontFamily: font.family }}
+                            >
+                              {font.family.split(",")[0].replace(/["']/g, "")}
+                            </span>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isActiveFont ? 'bg-blue-500 border-blue-500 transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
+                            }`}>
+                            {isActiveFont && <Check size={12} className="text-white" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            </div>
+          )}
+
+          <div className={`${themeStudioTab === "theme" || !selectedWidgetForStyle ? "flex-1 min-h-0 overflow-y-auto custom-scrollbar divide-y divide-slate-200/70 dark:divide-slate-800/80" : "hidden"}`}>
             {/* Default Themes */}
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-50 fill-mode-both px-6 py-6 first:pt-6">
               <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase mb-4 flex items-center gap-3">
@@ -2222,95 +2922,207 @@ export function YourIdentityClient() {
 
             {/* Wallpaper */}
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-75 fill-mode-both px-6 py-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase">Wallpaper</h3>
-                {/* <button
+              <div className="mb-4 flex items-center gap-3">
+                <h3 className="text-[10px] font-black tracking-[0.18em] text-slate-700 dark:text-slate-300 uppercase flex items-center gap-3 flex-1 min-w-0">
+                  Wallpaper
+                  <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                </h3>
+                <button
                   type="button"
                   onClick={openWallpaperUploadModal}
-                  className="text-xs font-semibold text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-950/80 px-3 py-2 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm shadow-black/5 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-white dark:hover:bg-slate-900 hover:shadow-md hover:shadow-black/10 active:translate-y-0 active:scale-[0.98]"
+                  aria-label="Upload asset"
                 >
+                  <Upload size={14} />
                   Upload
-                </button> */}
+                </button>
               </div>
-              <div className="relative grid grid-cols-4 gap-3 content-start">
-                {wallpaperChoices.map((wp, index) => (
-                  <button
-                    key={`${wp}-${index}`}
-                    onClick={() => handleWallpaperChange(wp)}
-                    className={`relative aspect-square rounded-full flex items-center justify-center transition-all duration-300 ${activeWallpaper === wp ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900 scale-100 shadow-md' : 'hover:scale-[1.08] opacity-90 hover:opacity-100 shadow-sm'
-                      }`}
-                    style={getWallpaperStyle(wp)}
-                  >
-                    {activeWallpaper === wp && (
-                      <span className="material-symbols-outlined text-white text-[18px] animate-in zoom-in-50 duration-200">check</span>
-                    )}
-                  </button>
-                ))}
-
-                <div className="relative">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 p-1">
                   <button
                     type="button"
-                    onClick={() => setIsCustomWallpaperPopupOpen((prev) => !prev)}
-                    className="relative aspect-square w-full rounded-full p-0.5 transition-all duration-300 hover:scale-[1.08] shadow-sm"
-                    style={{ background: "conic-gradient(from 210deg, #22c55e, #3b82f6, #a855f7, #ec4899, #f59e0b, #22c55e)" }}
-                    aria-label="Open custom color picker"
+                    onClick={() => setThemeWallpaperTab("prebuilt")}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 ${themeWallpaperTab === "prebuilt"
+                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                      : "text-slate-600 dark:text-slate-300"
+                      }`}
                   >
-                    <span className="absolute inset-1 rounded-full bg-white dark:bg-slate-950 flex items-center justify-center text-xl font-semibold text-fuchsia-500 dark:text-fuchsia-400">
-                      +
-                    </span>
+                    <Sparkles size={12} />
+                    Prebuilt
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setThemeWallpaperTab("my")}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 ${themeWallpaperTab === "my"
+                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                      : "text-slate-600 dark:text-slate-300"
+                      }`}
+                  >
+                    My Assets
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setThemeWallpaperTab("colors")}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold ${themeWallpaperTab === "colors"
+                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                      : "text-slate-600 dark:text-slate-300"
+                      }`}
+                  >
+                    Colors
                   </button>
                 </div>
-
-                {isCustomWallpaperPopupOpen && (
-                  <div className="col-span-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-3 shadow-xl">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={customWallpaperColor}
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          setCustomWallpaperColor(value);
-                          if (!customWallpaperValue.trim() || customWallpaperValue.trim().startsWith("#")) {
-                            setCustomWallpaperValue(value);
-                          }
-                        }}
-                        className="h-9 w-11 rounded-lg border border-slate-300/80 dark:border-slate-600 bg-transparent cursor-pointer"
-                        aria-label="Pick wallpaper color"
-                      />
-                      <input
-                        type="text"
-                        value={customWallpaperValue}
-                        onChange={(event) => setCustomWallpaperValue(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            applyCustomWallpaper();
-                          }
-                        }}
-                        placeholder="Color code or gradient"
-                        className="h-9 flex-1 rounded-lg border border-slate-300/80 dark:border-slate-600 bg-white dark:bg-slate-950 px-3 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
-                      />
-                    </div>
-
-                    <div className="mt-2.5 flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setIsCustomWallpaperPopupOpen(false)}
-                        className="h-8 rounded-lg border border-slate-300/80 dark:border-slate-600 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={applyCustomWallpaper}
-                        className="h-8 rounded-lg bg-blue-500 hover:bg-blue-600 px-3 text-xs font-bold text-white"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
+              {themeWallpaperTab === "prebuilt" ? (
+                <div className="grid grid-cols-4 gap-3">
+                  {defaultAssets.map((asset) => (
+                    <button
+                      key={asset.id}
+                      type="button"
+                      onClick={() => handleWallpaperChange(asset.url)}
+                      className={`aspect-square rounded-xl border transition-all overflow-hidden ${activeWallpaper === asset.url
+                        ? "ring-2 ring-blue-500 border-blue-500"
+                        : "border-slate-200 dark:border-slate-700"
+                        }`}
+                      style={{
+                        backgroundImage: `url("${asset.url}")`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
+                    />
+                  ))}
+
+                  {defaultAssets.length === 0 && (
+                    <div className="col-span-4 rounded-2xl border border-dashed border-slate-300/80 dark:border-slate-700 px-4 py-5 text-xs text-slate-500 dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40 flex flex-col items-center justify-center gap-2 text-center">
+                      <span className="inline-flex items-center justify-center size-10 rounded-full bg-blue-500/10 text-blue-500 dark:text-blue-300 dark:bg-blue-500/15">
+                        <Sparkles size={18} />
+                      </span>
+                      <div>
+                        <p className="font-semibold text-slate-700 dark:text-slate-200">No prebuilt wallpapers yet</p>
+                        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Try a custom upload or switch to Colors.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : themeWallpaperTab === "my" ? (
+                <div className="grid grid-cols-4 gap-3">
+                  {userAssets.map((asset) => (
+                    <button
+                      key={asset.id}
+                      type="button"
+                      onClick={() => handleWallpaperChange(asset.url)}
+                      className={`aspect-square rounded-xl border transition-all overflow-hidden ${activeWallpaper === asset.url
+                        ? "ring-2 ring-blue-500 border-blue-500"
+                        : "border-slate-200 dark:border-slate-700"
+                        }`}
+                      style={{
+                        backgroundImage: `url("${asset.url}")`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
+                    />
+                  ))}
+
+                  {userAssets.length === 0 && (
+                    <div className="col-span-4 rounded-2xl border border-dashed border-slate-300/80 dark:border-slate-700 px-4 py-5 bg-slate-50/60 dark:bg-slate-900/40 flex flex-col items-center justify-center gap-3 text-center">
+                      <span className="inline-flex items-center justify-center size-11 rounded-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-sm">
+                        <ImageOff size={18} />
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No assets uploaded yet</p>
+                        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Upload an image to use it here as a wallpaper.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={openWallpaperUploadModal}
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-950/90 px-3.5 py-2 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm shadow-black/5 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-white dark:hover:bg-slate-900 hover:shadow-md hover:shadow-black/10 active:translate-y-0 active:scale-[0.98]"
+                      >
+                        <Upload size={13} />
+                        Upload asset
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="relative grid grid-cols-4 gap-3 content-start">
+                  {colorWallpaperChoices.map((wp, index) => (
+                    <button
+                      key={`${wp}-${index}`}
+                      onClick={() => handleWallpaperChange(wp)}
+                      className={`relative aspect-square rounded-full flex items-center justify-center transition-all duration-300 ${activeWallpaper === wp ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900 scale-100 shadow-md' : 'hover:scale-[1.08] opacity-90 hover:opacity-100 shadow-sm'
+                        }`}
+                      style={getWallpaperStyle(wp)}
+                    >
+                      {activeWallpaper === wp && (
+                        <span className="material-symbols-outlined text-white text-[18px] animate-in zoom-in-50 duration-200">check</span>
+                      )}
+                    </button>
+                  ))}
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomWallpaperPopupOpen((prev) => !prev)}
+                      className="relative aspect-square w-full rounded-full p-0.5 transition-all duration-300 hover:scale-[1.08] shadow-sm"
+                      style={{ background: "conic-gradient(from 210deg, #22c55e, #3b82f6, #a855f7, #ec4899, #f59e0b, #22c55e)" }}
+                      aria-label="Open custom color picker"
+                    >
+                      <span className="absolute inset-1 rounded-full bg-white dark:bg-slate-950 flex items-center justify-center text-xl font-semibold text-fuchsia-500 dark:text-fuchsia-400">
+                        +
+                      </span>
+                    </button>
+                  </div>
+
+                  {isCustomWallpaperPopupOpen && (
+                    <div className="col-span-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-3 shadow-xl">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={customWallpaperColor}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            setCustomWallpaperColor(value);
+                            if (!customWallpaperValue.trim() || customWallpaperValue.trim().startsWith("#")) {
+                              setCustomWallpaperValue(value);
+                            }
+                          }}
+                          className="h-9 w-11 rounded-lg border border-slate-300/80 dark:border-slate-600 bg-transparent cursor-pointer"
+                          aria-label="Pick wallpaper color"
+                        />
+                        <input
+                          type="text"
+                          value={customWallpaperValue}
+                          onChange={(event) => setCustomWallpaperValue(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              applyCustomWallpaper();
+                            }
+                          }}
+                          placeholder="Color code or gradient"
+                          className="h-9 flex-1 rounded-lg border border-slate-300/80 dark:border-slate-600 bg-white dark:bg-slate-950 px-3 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
+                        />
+                      </div>
+
+                      <div className="mt-2.5 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsCustomWallpaperPopupOpen(false)}
+                          className="h-8 rounded-lg border border-slate-300/80 dark:border-slate-600 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={applyCustomWallpaper}
+                          className="h-8 rounded-lg bg-blue-500 hover:bg-blue-600 px-3 text-xs font-bold text-white"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Glass Material */}

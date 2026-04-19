@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, useRef } from "react";
-import { Check, Palette, RefreshCcw, X } from "lucide-react";
+import { Check, RefreshCcw, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import type { WallpaperUploadModalProps } from "@/types/components/dashboard/your-identity";
 
@@ -52,11 +52,11 @@ export function WallpaperUploadModal({
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="size-11 rounded-2xl bg-linear-to-br from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30 flex items-center justify-center">
-                <Palette size={20} />
+                <Upload size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight">Upload Wallpaper</h3>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Select an image and we&apos;ll add the returned URL to wallpapers.</p>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight">Upload Asset</h3>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Select an image and we&apos;ll add it to your assets.</p>
               </div>
             </div>
 
@@ -88,21 +88,21 @@ export function WallpaperUploadModal({
                 {!previewUrl && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/95">
                     <span className="material-symbols-outlined text-[30px]">photo_library</span>
-                    <span className="text-[11px] font-black uppercase tracking-[0.22em]">Choose image</span>
+                    <span className="text-[11px] font-black uppercase tracking-[0.22em]">Choose asset</span>
                   </div>
                 )}
               </div>
 
               <div className="flex-1 space-y-3">
                 <div>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">Click to pick a file</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">Click to pick an asset</p>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">PNG, JPG, WebP, or GIF.</p>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
                   {selectedFile ? (
                     <>
-                      <span className="block font-bold text-slate-700 dark:text-slate-200">Selected file</span>
+                      <span className="block font-bold text-slate-700 dark:text-slate-200">Selected asset</span>
                       <span className="block mt-1 break-all">{selectedFile.name}</span>
                     </>
                   ) : (
@@ -128,7 +128,7 @@ export function WallpaperUploadModal({
               className="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-linear-to-r from-blue-500 to-indigo-500 text-sm font-black text-white shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {isUploading ? <RefreshCcw size={16} className="animate-spin" /> : <Check size={16} strokeWidth={3} />}
-              {isUploading ? "Uploading..." : "Upload Wallpaper"}
+              {isUploading ? "Uploading..." : "Upload Asset"}
             </button>
           </div>
         </div>

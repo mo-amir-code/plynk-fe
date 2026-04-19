@@ -43,8 +43,14 @@ export type Wallpaper = {
  */
 export type WidgetStyleConfig = {
   wallpaper?: string;
+  wallpaperOpacity?: number;
   fontStyle?: string;
-  roundness?: string | number;
+  roundness?: {
+    topLeft?: number;
+    topRight?: number;
+    bottomLeft?: number;
+    bottomRight?: number;
+  };
 };
 
 /**
