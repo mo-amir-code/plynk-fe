@@ -165,6 +165,42 @@ export const useClaimUsername = () => {
 };
 
 /**
+ * Hook: useVerifyOTP
+ * Mutation hook to verify email with OTP
+ */
+export const useVerifyOTP = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { email: string; code: string }) => {
+      return await api.post<AuthResponse>(API_ENDPOINTS.AUTH.VERIFY_OTP, data);
+    },
+    onSuccess: async (result) => {
+      if (result?.token) {
+        setAuthCookie(result.token);
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.AUTH.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PAGE.ALL }),
+      ]);
+    },
+  });
+};
+
+/**
+ * Hook: useResendOTP
+ * Mutation hook to resend verification code
+ */
+export const useResendOTP = () => {
+  return useMutation({
+    mutationFn: async (data: { email: string }) => {
+      return await api.post<unknown>(API_ENDPOINTS.AUTH.RESEND_OTP, data);
+    },
+  });
+};
+
+/**
  * Hook: useLogout
  * Mutation hook for user logout
  */

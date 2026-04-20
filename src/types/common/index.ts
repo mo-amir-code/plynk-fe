@@ -15,6 +15,7 @@ export interface User {
 	fullName: string;
 	username: string | null;
 	role: UserRole;
+	isVerified: boolean;
 	tnc: boolean;
 	createdAt: string;
 	updatedAt: string;

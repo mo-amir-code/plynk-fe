@@ -21,6 +21,8 @@ export const API_ENDPOINTS = {
     GOOGLE: "/auth/google",
     CHECK_USERNAME: (username: string) => `/auth/check-username/${username}`,
     CLAIM_USERNAME: "/auth/claim-username",
+    VERIFY_OTP: "/auth/verify-otp",
+    RESEND_OTP: "/auth/resend-otp",
   },
   USERS: {
     ME: "/users/me",

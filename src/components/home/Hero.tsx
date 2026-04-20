@@ -20,7 +20,9 @@ export function Hero() {
             Ditch the boring lists. Snap your socials, videos, and projects into a stunning, interactive widget grid in minutes.
           </p>
           <div className="animate-fade-up delay-300 flex flex-wrap gap-4">
-            <Link href="/auth/signup" className="inline-block btn-primary px-8 sm:px-12 py-3 sm:py-5 bg-primary text-white rounded-full text-lg sm:text-xl font-bold shadow-2xl shadow-primary/30 transition-transform hover:scale-105 cursor-pointer">
+            <Link href="/auth/signup" className="inline-block relative group overflow-hidden px-10 py-4 bg-linear-to-b from-primary/95 to-primary/85 hover:brightness-105 text-white/90 rounded-full text-lg font-bold shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_1px_2px_rgba(0,0,0,0.1),0_12px_24px_rgba(0,0,0,0.12)] ring-1 ring-white/10 transition-all duration-300 cursor-pointer active:scale-[0.98]">
+              {/* Bright Shine effect */}
+              <div className="absolute inset-0 w-1/2 h-full bg-linear-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-[200%] transition-transform duration-1000 ease-in-out pointer-events-none" />
               Get Started
             </Link>
           </div>

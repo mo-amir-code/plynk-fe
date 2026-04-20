@@ -33,7 +33,7 @@ export default function FAQPage() {
             </p>
             <Link
               href="/contact" 
-              className="inline-flex items-center justify-center rounded-full bg-slate-900 dark:bg-white px-8 py-3.5 text-sm sm:text-base font-bold text-white dark:text-slate-900 shadow-md hover:shadow-xl transition-all active:scale-95 hover:-translate-y-0.5 cursor-pointer"
+              className="inline-flex items-center justify-center px-8 py-3.5 bg-linear-to-b from-slate-900 to-slate-800 dark:from-white dark:to-slate-200 text-white dark:text-slate-900 rounded-full text-sm sm:text-base font-bold shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-white/10 dark:ring-black/5 transition-all duration-300 hover:brightness-110 cursor-pointer"
             >
               Contact Support
             </Link>

@@ -85,15 +85,15 @@ export function Navbar() {
           <ThemeToggle />
           {!isAuth ? (
             <>
-              <Link href="/auth/signin" className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors duration-200 rounded-lg hover:bg-primary/5 cursor-pointer">
+              <Link href="/auth/signin" className="px-6 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200 bg-transparent hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all duration-300 cursor-pointer">
                 Log in
               </Link>
-              <Link href="/auth/signup" className="btn-primary px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 cursor-pointer">
+              <Link href="/auth/signup" className="relative group overflow-hidden px-5 py-3 bg-linear-to-b from-primary/95 to-primary/85 hover:brightness-90 text-white/90 rounded-xl text-sm font-bold shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-white/10 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
                 Sign up free
               </Link>
             </>
           ) : (
-             <Link href="/dashboard" className="btn-primary flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-sm font-bold shadow-lg transition-all duration-200 cursor-pointer">
+             <Link href="/dashboard" className="relative group overflow-hidden flex items-center gap-2 px-5 py-3 bg-linear-to-b from-slate-900 to-slate-800 dark:from-white dark:to-slate-200 text-white dark:text-slate-900 rounded-xl text-sm font-bold shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-white/10 dark:ring-black/5 transition-all duration-300 cursor-pointer active:scale-[0.98]">
                 Go to Dashboard
                 <ArrowRight className="size-4" />
              </Link>
@@ -133,7 +133,7 @@ export function Navbar() {
                 <Link href="/auth/signin" className="flex-1 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-primary hover:text-primary transition-all text-center cursor-pointer">
                   Log in
                 </Link>
-                <Link href="/auth/signup" className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-bold text-center cursor-pointer">
+                <Link href="/auth/signup" className="flex-1 py-2.5 bg-linear-to-b from-primary/95 to-primary/85 hover:brightness-90 text-white/90 rounded-2xl text-sm font-bold shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-white/10 transition-all text-center cursor-pointer">
                   Sign up free
                 </Link>
               </div>

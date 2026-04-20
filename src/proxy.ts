@@ -29,14 +29,16 @@ export function proxy(request: NextRequest) {
   // console.log("Payload from token:", payload);
   const isValid = payload && !isTokenExpired(payload);
   const hasUsername = isValid && !!payload.username;
+  const isVerified = isValid && payload.isVerified === true;
 
   const isAuthRoute = AUTH_ROUTES.includes(pathname);
+  const isVerifyEmailRoute = pathname === "/auth/verify-email";
   const isProtectedRoute = pathname.startsWith("/dashboard");
   const isOnboardingRoute = pathname === "/onboarding";
 
   // 1. Logged Out Redirects
   if (!isValid) {
-    if (isProtectedRoute || isOnboardingRoute) {
+    if (isProtectedRoute || isOnboardingRoute || isVerifyEmailRoute) {
       const response = NextResponse.redirect(new URL("/auth/signin", request.url));
       if (token) response.cookies.delete(COOKIE_NAME);
       return response;
@@ -44,18 +46,31 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Logged In Redirects
-  // If user is logged in but trying to access auth pages (signin/signup)
+  // 2. Unverified User Redirects (The Cage)
+  // If user is logged in but NOT verified, they ONLY belong on the verify-email page.
+  if (!isVerified) {
+    if (!isVerifyEmailRoute) {
+      return NextResponse.redirect(new URL("/auth/verify-email", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // 3. Verified User Redirects
+  // If they are verified, they should NEVER be on the verify-email page.
+  if (isVerifyEmailRoute) {
+    return NextResponse.redirect(new URL(hasUsername ? "/dashboard" : "/onboarding", request.url));
+  }
+
+  // 4. Auth Page Redirects (Already logged in)
   if (isAuthRoute) {
     return NextResponse.redirect(new URL(hasUsername ? "/dashboard" : "/onboarding", request.url));
   }
 
-  // If user is logged in but doesn't have a username, they MUST be on /onboarding
+  // 5. Onboarding & Username Redirects
   if (!hasUsername && isProtectedRoute) {
     return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 
-  // If user is logged in AND has a username, they CANNOT be on /onboarding
   if (hasUsername && isOnboardingRoute) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }

@@ -196,7 +196,9 @@ export default function AboutPage() {
             <h2 className="relative z-10 text-3xl sm:text-6xl font-black text-white dark:text-slate-900 mb-8 sm:mb-10 tracking-tighter leading-tight">
               Start your <br className="sm:hidden" /> journey today.
             </h2>
-            <Link href="/auth/signup" className="relative z-10 group inline-flex items-center gap-3 rounded-full bg-primary px-8 sm:px-12 py-3.5 sm:py-5 text-lg sm:text-xl font-black text-white shadow-2xl shadow-primary/40 hover:-translate-y-1 transition-all active:scale-95 cursor-pointer">
+            <Link href="/auth/signup" className="relative z-10 group overflow-hidden px-8 sm:px-12 py-4 sm:py-5 inline-flex items-center gap-3 bg-linear-to-b from-primary/95 to-primary/85 hover:brightness-105 text-white/90 rounded-full text-lg sm:text-xl font-bold shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-white/10 transition-all duration-300 cursor-pointer">
+              {/* Bright Shine effect */}
+              <div className="absolute inset-0 w-1/2 h-full bg-linear-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-[200%] transition-transform duration-1000 ease-in-out pointer-events-none" />
               <span>Get Started</span>
               <Zap className="w-5 h-5 sm:w-6 sm:h-6 group-hover:fill-current transition-all" />
             </Link>
