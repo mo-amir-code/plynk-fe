@@ -5,8 +5,11 @@ import { FAQAccordion } from "@/components/faq/FAQAccordion";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "FAQ | Plynk",
-  description: "Everything you need to know about setting up your stunning new creative hub with Plynk.",
+  title: "Frequently Asked Questions | Plynk Support",
+  description: "Find answers to all your questions about Plynk—the most artistic bio-link hub. Learn about widgets, customization, privacy, and how to get started.",
+  alternates: {
+    canonical: "/faq",
+  },
 };
 
 export default function FAQPage() {

@@ -25,12 +25,12 @@ export function Footer() {
             <div className="col-span-1 md:col-span-4 lg:col-span-5">
               <Link href="/" className="flex items-center gap-2.5 mb-5 sm:mb-6 group cursor-pointer w-fit">
                 <div className="size-10 sm:size-12 rounded-xl overflow-hidden">
-                  <img src="/logo.svg" alt="plynk logo" className="w-full h-full object-cover" />
+                  <img src="/logo.svg" alt={`${BRAND_NAME} - Your Personal Identity Hub`} className="w-full h-full object-cover" />
                 </div>
                 <span className="text-xl sm:text-2xl font-bold tracking-[-0.03em] text-slate-900 dark:text-slate-100">plynk</span>
               </Link>
               <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 max-w-sm font-medium leading-relaxed">
-                One Link. Everything you are.
+                Connect your world with a single link. The ultimate hub for creators, artists, and developers.
               </p>
             </div>
             
@@ -45,6 +45,7 @@ export function Footer() {
                         <Link 
                           className="hover:text-primary dark:hover:text-primary transition-colors duration-200 relative group inline-block py-0.5" 
                           href={link.href}
+                          aria-label={`Go to ${link.name} page`}
                         >
                           {link.name}
                           <span className="absolute bottom-0 left-0 w-0 h-px bg-primary transition-all duration-300 group-hover:w-full"></span>
@@ -60,7 +61,14 @@ export function Footer() {
                 <h4 className="font-bold mb-4 sm:mb-6 text-slate-900 dark:text-slate-100 uppercase tracking-wider text-xs">Social</h4>
                 <div className="flex gap-3">
                   {footerSocials.map((icon) => (
-                    <a key={icon.id} href={icon.href} target="_blank" rel="noopener noreferrer" className={`size-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-slate-400 border border-slate-200 dark:border-slate-800 transition-all duration-300 hover:-translate-y-1 shadow-sm group ${icon.color}`}>
+                    <a 
+                      key={icon.id} 
+                      href={icon.href} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      aria-label={`Follow Plynk on ${icon.id}`}
+                      className={`size-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center text-slate-400 border border-slate-200 dark:border-slate-800 transition-all duration-300 hover:-translate-y-1 shadow-sm group ${icon.color}`}
+                    >
                       {icon.id === 'instagram' ? (
                         <Instagram size={18} className="transition-colors duration-300 grayscale group-hover:grayscale-0" />
                       ) : (
