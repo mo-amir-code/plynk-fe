@@ -121,7 +121,7 @@ export function ForgotPasswordForm() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full btn-primary px-5 py-3.5 bg-primary text-white rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-primary/20 disabled:hover:translate-y-0"
+                className="w-full relative group overflow-hidden px-5 py-4 bg-linear-to-b from-primary/95 to-primary/85 hover:brightness-90 text-white/90 rounded-2xl text-sm sm:text-base font-bold shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-white/10 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
               >
                 {isLoading ? (
                   <>
@@ -168,7 +168,7 @@ export function ForgotPasswordForm() {
                   setSubmitted(false);
                   setEmail("");
                 }}
-                className="w-full px-5 py-3.5 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-700 rounded-xl text-base font-bold hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary transition-all duration-200 flex items-center justify-center gap-2"
+                className="w-full px-5 py-3.5 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-1 border-slate-200 dark:border-slate-700 rounded-xl text-base font-bold hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary transition-all duration-200 flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined text-lg leading-none">edit</span>
                 Try another email

@@ -19,7 +19,7 @@ export function FounderAvatar({ src, alt, fallback, className = "", initialsClas
         <img 
           src={src} 
           alt={alt} 
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-full object-cover transition-transform duration-500"
           onError={() => setError(true)}
         />
       ) : (

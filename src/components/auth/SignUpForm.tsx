@@ -84,9 +84,8 @@ export function SignUpForm() {
     try {
       const auth = await signupMutation.mutateAsync({ email, password, fullName, tnc: agreeToTerms });
       setUser(auth.user);
-      toast.success("Account created successfully!");
-      // Redirect to onboarding or dashboard
-      router.push("/onboarding");
+      toast.success("Account created! Please verify your email.");
+      router.push("/auth/verify-email");
       router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Signup failed. Please try again.";
@@ -210,7 +209,7 @@ export function SignUpForm() {
           <button
             type="submit"
             disabled={signupMutation.isPending}
-            className="w-full btn-primary px-5 py-3.5 bg-primary text-white rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer hover:shadow-primary/30 hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-primary/20 disabled:hover:translate-y-0"
+            className="w-full relative group overflow-hidden px-5 py-4 bg-linear-to-b from-primary/95 to-primary/85 hover:brightness-90 text-white/90 rounded-2xl text-sm sm:text-base font-bold shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.05)] ring-1 ring-white/10 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
           >
             {signupMutation.isPending ? (
               <>
