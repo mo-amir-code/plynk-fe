@@ -7,8 +7,16 @@ import { FounderAvatar } from "@/components/about/FounderAvatar";
 import { Users, Code, PenTool, Sparkles, Zap, Shield, Globe, Award, Linkedin } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "About Us | Plynk",
-  description: "Meet the founders of Plynk. Amir and Shubham are on a mission to redefine digital identity for the modern creator.",
+  title: "Our Mission & Story | Plynk",
+  description: "Discover the story behind Plynk. Founded by Amir and Shubham, we're building an art-first digital identity platform for the next generation of global creators, artists, and developers.",
+  alternates: {
+    canonical: "/about",
+  },
+  openGraph: {
+    title: "The Story Behind Plynk | Redefining Digital Identity",
+    description: "Meet the team building the world's most artistic link hub. Our mission is to make the web beautiful again.",
+    url: "/about",
+  }
 };
 
 export default function AboutPage() {

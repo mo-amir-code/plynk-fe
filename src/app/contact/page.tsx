@@ -6,8 +6,11 @@ import { ContactForm } from "@/components/contact/ContactForm";
 import { Mail, MessageSquare, Globe } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Contact | Plynk",
-  description: "Get in touch with the Plynk team. We're here to help you build your perfect digital presence.",
+  title: "Contact Us | Get Help with Your Plynk Hub",
+  description: "Have questions about our widgets or premium features? Reach out to the Plynk support team. We're here to help you launch your perfect digital profile.",
+  alternates: {
+    canonical: "/contact",
+  },
 };
 
 export default function ContactPage() {
