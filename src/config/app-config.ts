@@ -60,3 +60,8 @@ export function getPublicProfileUrl(username: string) {
 export function getPublicProfileDisplay(username: string) {
   return `${APP_DOMAIN}/${username}`;
 }
+
+// Analytics Settings
+export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "";
+export const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID || "";
+

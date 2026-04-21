@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
-import { APP_ORIGIN, APP_THEME_STORAGE_KEY, BRAND_NAME } from "@/config/app-config";
+import { APP_ORIGIN, APP_THEME_STORAGE_KEY, BRAND_NAME, CLARITY_PROJECT_ID, GA_MEASUREMENT_ID } from "@/config/app-config";
 import { GlobalBackground } from "@/components/layout/GlobalBackground";
+import { GoogleAnalytics } from '@next/third-parties/google'
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_ORIGIN),
   title: {
-    default: `${BRAND_NAME} | The Ultimate Bio-Link & Identity Hub for Creators`,
-    template: `%s | ${BRAND_NAME}`,
+    default: `Plynk | The Ultimate Bio-Link & Identity Hub for Creators`,
+    template: `%s | Plynk`,
   },
   description: "Transform your online presence with Plynk. Create a stunning, high-converting bio-link hub with interactive widgets, social feeds, and artistic layouts. Perfect for creators, developers, and artists.",
   keywords: [
@@ -33,21 +35,21 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: APP_ORIGIN,
-    siteName: BRAND_NAME,
-    title: `${BRAND_NAME} | The Ultimate Personal Link Hub`,
+    siteName: "Plynk",
+    title: "Plynk | The Ultimate Personal Link Hub",
     description: "One link, infinite potential. Build your artistic bio-link hub with premium widgets and art-first layouts.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: `${BRAND_NAME} Platform Preview`,
+        alt: "Plynk Platform Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${BRAND_NAME} | Your Personal Identity Hub`,
+    title: "Plynk | Your Personal Identity Hub",
     description: "Showcase your whole world with one link. Interactive, widget-based, and art-first.",
     images: ["/og-image.png"],
   },
@@ -80,9 +82,37 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Plynk",
+    "url": APP_ORIGIN,
+    "alternateName": ["Plynk Hub", "Plynk.in"]
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Google Analytics */}
+        {GA_MEASUREMENT_ID && <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />}
+
+        {/* Microsoft Clarity */}
+        {CLARITY_PROJECT_ID && (
+          <Script id="microsoft-clarity" strategy="afterInteractive">
+            {`
+              (function(c,l,a,r,i,t,y){
+                  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+              })(window, document, "clarity", "script", "${CLARITY_PROJECT_ID}");
+            `}
+          </Script>
+        )}
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <link
           href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
           rel="stylesheet"
