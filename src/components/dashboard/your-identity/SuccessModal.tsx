@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Check, Copy, ExternalLink, Twitter, Linkedin, MessageCircle, Share2, Sparkles } from "lucide-react";
+import { Check, Copy, ExternalLink, Twitter, Linkedin, MessageCircle, Share2, Sparkles, Link } from "lucide-react";
 import { toast } from "sonner";
 import { BRAND_NAME, getPublicProfileDisplay, getPublicProfileUrl } from "@/config/app-config";
 import type { SuccessModalProps } from "@/types/components/dashboard/your-identity";
@@ -36,92 +36,98 @@ export function SuccessModal({ isOpen, onClose, username }: SuccessModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
-      {/* Backdrop with heavy blur */}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+      {/* Deepest Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-500" 
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-1000" 
         onClick={onClose}
       />
 
-      {/* Modal Container */}
-      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-4xl overflow-hidden shadow-2xl border border-slate-100 dark:border-white/5 animate-in zoom-in-95 fade-in duration-300">
+      {/* Modal Container - Deep Indigo Theme */}
+      <div className="relative w-full max-w-sm bg-[#020617] rounded-[2.5rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] border border-white/5 animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
         
-        {/* Decorative Top Gradient/Icon Section */}
-        <div className="relative h-32 flex items-center justify-center overflow-hidden bg-linear-to-br from-blue-500 to-indigo-600">
-            {/* Animated particles background */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
-                <div className="absolute top-0 left-0 w-full h-full animate-pulse">
-                    <div className="absolute top-1/4 left-1/4 size-12 bg-white rounded-full blur-2xl" />
-                    <div className="absolute bottom-1/4 right-1/4 size-16 bg-blue-300 rounded-full blur-3xl" />
+        {/* Subtle Brand Accent (Top-Edge Indigo Leak) */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-primary/30 to-transparent" />
+        
+        {/* Ambient Glow behind the card content */}
+        <div className="absolute -top-32 -left-32 size-80 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+
+        {/* Minimalist Icon Section with Moving Gradient */}
+        <div className="relative h-44 flex flex-col items-center justify-center pt-4">
+            <div className="relative">
+                {/* Sunken Glass Circle with Rotating Orange Orbit */}
+                <div className="size-20 rounded-full bg-slate-900/50 border border-white/10 shadow-inner flex items-center justify-center relative overflow-hidden group">
+                    {/* The Moving Background Gradient */}
+                    <div className="absolute inset-x-[-50%] inset-y-[-50%] bg-[conic-gradient(from_0deg,transparent,transparent,rgba(255,77,0,0.4),transparent)] animate-[spin_3s_linear_infinite]" />
+                    
+                    <div className="relative z-10 size-16 rounded-full bg-[#020617]/40 backdrop-blur-sm flex items-center justify-center">
+                        <Check className="text-white drop-shadow-[0_0_8px_rgba(255,100,0,0.5)]" size={32} strokeWidth={2.5} />
+                    </div>
                 </div>
             </div>
             
-            <div className="relative size-16 rounded-2xl bg-white shadow-xl flex items-center justify-center rotate-3 animate-in slide-in-from-bottom-4 duration-500 delay-150">
-                <div className="size-12 rounded-xl bg-emerald-500 flex items-center justify-center">
-                    <Check className="text-white" size={24} strokeWidth={3} />
-                </div>
+            <div className="mt-6 flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/5">
+                <span className="size-1 rounded-full bg-orange-500 animate-pulse" />
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Identity Verified</span>
             </div>
         </div>
 
         {/* Content Section */}
-        <div className="p-8 pt-6">
-          <div className="text-center space-y-2 mb-8">
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-2">
-              Your {BRAND_NAME} is Live! <Sparkles className="text-amber-400" size={20} fill="currentColor" />
+        <div className="px-8 pb-10">
+          <div className="text-center space-y-3 mb-10">
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              Your Canvas is Live.
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
-              Your identity is now public and ready to share with the world.
+            <p className="text-slate-500 text-xs font-medium leading-relaxed max-w-[240px] mx-auto tracking-wide">
+              Your artistic digital hub is now synchronized across our global nodes.
             </p>
           </div>
 
-          {/* URL Block */}
-          <div className="space-y-3 mb-8">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">
-              Public Link
-            </label>
-            <div className="group relative flex items-center gap-2 p-1.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 transition-all hover:border-blue-500/30">
-              <div className="flex-1 px-3 py-2 text-sm font-bold text-slate-700 dark:text-blue-400 truncate">
+          {/* URL Block - Frosted glass style */}
+          <div className="space-y-4 mb-10">
+            <div className="group relative flex items-center p-1.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md transition-all duration-300 hover:border-white/20">
+              <div className="flex-1 px-3 py-2 text-xs font-bold text-slate-300 truncate tracking-widest lowercase">
                 {publicUrl}
               </div>
               <button
                 onClick={handleCopy}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-[11px] font-black Capitalize tracking-widest transition-all duration-500 ${
                   copied 
-                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30" 
-                    : "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95"
+                    ? "bg-emerald-500 text-white" 
+                    : "bg-white text-black hover:bg-slate-200 active:scale-95 cursor-pointer"
                 }`}
               >
-                {copied ? <Check size={16} /> : <Copy size={16} />}
+                {copied ? <Check size={14} /> : <Copy size={14} />}
                 <span>{copied ? "Copied" : "Copy"}</span>
               </button>
             </div>
           </div>
 
-          {/* Share Grid */}
-          <div className="grid grid-cols-2 gap-3 mb-8">
+          {/* Social Proof Actions */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
             <a 
-              href={publicUrl} 
+              href={fullUrl} 
               target="_blank" 
-              className="flex items-center justify-center gap-2.5 p-3.5 rounded-2xl bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-500/25 hover:bg-blue-600 hover:scale-[1.02] active:scale-95 transition-all"
+              className="flex items-center justify-center gap-2 px-4 py-4 rounded-xl bg-primary text-white font-black text-[10px] uppercase tracking-widest transition-all duration-300 hover:brightness-125 shadow-[0_10px_30px_-10px_rgba(255,77,0,0.4)]"
             >
-              <ExternalLink size={18} />
-              View Page
+              <ExternalLink size={16} />
+              Visit Page
             </a>
             <button 
               onClick={shareTwitter}
-              className="flex items-center justify-center gap-2.5 p-3.5 rounded-2xl bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-black/5 dark:shadow-white/5"
+              className="flex items-center justify-center gap-2 px-4 py-4 rounded-xl bg-white/5 text-white font-black text-[10px] uppercase tracking-widest border border-white/5 transition-all duration-300 hover:bg-white/10 cursor-pointer"
             >
-              <Twitter size={18} fill="currentColor" />
+              <Twitter size={16} fill="currentColor" />
               Twitter
             </button>
           </div>
 
-          {/* Close Action */}
+          {/* Back Action */}
           <button 
             onClick={onClose}
-            className="w-full py-4 text-sm font-bold text-slate-500 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 transition-colors"
+            className="w-full text-[10px] font-black text-slate-600 hover:text-white transition-colors uppercase tracking-wider pt-4"
           >
-            Done for now
+            Return to Dashboard
           </button>
         </div>
       </div>

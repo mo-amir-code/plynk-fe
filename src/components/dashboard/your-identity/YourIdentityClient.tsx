@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { X, Palette, Check, RefreshCcw, Save, Eye, Pencil, Shield, Globe, Lock, Upload, Percent, Sparkles, ImageOff } from "lucide-react";
+import { X, Palette, Check, RefreshCcw, Save, Eye, Pencil, Shield, Globe, Lock, Upload, Percent, Sparkles, ImageOff, Trash2, Plus } from "lucide-react";
 import {
   DashboardSocialWidget,
 } from "@/components/dashboard/widgets/SocialWidget";
@@ -2406,13 +2406,13 @@ export function YourIdentityClient() {
       </div>
 
       {/* Floating Action Dock */}
-      <div className="fixed bottom-6 lg:bottom-10 left-1/2 -translate-x-1/2 z-45 flex items-center gap-1 sm:gap-2 p-2 rounded-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)]">
+      <div className="fixed bottom-6 lg:bottom-10 left-1/2 -translate-x-1/2 z-45 flex items-center gap-1.5 p-2 rounded-full bg-white/95 dark:bg-[#0c0e12]/90 backdrop-blur-2xl border border-slate-200/50 dark:border-white/5 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] dark:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)]">
         <button
           type="button"
           onClick={() => setIsThemeStudioOpen(true)}
-          className="cursor-pointer inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs sm:text-sm font-bold transition-all hover:scale-105 active:scale-95 bg-linear-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30 ring-1 ring-blue-500/20"
+          className="cursor-pointer inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs sm:text-[13px] font-bold transition-all active:opacity-80 bg-linear-to-b from-primary to-orange-600 text-white shadow-lg shadow-primary/20"
         >
-          <span className="material-symbols-outlined text-[18px] leading-none">palette</span>
+          <Palette size={16} strokeWidth={2.5} />
           <span className="hidden sm:inline">Theme</span>
         </button>
 
@@ -2420,13 +2420,15 @@ export function YourIdentityClient() {
           type="button"
           onClick={() => setIsAddModalOpen(true)}
           disabled={isPreview}
-          className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs sm:text-sm font-bold transition-all text-slate-700 dark:text-white ${isPreview ? 'opacity-40 cursor-not-allowed hidden sm:flex' : 'hover:scale-105 active:scale-95 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer'}`}
+          className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs sm:text-[13px] font-bold transition-all text-slate-700 dark:text-slate-300 ${isPreview ? 'opacity-30 cursor-not-allowed hidden sm:flex' : 'active:opacity-70 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer'}`}
         >
-          <span className="material-symbols-outlined text-[18px] leading-none">add_circle</span>
+          <div className="size-5 rounded-full border-2 border-slate-400 dark:border-white/20 flex items-center justify-center">
+            <Plus size={10} strokeWidth={4} />
+          </div>
           <span className="hidden sm:inline">Add Widget</span>
         </button>
 
-        <div className="w-px h-6 bg-slate-200 dark:bg-white/20 mx-1"></div>
+        <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1"></div>
 
         <button
           type="button"
@@ -2439,19 +2441,19 @@ export function YourIdentityClient() {
             }
             setIsPreview((prev) => !prev);
           }}
-          className={`cursor-pointer inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs sm:text-sm font-bold transition-all hover:scale-105 active:scale-95 ${isPreview
-            ? "bg-slate-900 text-white dark:bg-white dark:text-blue-600 shadow-md"
-            : "text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10"
+          className={`cursor-pointer inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs sm:text-[13px] font-bold transition-all active:opacity-80 ${isPreview
+            ? "bg-slate-900 text-white dark:bg-white dark:text-black shadow-xl"
+            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
             }`}
         >
-          {isPreview ? <Pencil size={18} /> : <Eye size={18} />}
+          {isPreview ? <Pencil size={16} /> : <Eye size={16} />}
           {isPreview ? "Edit Mode" : "Preview"}
         </button>
 
         {hasMissingWidgetHandles && !isPreview && (
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-500/12 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 text-[11px] font-bold">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200/50 dark:border-amber-500/20 text-[11px] font-bold">
             <Lock size={12} />
-            Missing handles in {widgetsMissingHandle.length} widget{widgetsMissingHandle.length > 1 ? "s" : ""}
+            Missing handles: {widgetsMissingHandle.length}
           </div>
         )}
 
@@ -2459,9 +2461,9 @@ export function YourIdentityClient() {
           type="button"
           onClick={submitWidgets}
           disabled={isSubmitting || isPreview}
-          className={`cursor-pointer inline-flex items-center gap-2 rounded-full bg-blue-500 text-white px-5 py-2.5 text-xs sm:text-sm font-black shadow-lg shadow-blue-500/30 transition-all ml-1 ${isSubmitting || isPreview ? 'opacity-40 cursor-not-allowed hidden sm:flex' : 'hover:scale-105 hover:bg-blue-600 active:scale-95'}`}
+          className={`cursor-pointer inline-flex items-center gap-2 rounded-full bg-primary text-white px-6 py-2.5 text-xs sm:text-[13px] font-black shadow-xl shadow-primary/20 transition-all ml-1 ${isSubmitting || isPreview ? 'opacity-30 cursor-not-allowed hidden sm:flex' : 'hover:brightness-110 active:opacity-90'}`}
         >
-          {isSubmitting ? <RefreshCcw size={16} className="animate-spin" /> : <Check size={18} strokeWidth={3} />}
+          {isSubmitting ? <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check size={18} strokeWidth={3} />}
           {isSubmitting ? submitButtonLoadingLabel : submitButtonLabel}
         </button>
       </div>
@@ -2469,20 +2471,23 @@ export function YourIdentityClient() {
       {/* Theme Studio Floating Panel */}
       {isThemeStudioOpen && (
         <div
-          className="fixed top-20 bottom-6 right-4 w-[min(92vw,388px)] bg-white/92 dark:bg-slate-950/90 backdrop-blur-2xl rounded-[28px] shadow-[0_28px_70px_-20px_rgba(37,99,235,0.35)] dark:shadow-[0_28px_70px_-20px_rgba(0,0,0,0.75)] z-50 flex flex-col overflow-hidden border border-blue-100/80 dark:border-blue-400/10 ring-1 ring-white/40 dark:ring-white/5 animate-in fade-in slide-in-from-right-full duration-500 ease-out"
-          style={{ fontFamily: 'Manrope, sans-serif' }}
+          className="fixed top-24 bottom-10 right-6 w-[min(92vw,400px)] bg-[#020617] backdrop-blur-2xl rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] z-50 flex flex-col overflow-hidden border border-white/5 animate-in fade-in slide-in-from-right-full duration-700 ease-out"
         >
-          <div className="h-1.5 w-full bg-linear-to-r from-blue-500 via-indigo-500 to-cyan-400" />
-          {/* Header */}
-          <div className="px-6 py-5 flex items-start justify-between gap-4 border-b border-slate-100/70 dark:border-white/5 bg-linear-to-b from-blue-50/70 to-white/70 dark:from-white/5 dark:to-slate-950/10">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2.5 rounded-2xl bg-linear-to-br from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30">
-                <Palette size={18} />
+          {/* Elite Top Accent */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-primary/40 to-transparent" />
+          
+          {/* Header Section */}
+          <div className="px-8 py-7 flex items-start justify-between gap-4 border-b border-white/5 bg-linear-to-b from-white/5 to-transparent">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/5 text-primary shadow-inner relative overflow-hidden">
+                <div className="absolute inset-0 bg-primary/10 animate-pulse" />
+                <Palette size={20} className="relative z-10" />
               </div>
               <div>
-                <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">Theme Studio</h2>
+                <h3 className="text-xl font-bold text-white tracking-tight leading-tight">Theme Studio</h3>
               </div>
             </div>
+
             {themeStudioTab === "widget" && selectedWidgetForStyle ? (
               <button
                 type="button"
@@ -2573,8 +2578,8 @@ export function YourIdentityClient() {
                           type="button"
                           onClick={() => updateSelectedWidgetStyle({ wallpaper: asset.url })}
                           className={`aspect-square rounded-xl border transition-all overflow-hidden ${selectedWidgetStyle?.wallpaper === asset.url
-                            ? "ring-2 ring-blue-500 border-blue-500"
-                            : "border-slate-200 dark:border-slate-700"
+                            ? "ring-2 ring-primary border-primary"
+                            : "border-white/10"
                             }`}
                           style={{
                             backgroundImage: `url("${asset.url}")`,
@@ -2592,8 +2597,8 @@ export function YourIdentityClient() {
                           type="button"
                           onClick={() => updateSelectedWidgetStyle({ wallpaper: asset.url })}
                           className={`aspect-square rounded-xl border transition-all overflow-hidden ${selectedWidgetStyle?.wallpaper === asset.url
-                            ? "ring-2 ring-blue-500 border-blue-500"
-                            : "border-slate-200 dark:border-slate-700"
+                            ? "ring-2 ring-primary border-primary"
+                            : "border-white/10"
                             }`}
                           style={{
                             backgroundImage: `url("${asset.url}")`,
@@ -2631,7 +2636,7 @@ export function YourIdentityClient() {
                           type="button"
                           onClick={() => updateSelectedWidgetStyle({ wallpaper: wp })}
                           className={`relative aspect-square rounded-full flex items-center justify-center transition-all duration-300 ${selectedWidgetStyle?.wallpaper === wp
-                            ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900 scale-100 shadow-md'
+                            ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-950 scale-100 shadow-md'
                             : 'hover:scale-[1.08] opacity-90 hover:opacity-100 shadow-sm'
                             }`}
                           style={getWallpaperStyle(wp)}
@@ -2695,13 +2700,13 @@ export function YourIdentityClient() {
                             >
                               Cancel
                             </button>
-                            <button
-                              type="button"
-                              onClick={applyCustomWidgetWallpaper}
-                              className="h-8 rounded-lg bg-blue-500 hover:bg-blue-600 px-3 text-xs font-bold text-white"
-                            >
-                              Add
-                            </button>
+                             <button
+                               type="button"
+                               onClick={applyCustomWidgetWallpaper}
+                               className="h-8 rounded-lg bg-primary hover:brightness-110 px-4 text-xs font-bold text-white shadow-lg shadow-primary/20"
+                             >
+                               Add
+                             </button>
                           </div>
                         </div>
                       )}
@@ -2710,13 +2715,13 @@ export function YourIdentityClient() {
 
                   <div className="mt-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-3.5">
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 font-medium">
-                        <span className="inline-flex items-center justify-center size-5 rounded-full bg-blue-500/10 text-blue-500 dark:text-blue-300 dark:bg-blue-500/15">
-                          <Percent size={12} strokeWidth={3} />
+                      <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 flex items-center gap-2">
+                        <span className="inline-flex items-center justify-center size-5 rounded-full bg-primary/10 text-primary">
+                          <Percent size={10} strokeWidth={3} />
                         </span>
                         Background Opacity
                       </span>
-                      <span className="text-xs font-bold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-0.5 rounded-md">{selectedWidgetWallpaperOpacity}%</span>
+                      <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-md">{selectedWidgetWallpaperOpacity}%</span>
                     </div>
                     <input
                       type="range"
@@ -2724,7 +2729,7 @@ export function YourIdentityClient() {
                       max="100"
                       value={selectedWidgetWallpaperOpacity}
                       onChange={(event) => updateSelectedWidgetStyle({ wallpaperOpacity: Number(event.target.value) })}
-                      className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
+                      className="w-full appearance-none bg-white/5 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
                     />
                   </div>
                 </div>
@@ -2750,18 +2755,18 @@ export function YourIdentityClient() {
                       ["bottomRight", "Bottom Right"],
                     ] as const).map(([cornerKey, cornerLabel]) => (
                       <div key={cornerKey} className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{cornerLabel}</span>
-                          <span className="text-xs font-bold text-blue-500">{selectedWidgetCornerRoundness?.[cornerKey] ?? activeRoundness}px</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="48"
-                          value={selectedWidgetCornerRoundness?.[cornerKey] ?? activeRoundness}
-                          onChange={(event) => handleWidgetCornerRoundnessChange(cornerKey, Number(event.target.value))}
-                          className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
-                        />
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] uppercase font-black tracking-widest text-slate-500">{cornerLabel}</span>
+                            <span className="text-[11px] font-bold text-primary">{selectedWidgetCornerRoundness?.[cornerKey] ?? activeRoundness}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="48"
+                            value={selectedWidgetCornerRoundness?.[cornerKey] ?? activeRoundness}
+                            onChange={(event) => handleWidgetCornerRoundnessChange(cornerKey, Number(event.target.value))}
+                            className="w-full appearance-none bg-white/5 h-1.25 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
+                          />
                       </div>
                     ))}
                   </div>
@@ -2782,9 +2787,9 @@ export function YourIdentityClient() {
                           key={font.id}
                           type="button"
                           onClick={() => updateSelectedWidgetStyle({ fontStyle: font.id })}
-                          className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 ${isActiveFont
-                            ? "border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-sm"
-                            : "border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white/70 dark:bg-slate-900/70 hover:bg-white dark:hover:bg-slate-800/70"
+                          className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 ${isActiveFont
+                            ? "border-primary/50 bg-primary/10 shadow-[0_10px_30px_-10px_rgba(255,77,0,0.2)]"
+                            : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10"
                             }`}
                         >
                           <div className="flex flex-col items-start gap-1">
@@ -2801,7 +2806,7 @@ export function YourIdentityClient() {
                               {font.family.split(",")[0].replace(/["']/g, "")}
                             </span>
                           </div>
-                          <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isActiveFont ? 'bg-blue-500 border-blue-500 transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isActiveFont ? 'bg-primary border-primary transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
                             }`}>
                             {isActiveFont && <Check size={12} className="text-white" />}
                           </div>
@@ -2830,9 +2835,9 @@ export function YourIdentityClient() {
                     <button
                       key={theme.id}
                       onClick={() => applyThemeConfig(theme, "default")}
-                      className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 ${isActive
-                        ? "border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-sm"
-                        : "border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white/70 dark:bg-slate-900/70 hover:bg-white dark:hover:bg-slate-800/70"
+                      className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-300 ${isActive
+                        ? "border-primary/50 bg-primary/10 shadow-sm"
+                        : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"
                         }`}
                     >
                       <div className="flex items-center gap-3">
@@ -2842,7 +2847,7 @@ export function YourIdentityClient() {
                           <span className="text-[11px] text-slate-500 dark:text-slate-500">{fontStyle}</span>
                         </div>
                       </div>
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isActive ? 'bg-blue-500 border-blue-500 transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isActive ? 'bg-primary border-primary transform scale-100' : 'border-white/10 bg-white/5 transform scale-90'
                         }`}>
                         {isActive && <Check size={12} className="text-white" />}
                       </div>
@@ -2872,9 +2877,9 @@ export function YourIdentityClient() {
                     return (
                       <div
                         key={theme.id}
-                        className={`w-full p-2.5 rounded-2xl border transition-all duration-200 ${isActive
-                          ? "border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-sm"
-                          : "border-slate-200/70 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70"
+                        className={`w-full p-2.5 rounded-2xl border transition-all duration-300 ${isActive
+                          ? "border-primary/50 bg-primary/10 shadow-sm"
+                          : "border-white/5 bg-white/[0.02]"
                           }`}
                       >
                         <button
@@ -2889,7 +2894,7 @@ export function YourIdentityClient() {
                               <span className="text-[11px] text-slate-500 dark:text-slate-500">{fontStyle}</span>
                             </div>
                           </div>
-                          <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isActive ? 'bg-blue-500 border-blue-500 transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isActive ? 'bg-primary border-primary transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
                             }`}>
                             {isActive && <Check size={12} className="text-white" />}
                           </div>
@@ -2899,18 +2904,16 @@ export function YourIdentityClient() {
                           <button
                             type="button"
                             onClick={() => openEditCustomThemeModal(theme)}
-                            className="h-7 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1"
+                            className="h-7 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1 cursor-pointer"
                           >
                             <Pencil size={11} />
-                            Edit
                           </button>
                           <button
                             type="button"
                             onClick={() => deleteCustomTheme(theme.id)}
-                            className="h-7 px-2.5 rounded-lg border border-red-200 dark:border-red-500/40 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50/70 dark:hover:bg-red-500/10 flex items-center gap-1"
+                            className="h-7 px-2.5 rounded-lg border border-red-200 dark:border-red-500/40 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50/70 dark:hover:bg-red-500/10 flex items-center gap-1 cursor-pointer"
                           >
-                            <X size={11} />
-                            Delete
+                            <Trash2 size={11} />
                           </button>
                         </div>
                       </div>
@@ -2930,7 +2933,7 @@ export function YourIdentityClient() {
                 <button
                   type="button"
                   onClick={openWallpaperUploadModal}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-950/80 px-3 py-2 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm shadow-black/5 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-white dark:hover:bg-slate-900 hover:shadow-md hover:shadow-black/10 active:translate-y-0 active:scale-[0.98]"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-950/80 px-3 py-2 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm shadow-black/5 backdrop-blur-md transition-all duration-200 hover:bg-white dark:hover:bg-slate-900 hover:shadow-md hover:shadow-black/10 active:translate-y-0 active:scale-[0.98] cursor-pointer"
                   aria-label="Upload asset"
                 >
                   <Upload size={14} />
@@ -2980,8 +2983,8 @@ export function YourIdentityClient() {
                       type="button"
                       onClick={() => handleWallpaperChange(asset.url)}
                       className={`aspect-square rounded-xl border transition-all overflow-hidden ${activeWallpaper === asset.url
-                        ? "ring-2 ring-blue-500 border-blue-500"
-                        : "border-slate-200 dark:border-slate-700"
+                        ? "ring-2 ring-primary border-primary"
+                        : "border-white/10"
                         }`}
                       style={{
                         backgroundImage: `url("${asset.url}")`,
@@ -3011,8 +3014,8 @@ export function YourIdentityClient() {
                       type="button"
                       onClick={() => handleWallpaperChange(asset.url)}
                       className={`aspect-square rounded-xl border transition-all overflow-hidden ${activeWallpaper === asset.url
-                        ? "ring-2 ring-blue-500 border-blue-500"
-                        : "border-slate-200 dark:border-slate-700"
+                        ? "ring-2 ring-primary border-primary"
+                        : "border-white/10"
                         }`}
                       style={{
                         backgroundImage: `url("${asset.url}")`,
@@ -3034,7 +3037,7 @@ export function YourIdentityClient() {
                       <button
                         type="button"
                         onClick={openWallpaperUploadModal}
-                        className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-950/90 px-3.5 py-2 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm shadow-black/5 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-white dark:hover:bg-slate-900 hover:shadow-md hover:shadow-black/10 active:translate-y-0 active:scale-[0.98]"
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-950/90 px-3.5 py-2 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm shadow-black/5 backdrop-blur-md transition-all duration-200 hover:bg-white dark:hover:bg-slate-900 hover:shadow-md hover:shadow-black/10 active:translate-y-0 active:scale-[0.98] cursor-pointer"
                       >
                         <Upload size={13} />
                         Upload asset
@@ -3048,7 +3051,7 @@ export function YourIdentityClient() {
                     <button
                       key={`${wp}-${index}`}
                       onClick={() => handleWallpaperChange(wp)}
-                      className={`relative aspect-square rounded-full flex items-center justify-center transition-all duration-300 ${activeWallpaper === wp ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900 scale-100 shadow-md' : 'hover:scale-[1.08] opacity-90 hover:opacity-100 shadow-sm'
+                      className={`relative aspect-square rounded-full flex items-center justify-center transition-all duration-300 ${activeWallpaper === wp ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-950 scale-100 shadow-md' : 'hover:scale-[1.08] opacity-90 hover:opacity-100 shadow-sm'
                         }`}
                       style={getWallpaperStyle(wp)}
                     >
@@ -3111,13 +3114,13 @@ export function YourIdentityClient() {
                         >
                           Cancel
                         </button>
-                        <button
-                          type="button"
-                          onClick={applyCustomWallpaper}
-                          className="h-8 rounded-lg bg-blue-500 hover:bg-blue-600 px-3 text-xs font-bold text-white"
-                        >
-                          Add
-                        </button>
+                         <button
+                           type="button"
+                           onClick={applyCustomWallpaper}
+                           className="h-8 rounded-lg bg-primary hover:brightness-110 px-4 text-xs font-bold text-white shadow-lg shadow-primary/20"
+                         >
+                           Add
+                         </button>
                       </div>
                     </div>
                   )}
@@ -3135,52 +3138,52 @@ export function YourIdentityClient() {
               <div className="space-y-4">
                 <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-3.5">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 font-medium">
-                      <span className="material-symbols-outlined text-[16px] text-slate-400 dark:text-slate-500">blur_on</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 flex items-center gap-2">
+                       <span className="material-symbols-outlined text-[16px] text-slate-500">blur_on</span>
                       Frost Intensity
                     </span>
-                    <span className="text-xs font-bold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-0.5 rounded-md">{frostIntensity}px</span>
+                    <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-md">{frostIntensity}px</span>
                   </div>
                   <input
                     type="range"
                     min="0" max="100"
                     value={frostIntensity}
                     onChange={(e) => handleFrostIntensityChange(Number(e.target.value))}
-                    className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-95 transition-all"
+                    className="w-full appearance-none bg-white/5 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-95 transition-all"
                   />
                 </div>
 
                 <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-3.5">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 font-medium">
-                      <span className="material-symbols-outlined text-[16px] text-slate-400 dark:text-slate-500">water_drop</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[16px] text-slate-500">water_drop</span>
                       Surface Tint
                     </span>
-                    <span className="text-xs font-bold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-0.5 rounded-md">{surfaceTint}%</span>
+                    <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-md">{surfaceTint}%</span>
                   </div>
                   <input
                     type="range"
                     min="0" max="100"
                     value={surfaceTint}
                     onChange={(e) => handleSurfaceTintChange(Number(e.target.value))}
-                    className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-95 transition-all"
+                    className="w-full appearance-none bg-white/5 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-95 transition-all"
                   />
                 </div>
 
                 <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-3.5">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 font-medium">
-                      <span className="material-symbols-outlined text-[16px] text-slate-400 dark:text-slate-500">rounded_corner</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[16px] text-slate-500">rounded_corner</span>
                       Roundness
                     </span>
-                    <span className="text-xs font-bold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-0.5 rounded-md">{activeRoundness}px</span>
+                    <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-md">{activeRoundness}px</span>
                   </div>
                   <input
                     type="range"
                     min="0" max="32"
                     value={activeRoundness}
                     onChange={(e) => handleRoundnessChange(Number(e.target.value))}
-                    className="w-full appearance-none bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-95 transition-all"
+                    className="w-full appearance-none bg-white/5 h-1.5 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-95 transition-all"
                   />
                 </div>
               </div>
@@ -3197,16 +3200,18 @@ export function YourIdentityClient() {
                   <button
                     key={font.id}
                     onClick={() => handleFontStyleChange(font.id)}
-                    className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 ${activeFont === font.id ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-sm' : 'border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white/70 dark:bg-slate-900/70 hover:bg-white dark:hover:bg-slate-800/70'
+                    className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-300 ${activeFont === font.id 
+                      ? 'border-primary/50 bg-primary/10 shadow-[0_10px_30px_-10px_rgba(255,77,0,0.2)]' 
+                      : 'border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white/70 dark:bg-slate-900/70 hover:bg-white dark:hover:bg-slate-800/70'
                       }`}
                   >
                     <div className="flex flex-col items-start gap-1">
-                      <span className={`text-[15px] font-bold ${activeFont === font.id ? 'text-slate-900 dark:text-white' : 'text-slate-800 dark:text-slate-300'}`} style={{ fontFamily: font.family }}>{font.name}</span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-500 uppercase tracking-wide" style={{ fontFamily: font.family }}>{font.family.split(',')[0].replace(/['"]/g, '')}</span>
+                      <span className={`text-[15px] font-bold ${activeFont === font.id ? 'text-white' : 'text-slate-400'}`} style={{ fontFamily: font.family }}>{font.name}</span>
+                      <span className="text-[11px] text-slate-500 uppercase tracking-[0.2em] font-black" style={{ fontFamily: font.family }}>{font.family.split(',')[0].replace(/['"]/g, '')}</span>
                     </div>
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${activeFont === font.id ? 'bg-blue-500 border-blue-500 transform scale-100' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transform scale-90'
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${activeFont === font.id ? 'bg-primary border-primary transform scale-100 shadow-lg shadow-primary/20' : 'border-white/10 bg-white/5 transform scale-90'
                       }`}>
-                      {activeFont === font.id && <Check size={12} className="text-white" />}
+                      {activeFont === font.id && <Check size={12} className="text-white" strokeWidth={3} />}
                     </div>
                   </button>
                 ))}
@@ -3241,10 +3246,10 @@ export function YourIdentityClient() {
                   <button
                     onClick={togglePublishStatus}
                     disabled={isStatusUpdating}
-                    className={`relative w-10 h-6 shrink-0 rounded-full transition-colors duration-300 outline-none focus:ring-2 focus:ring-blue-500/50 ${isPublished ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'
-                      } ${isStatusUpdating ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                    className={`relative w-11 h-6 shrink-0 rounded-full transition-all duration-500 outline-none focus:ring-2 focus:ring-primary/40 ${isPublished ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-white/10'
+                      } ${isStatusUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
-                    <div className={`absolute top-1 left-1 size-4 rounded-full bg-white shadow-sm transition-all duration-300 ease-in-out ${isPublished ? 'translate-x-4' : 'translate-x-0'
+                    <div className={`absolute top-1 left-1 size-4 rounded-full bg-white shadow-xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isPublished ? 'translate-x-5' : 'translate-x-0'
                       }`} />
                   </button>
                 </div>
@@ -3285,36 +3290,34 @@ export function YourIdentityClient() {
             type="button"
             aria-label="Close custom theme naming modal"
             onClick={closeCustomThemeModal}
-            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
           />
 
-          <div className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-sm rounded-[2.5rem] bg-[#020617] border border-white/5 shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] p-8 space-y-6 animate-in fade-in zoom-in-95 duration-500 ease-out">
+            <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-primary/40 to-transparent" />
             <div>
-              <h3 className="text-base font-black text-slate-900 dark:text-white">Save Customized Theme</h3>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                You edited a default theme. Give your customized theme a name.
-              </p>
+              <h3 className="text-xl font-bold text-white tracking-tight leading-none">Save Customized Theme</h3>
             </div>
 
             <input
               value={customThemeName}
               onChange={(e) => setCustomThemeName(e.target.value)}
               placeholder="Theme name"
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/40"
+              className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/5 text-sm text-white placeholder:text-slate-700 outline-none focus:border-primary/30 focus:shadow-[0_0_20px_rgba(255,77,0,0.1)] transition-all"
             />
 
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={closeCustomThemeModal}
-                className="px-3.5 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                className="px-5 h-10 rounded-xl border border-white/5 text-[11px] font-bold text-slate-400 hover:text-white transition-all cursor-pointer"
               >
                 Later
               </button>
               <button
                 type="button"
                 onClick={saveCustomTheme}
-                className="px-3.5 h-9 rounded-xl bg-blue-500 text-white text-xs font-bold hover:bg-blue-600"
+                className="px-6 h-10 rounded-xl bg-primary text-white text-[11px] font-bold capitalize cursor-pointer tracking-wide shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all"
               >
                 Save Theme
               </button>
@@ -3329,36 +3332,35 @@ export function YourIdentityClient() {
             type="button"
             aria-label="Close edit custom theme modal"
             onClick={closeEditCustomThemeModal}
-            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
           />
 
-          <div className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-sm rounded-[2.5rem] bg-[#020617] border border-white/5 shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] p-8 space-y-6 animate-in fade-in zoom-in-95 duration-500 ease-out">
+            <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-primary/40 to-transparent" />
             <div>
-              <h3 className="text-base font-black text-slate-900 dark:text-white">Edit Customized Theme</h3>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Update your customized theme name.
-              </p>
+              <h3 className="text-xl font-bold text-white tracking-tight leading-none">Edit Customized Theme</h3>
+              <p className="mt-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Update Identity Node</p>
             </div>
 
             <input
               value={editingCustomThemeName}
               onChange={(e) => setEditingCustomThemeName(e.target.value)}
               placeholder="Theme name"
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/40"
+              className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/5 text-sm text-white placeholder:text-slate-700 outline-none focus:border-primary/30 focus:shadow-[0_0_20px_rgba(255,77,0,0.1)] transition-all"
             />
 
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={closeEditCustomThemeModal}
-                className="px-3.5 h-9 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                className="px-5 h-10 rounded-xl border border-white/5 text-[11px] font-bold text-slate-400 hover:text-white transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={saveCustomThemeName}
-                className="px-3.5 h-9 rounded-xl bg-blue-500 text-white text-xs font-bold hover:bg-blue-600"
+                className="px-6 h-10 rounded-xl bg-primary text-white text-[11px] font-bold capitalize cursor-pointer tracking-wide shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all"
               >
                 Save Name
               </button>
