@@ -146,7 +146,7 @@ export function DashboardSocialWidget({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={`group relative block overflow-hidden ${disableTransitions ? "" : "transition-all duration-200"} transform-gpu shadow-lg sm:shadow-xl sm:hover:shadow-2xl sm:hover:ring-2 sm:hover:ring-white/60 dark:sm:hover:ring-white/30 w-full h-full bg-slate-100/85 dark:bg-slate-800/85 border border-white/55 dark:border-white/10 ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
-        } ${isDragging ? "opacity-60 scale-95" : ""} ${isResizing ? "ring-2 ring-primary/60" : ""} ${isSelected ? "ring-2 ring-blue-500/80" : ""}`}
+        } ${isDragging ? "opacity-60 scale-95" : ""} ${isResizing ? "ring-2 ring-primary/60" : ""} ${isSelected ? "ring-2 ring-primary/80" : ""}`}
       style={{
         gridColumn: `${startCol} / span ${colSize}`,
         gridRow: `${startRow} / span ${rowSize}`,
