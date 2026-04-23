@@ -2,11 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  output: "standalone",
   async rewrites() {
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:8080/api/:path*",
+        destination: process.env.BACKEND_API_URL || "http://localhost:8080/api/:path*",
       },
     ];
   },
