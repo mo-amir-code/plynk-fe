@@ -161,6 +161,7 @@ function getWallpaperStyle(wallpaper: string) {
    ───────────────────────────────────────── */
 
 const GRID_COLS = 12;
+const MOBILE_GRID_COLS = 6;
 const GAP_PX = 12; // matches gap-3 (0.75rem = 12px)
 
 const initialWidgets: DashboardSocialWidgetData[] = [
@@ -249,56 +250,71 @@ function normalizeWidgets(rawWidgets: unknown): DashboardSocialWidgetData[] {
 }
 
 
-function getMobileSpan(size: number) {
-  return size >= 6 ? 2 : 1;
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
 }
 
-function computeMobilePlacements(layout: DashboardSocialWidgetData[]): MobilePlacement[] {
-  const occupied = new Set<string>();
-  const placements: MobilePlacement[] = [];
+function normalizeSpan(value: number): number {
+  return Math.ceil(value / 3) * 3;
+}
 
-  const canFit = (startRow: number, startCol: number, rowSpan: number, colSpan: number) => {
-    if (startCol + colSpan - 1 > 2) return false;
-    for (let row = startRow; row < startRow + rowSpan; row += 1) {
-      for (let col = startCol; col < startCol + colSpan; col += 1) {
-        if (occupied.has(`${row}-${col}`)) return false;
+function computeMobilePlacements(layout: DashboardSocialWidgetData[]): DashboardSocialWidgetData[] {
+  const occupied = new Set<string>();
+
+  // Sort widgets by desktop position: startRow → startCol → id
+  const sortedWidgets = [...layout].sort((a, b) => {
+    if (a.startRow !== b.startRow) return a.startRow - b.startRow;
+    if (a.startCol !== b.startCol) return a.startCol - b.startCol;
+    return a.id.localeCompare(b.id);
+  });
+
+  const canPlaceAt = (row: number, col: number, rowSpan: number, colSpan: number): boolean => {
+    if (col + colSpan - 1 > MOBILE_GRID_COLS) return false;
+    if (row + rowSpan - 1 > MAX_PACK_ROWS) return false;
+    for (let r = row; r < row + rowSpan; r += 1) {
+      for (let c = col; c < col + colSpan; c += 1) {
+        if (occupied.has(`${r}-${c}`)) return false;
       }
     }
     return true;
   };
 
-  const occupy = (startRow: number, startCol: number, rowSpan: number, colSpan: number) => {
-    for (let row = startRow; row < startRow + rowSpan; row += 1) {
-      for (let col = startCol; col < startCol + colSpan; col += 1) {
-        occupied.add(`${row}-${col}`);
+  const markPlacement = (row: number, col: number, rowSpan: number, colSpan: number) => {
+    for (let r = row; r < row + rowSpan; r += 1) {
+      for (let c = col; c < col + colSpan; c += 1) {
+        occupied.add(`${r}-${c}`);
       }
     }
   };
 
-  layout.forEach((widget, index) => {
-    const colSpan = getMobileSpan(widget.colSize);
-    const rowSpan = getMobileSpan(widget.rowSize);
+  return sortedWidgets.map((widget) => {
+    const mobileColSize = clamp(normalizeSpan(widget.colSize), 3, MOBILE_GRID_COLS);
+    const mobileRowSize = clamp(normalizeSpan(widget.rowSize), 3, MAX_PACK_ROWS);
+    
+    let placedStartRow = 1;
+    let placedStartCol = 1;
+    let didPlace = false;
 
-    for (let row = 1; row <= MAX_PACK_ROWS; row += 1) {
-      let placed = false;
-      for (let col = 1; col <= 2 - colSpan + 1; col += 1) {
-        if (!canFit(row, col, rowSpan, colSpan)) continue;
-        occupy(row, col, rowSpan, colSpan);
-        placements.push({
-          index,
-          startRow: row,
-          startCol: col,
-          rowSpan,
-          colSpan,
-        });
-        placed = true;
-        break;
+    for (let row = 1; row <= MAX_PACK_ROWS - mobileRowSize + 1 && !didPlace; row += 1) {
+      for (let col = 1; col <= MOBILE_GRID_COLS - mobileColSize + 1; col += 1) {
+        if (canPlaceAt(row, col, mobileRowSize, mobileColSize)) {
+          placedStartRow = row;
+          placedStartCol = col;
+          markPlacement(row, col, mobileRowSize, mobileColSize);
+          didPlace = true;
+          break;
+        }
       }
-      if (placed) break;
     }
-  });
 
-  return placements;
+    return {
+      ...widget,
+      startCol: placedStartCol,
+      startRow: placedStartRow,
+      colSize: mobileColSize,
+      rowSize: mobileRowSize,
+    };
+  });
 }
 
 function rangesOverlap(aStart: number, aEnd: number, bStart: number, bEnd: number) {
@@ -1786,9 +1802,8 @@ export function YourIdentityClient() {
     nextLayout: DashboardSocialWidgetData[],
   ) => {
     const mobileGapPx = 16; // gap-4
-    const mobileRowPx = 128; // gridAutoRows
     const gridWidth = mobileGridRef.current?.getBoundingClientRect().width ?? 0;
-    const mobileCellPx = gridWidth > 0 ? (gridWidth - mobileGapPx) / 2 : 0;
+    const mobileCellPx = gridWidth > 0 ? (gridWidth - mobileGapPx) / MOBILE_GRID_COLS : 0;
 
     if (mobileCellPx <= 0) {
       setWidgets(nextLayout);
@@ -1799,23 +1814,23 @@ export function YourIdentityClient() {
     const nextPlacements = computeMobilePlacements(nextLayout);
 
     const prevById = new Map(
-      prevPlacements.map((placement) => [currentLayout[placement.index].id, placement]),
+      prevPlacements.map((widget) => [widget.id, widget]),
     );
     const nextById = new Map(
-      nextPlacements.map((placement) => [nextLayout[placement.index].id, placement]),
+      nextPlacements.map((widget) => [widget.id, widget]),
     );
 
     const offsets: Record<string, { x: number; y: number }> = {};
 
     for (const widget of currentLayout) {
-      const prevPlacement = prevById.get(widget.id);
-      const nextPlacement = nextById.get(widget.id);
-      if (!prevPlacement || !nextPlacement) continue;
+      const prevWidget = prevById.get(widget.id);
+      const nextWidget = nextById.get(widget.id);
+      if (!prevWidget || !nextWidget) continue;
 
-      const prevX = (prevPlacement.startCol - 1) * (mobileCellPx + mobileGapPx);
-      const prevY = (prevPlacement.startRow - 1) * (mobileRowPx + mobileGapPx);
-      const nextX = (nextPlacement.startCol - 1) * (mobileCellPx + mobileGapPx);
-      const nextY = (nextPlacement.startRow - 1) * (mobileRowPx + mobileGapPx);
+      const prevX = (prevWidget.startCol - 1) * (mobileCellPx + mobileGapPx);
+      const prevY = (prevWidget.startRow - 1) * (mobileCellPx + mobileGapPx);
+      const nextX = (nextWidget.startCol - 1) * (mobileCellPx + mobileGapPx);
+      const nextY = (nextWidget.startRow - 1) * (mobileCellPx + mobileGapPx);
 
       const x = prevX - nextX;
       const y = prevY - nextY;
@@ -1837,36 +1852,57 @@ export function YourIdentityClient() {
     });
   };
 
-  const moveMobileWidget = (currentIndex: number, direction: "left" | "right" | "up" | "down") => {
-    const placements = computeMobilePlacements(widgets);
-    const targetIndex = getMobileNeighborIndex(currentIndex, direction, placements);
-    if (targetIndex === null) return;
+  const moveMobileWidget = (mobileIndex: number, direction: "left" | "right" | "up" | "down") => {
+    const mobileWidgets = computeMobilePlacements(widgets);
+    
+    // Convert widgets to placements for getMobileNeighborIndex
+    const placements: MobilePlacement[] = mobileWidgets.map((w, idx) => ({
+      index: idx,
+      startRow: w.startRow,
+      startCol: w.startCol,
+      rowSpan: w.rowSize,
+      colSpan: w.colSize,
+    }));
+    
+    const targetMobileIndex = getMobileNeighborIndex(mobileIndex, direction, placements);
+    if (targetMobileIndex === null) return;
 
+    // Get the actual widgets from the mobile layout
+    const currentMobileWidget = mobileWidgets[mobileIndex];
+    const targetMobileWidget = mobileWidgets[targetMobileIndex];
+    
+    // Find their original indices in the widgets array
+    const currentOriginalIndex = widgets.findIndex(w => w.id === currentMobileWidget.id);
+    const targetOriginalIndex = widgets.findIndex(w => w.id === targetMobileWidget.id);
+    
+    if (currentOriginalIndex === -1 || targetOriginalIndex === -1) return;
+
+    // Swap in the original widgets array
     const nextLayout = [...widgets];
-    [nextLayout[currentIndex], nextLayout[targetIndex]] = [nextLayout[targetIndex], nextLayout[currentIndex]];
+    [nextLayout[currentOriginalIndex], nextLayout[targetOriginalIndex]] = [nextLayout[targetOriginalIndex], nextLayout[currentOriginalIndex]];
     animateMobileToLayout(widgets, nextLayout);
   };
 
   const getMobileResizeCapabilities = (widget: DashboardSocialWidgetData) => {
-    const colSpan = getMobileSpan(widget.colSize);
-    const rowSpan = getMobileSpan(widget.rowSize);
-    const maxColSize = GRID_COLS - widget.startCol + 1;
-    const maxRowSize = MAX_PACK_ROWS - widget.startRow + 1;
-
-    const canGrowWidth = colSpan === 1 && maxColSize >= 6;
-    const canGrowHeight = rowSpan === 1 && maxRowSize >= 6;
+    const mobileColSize = clamp(normalizeSpan(widget.colSize), 3, MOBILE_GRID_COLS);
+    const mobileRowSize = clamp(normalizeSpan(widget.rowSize), 3, MAX_PACK_ROWS);
+    
+    // For mobile: can grow width from 3 to 6 (max 1 step), can grow height to next 3-multiple
+    const canGrowWidth = mobileColSize < MOBILE_GRID_COLS;
+    const canGrowHeight = mobileRowSize < MAX_PACK_ROWS - 3;
     const canGrow = canGrowWidth || canGrowHeight;
-    const canShrink = colSpan === 2 || rowSpan === 2;
+    // Can shrink back to minimum of 3
+    const canShrink = mobileColSize > 3 || mobileRowSize > 3;
 
     return {
       canGrow,
       canShrink,
       canGrowWidth,
       canGrowHeight,
-      colSpan,
-      rowSpan,
-      maxColSize,
-      maxRowSize,
+      colSpan: mobileColSize,
+      rowSpan: mobileRowSize,
+      maxColSize: MOBILE_GRID_COLS,
+      maxRowSize: MAX_PACK_ROWS,
     };
   };
 
@@ -1892,15 +1928,16 @@ export function YourIdentityClient() {
     let nextRowSize = widget.rowSize;
 
     if (mode === "increase") {
-      if (canGrowWidth) {
-        nextColSize = Math.min(6, maxColSize);
+      if (canGrowWidth && colSpan < MOBILE_GRID_COLS) {
+        nextColSize = 6; // Grow to 6 (max for MOBILE_GRID_COLS)
       } else if (canGrowHeight) {
-        nextRowSize = Math.min(6, maxRowSize);
+        nextRowSize = rowSpan + 3; // Grow by one 3-unit step
       }
     } else {
-      if (rowSpan === 2) {
-        nextRowSize = 3;
-      } else if (colSpan === 2) {
+      // Shrink to minimum of 3
+      if (rowSpan > 3) {
+        nextRowSize = Math.max(3, rowSpan - 3);
+      } else if (colSpan > 3) {
         nextColSize = 3;
       }
     }
@@ -1918,6 +1955,30 @@ export function YourIdentityClient() {
   };
 
   const mobilePlacements = computeMobilePlacements(widgets);
+  
+  const [mobileCellPx, setMobileCellPx] = useState<number | null>(null);
+  
+  const totalMobileRows = Math.max(
+    ...mobilePlacements.map((w) => w.startRow + w.rowSize - 1),
+    6
+  );
+
+  useEffect(() => {
+    setMobileCellPx(null);
+    const el = mobileGridRef.current;
+    if (!el) return;
+
+    const compute = () => {
+      const width = el.getBoundingClientRect().width;
+      const mobileCellSize = (width - (MOBILE_GRID_COLS - 1) * GAP_PX) / MOBILE_GRID_COLS;
+      setMobileCellPx(Math.max(mobileCellSize, 20));
+    };
+
+    compute();
+    const observer = new ResizeObserver(compute);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [mobilePlacements]);
 
   useEffect(() => {
     if (!selectedWidgetForStyleId) return;
@@ -2250,44 +2311,55 @@ export function YourIdentityClient() {
           </div>
         )}
 
-        {/* Mobile card grid — 2 columns with size-aware spans */}
+        {/* Mobile card grid — 6 columns with greedy packing */}
         <div
           ref={mobileGridRef}
-          className="grid grid-cols-2 gap-4 sm:hidden"
-          style={{ gridAutoRows: "128px" }}
+          className="grid sm:hidden"
+          style={{
+            gridTemplateColumns: `repeat(${MOBILE_GRID_COLS}, minmax(0, 1fr))`,
+            gridTemplateRows: mobileCellPx !== null ? `repeat(${totalMobileRows}, ${mobileCellPx}px)` : undefined,
+            gap: `${GAP_PX}px`,
+            visibility: mobileCellPx !== null ? "visible" : "hidden",
+          }}
         >
-          {widgets.map((w, index) => {
-            const placement = mobilePlacements.find((item) => item.index === index);
-            if (!placement) return null;
+          {mobileCellPx !== null && (() => {
+            const placements: MobilePlacement[] = mobilePlacements.map((w, idx) => ({
+              index: idx,
+              startRow: w.startRow,
+              startCol: w.startCol,
+              rowSpan: w.rowSize,
+              colSpan: w.colSize,
+            }));
 
-            const canMoveLeft = getMobileNeighborIndex(index, "left", mobilePlacements) !== null;
-            const canMoveRight = getMobileNeighborIndex(index, "right", mobilePlacements) !== null;
-            const canMoveUp = getMobileNeighborIndex(index, "up", mobilePlacements) !== null;
-            const canMoveDown = getMobileNeighborIndex(index, "down", mobilePlacements) !== null;
+            return mobilePlacements.map((mobileWidget, index) => {
+              const canMoveLeft = getMobileNeighborIndex(index, "left", placements) !== null;
+              const canMoveRight = getMobileNeighborIndex(index, "right", placements) !== null;
+              const canMoveUp = getMobileNeighborIndex(index, "up", placements) !== null;
+              const canMoveDown = getMobileNeighborIndex(index, "down", placements) !== null;
 
-            return (
-              <div
-                key={w.id}
-                className="relative"
-                style={{
-                  gridColumn: `span ${placement.colSpan}`,
-                  gridRow: `span ${placement.rowSpan}`,
-                }}
-              >
-                <button
-                  type="button"
-                  aria-label={`Move ${w.type} widget left`}
-                  onClick={() => moveMobileWidget(index, "left")}
-                  disabled={!canMoveLeft}
-                  hidden={isPreview}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-30 size-7 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+              return (
+                <div
+                  key={mobileWidget.id}
+                  className="relative"
+                  style={{
+                    gridColumn: `${mobileWidget.startCol} / span ${mobileWidget.colSize}`,
+                    gridRow: `${mobileWidget.startRow} / span ${mobileWidget.rowSize}`,
+                  }}
                 >
-                  <span className="material-symbols-outlined text-[18px] leading-none">chevron_left</span>
-                </button>
+                  <button
+                    type="button"
+                    aria-label={`Move ${mobileWidget.type} widget left`}
+                    onClick={() => moveMobileWidget(index, "left")}
+                    disabled={!canMoveLeft}
+                    hidden={isPreview}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-30 size-7 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/80 shadow-md flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-[18px] leading-none">chevron_left</span>
+                  </button>
 
                 <button
                   type="button"
-                  aria-label={`Move ${w.type} widget right`}
+                  aria-label={`Move ${mobileWidget.type} widget right`}
                   onClick={() => moveMobileWidget(index, "right")}
                   disabled={!canMoveRight}
                   hidden={isPreview}
@@ -2298,7 +2370,7 @@ export function YourIdentityClient() {
 
                 <button
                   type="button"
-                  aria-label={`Move ${w.type} widget up`}
+                  aria-label={`Move ${mobileWidget.type} widget up`}
                   onClick={() => moveMobileWidget(index, "up")}
                   disabled={!canMoveUp}
                   hidden={isPreview}
@@ -2309,7 +2381,7 @@ export function YourIdentityClient() {
 
                 <button
                   type="button"
-                  aria-label={`Move ${w.type} widget down`}
+                  aria-label={`Move ${mobileWidget.type} widget down`}
                   onClick={() => moveMobileWidget(index, "down")}
                   disabled={!canMoveDown}
                   hidden={isPreview}
@@ -2320,33 +2392,31 @@ export function YourIdentityClient() {
 
                 <DashboardSocialWidget
                   data={{
-                    ...w,
+                    ...mobileWidget,
                     startCol: 1,
                     startRow: 1,
-                    colSize: placement.colSpan,
-                    rowSize: placement.rowSpan,
-                    widgetBackground: w.widgetBackground,
                   }}
-                  motionOffset={layoutOffsets[w.id]}
+                  motionOffset={layoutOffsets[mobileWidget.id]}
                   layoutMotionEnabled={layoutMotionEnabled}
                   forceShowLabel
                   disableLink={!isPreview}
                   showEditButton={!isPreview}
-                  onEditClick={() => openEditModal(w)}
-                  onDeleteClick={() => deleteWidget(w.id)}
+                  onEditClick={() => openEditModal(mobileWidget)}
+                  onDeleteClick={() => deleteWidget(mobileWidget.id)}
                   frostIntensity={frostIntensity}
                   surfaceTint={surfaceTint}
                   roundness={activeRoundness}
-                  fontFamily={getWidgetFontFamily(w.id)}
-                  widgetWallpaper={widgetStyles[w.id]?.wallpaper}
-                  widgetWallpaperOpacity={widgetStyles[w.id]?.wallpaperOpacity}
-                  cornerRoundness={getWidgetCornerRoundness(w.id)}
-                  isSelected={selectedWidgetForStyleId === w.id}
-                  onSelect={isPreview ? undefined : () => handleSelectWidgetForStyle(w.id)}
+                  fontFamily={getWidgetFontFamily(mobileWidget.id)}
+                  widgetWallpaper={widgetStyles[mobileWidget.id]?.wallpaper}
+                  widgetWallpaperOpacity={widgetStyles[mobileWidget.id]?.wallpaperOpacity}
+                  cornerRoundness={getWidgetCornerRoundness(mobileWidget.id)}
+                  isSelected={selectedWidgetForStyleId === mobileWidget.id}
+                  onSelect={isPreview ? undefined : () => handleSelectWidgetForStyle(mobileWidget.id)}
                 />
               </div>
             );
-          })}
+            });
+          })()}
         </div>
 
         {/* Desktop grid — row height == column width so equal colSize/rowSize = square */}
