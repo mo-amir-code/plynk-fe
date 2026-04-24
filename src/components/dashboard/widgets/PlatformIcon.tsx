@@ -6,7 +6,8 @@ import {
   FaTiktok, 
   FaLinkedin, 
   FaGithub, 
-  FaDribbble 
+  FaDribbble, 
+  FaGlobe
 } from "react-icons/fa6";
 import type { SocialPlatform } from "@/types/components/dashboard/widgets";
 
@@ -39,6 +40,8 @@ export function PlatformIcon({
       return <FaGithub {...iconProps} />;
     case "dribbble":
       return <FaDribbble {...iconProps} />;
+    case "custom":
+      return <FaGlobe {...iconProps} />;
     default:
       return null;
   }

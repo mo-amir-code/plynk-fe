@@ -20,6 +20,11 @@ export interface EditWidgetModalProps {
   onClose: () => void;
   editHandle: string;
   setEditHandle: (val: string) => void;
+  editTitle: string;
+  setEditTitle: (val: string) => void;
+  editSubTitle: string;
+  setEditSubTitle: (val: string) => void;
+  widgetType?: SocialPlatform;
   onSave: () => void;
 }
 

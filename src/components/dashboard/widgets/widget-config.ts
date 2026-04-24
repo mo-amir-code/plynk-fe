@@ -9,6 +9,7 @@ export const SOCIAL_PLATFORMS = [
   "linkedin",
   "github",
   "dribbble",
+  "custom"
 ] as const;
 
 export const WIDGET_TYPE_CONFIG: Record<SocialPlatform, WidgetTypeConfig> = {
@@ -67,5 +68,12 @@ export const WIDGET_TYPE_CONFIG: Record<SocialPlatform, WidgetTypeConfig> = {
     defaultHandle: "yourname",
     background: "linear-gradient(135deg, #EA4C89 0%, #C32361 100%)",
     url: (handle) => `https://dribbble.com/${handle}`,
+  },
+  custom: {
+    label: "Custom",
+    hint: "Add your own social link",
+    defaultHandle: "https://example.com",
+    background: "linear-gradient(135deg, #EA4C89 0%, #C32361 100%)",
+    url: (url: string) => url,
   },
 };

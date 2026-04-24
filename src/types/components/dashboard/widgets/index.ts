@@ -8,7 +8,8 @@ export type SocialPlatform =
   | "tiktok"
   | "linkedin"
   | "github"
-  | "dribbble";
+  | "dribbble"
+  | "custom";
 
 export type BackgroundPosition =
   | "top-center"
@@ -54,6 +55,12 @@ export interface DashboardSocialWidgetData {
   rowSize: number;
   icon?: string;
   widgetBackground?: WidgetBackground;
+  config?: {
+    metadata?: {
+      title: string;
+      subTitle: string;
+    };
+  };
 }
 
 export interface DashboardSocialWidgetProps {
