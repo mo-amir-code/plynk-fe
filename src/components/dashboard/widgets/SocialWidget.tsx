@@ -98,7 +98,7 @@ export function DashboardSocialWidget({
   isSelected = false,
   onSelect,
 }: DashboardSocialWidgetProps) {
-  const { type, handle, startCol, startRow, colSize, rowSize, widgetBackground } = data;
+  const { type, handle, startCol, startRow, colSize, rowSize, widgetBackground, config } = data;
   const resolvedFontFamily = widgetBackground?.fontFamily || fontFamily;
   const resolvedWidgetWallpaper = widgetBackground?.wallpaper || widgetWallpaper;
   const widgetBackgroundWallpaperOpacity =
@@ -121,8 +121,8 @@ export function DashboardSocialWidget({
   const titleSize = getTitleSize(area);
   const subtitleSize = getSubtitleSize(area);
   const href = cfg.url(handle.trim());
-  const displayName = cfg.label;
-  const subtitle = cfg.hint.toUpperCase();
+  const displayName = config?.metadata?.title?.trim() && config.metadata.title.trim().length > 0 ? config.metadata.title : cfg.label;
+  const subtitle = config?.metadata?.subTitle?.trim() && config.metadata.subTitle.trim().length > 0 ? config.metadata.subTitle.toUpperCase() : cfg.hint.toUpperCase();
   const isCompactCard = forceShowLabel || (colSize === 1 && rowSize === 1);
   const resolvedTopLeftRadius = resolvedCornerRoundness?.topLeft ?? roundness;
   const resolvedTopRightRadius = resolvedCornerRoundness?.topRight ?? roundness;

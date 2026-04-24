@@ -146,6 +146,8 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
     const startCol = clamp(toSafePositiveInt(startColRaw, fallbackStartCol), 1, GRID_COLS - colSize + 1);
     const startRow = Math.max(1, Math.min(toSafePositiveInt(startRowRaw, fallbackStartRow), MAX_PACK_ROWS - rowSize + 1));
 
+    const config = widget?.config && typeof widget.config === "object" ? widget.config : undefined;
+
     return {
       id: String(widget?.id ?? `widget-${index}`),
       pageId: widget?.pageId ? String(widget.pageId) : undefined,
@@ -157,6 +159,7 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
       colSize,
       rowSize,
       icon: widget?.icon ? String(widget.icon) : undefined,
+      config,
     };
   });
 

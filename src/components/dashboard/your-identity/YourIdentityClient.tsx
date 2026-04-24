@@ -214,6 +214,8 @@ function normalizeWidget(rawWidget: any, index: number): DashboardSocialWidgetDa
   const pageId = typeof rawWidget?.pageId === "string" ? rawWidget.pageId : undefined;
   const fullURL = typeof rawWidget?.fullURL === "string" ? rawWidget.fullURL : undefined;
   const icon = typeof rawWidget?.icon === "string" ? rawWidget.icon : undefined;
+  
+  const config = rawWidget?.config && typeof rawWidget.config === "object" ? rawWidget.config : undefined;
 
   return {
     id: typeof rawWidget?.id === "string" && rawWidget.id.trim() ? rawWidget.id : `w${index + 1}`,
@@ -226,6 +228,7 @@ function normalizeWidget(rawWidget: any, index: number): DashboardSocialWidgetDa
     colSize,
     rowSize,
     icon,
+    config,
   };
 }
 
@@ -457,6 +460,8 @@ export function YourIdentityClient() {
   const [addSearch, setAddSearch] = useState("");
   const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
   const [editHandle, setEditHandle] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editSubTitle, setEditSubTitle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [activeWallpaper, setActiveWallpaper] = useState(DEFAULT_WALLPAPER_BACKGROUND);
@@ -1268,6 +1273,7 @@ export function YourIdentityClient() {
             colSize: w.colSize,
             rowSize: w.rowSize,
             icon: w.icon,
+            config: w.config,
           })));
           setWidgets(mappedWidgets);
         } else {
@@ -1994,12 +2000,16 @@ export function YourIdentityClient() {
   const openEditModal = (widget: DashboardSocialWidgetData) => {
     setEditingWidgetId(widget.id);
     setEditHandle(widget.handle);
+    setEditTitle(widget.config?.metadata?.title || WIDGET_TYPE_CONFIG[widget.type]?.label || "");
+    setEditSubTitle(widget.config?.metadata?.subTitle || WIDGET_TYPE_CONFIG[widget.type]?.hint || "");
     handleSelectWidgetForStyle(widget.id);
   };
 
   const closeEditModal = () => {
     setEditingWidgetId(null);
     setEditHandle("");
+    setEditTitle("");
+    setEditSubTitle("");
   };
 
   const deleteWidget = (id: string) => {
@@ -2060,6 +2070,12 @@ export function YourIdentityClient() {
           ? {
             ...widget,
             handle: trimmedHandle,
+            config: {
+              metadata: {
+                title: editTitle.trim(),
+                subTitle: editSubTitle.trim(),
+              },
+            },
           }
           : widget,
       ),
@@ -3458,6 +3474,11 @@ export function YourIdentityClient() {
           onClose={closeEditModal}
           editHandle={editHandle}
           setEditHandle={setEditHandle}
+          editTitle={editTitle}
+          setEditTitle={setEditTitle}
+          editSubTitle={editSubTitle}
+          setEditSubTitle={setEditSubTitle}
+          widgetType={widgets.find(w => w.id === editingWidgetId)?.type}
           onSave={saveWidgetEdits}
         />
       )}

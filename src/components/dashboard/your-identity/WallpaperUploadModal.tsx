@@ -78,7 +78,7 @@ export function WallpaperUploadModal({
           <input 
             ref={inputRef} 
             type="file" 
-            accept=".jpeg,.jpg,.png,.svg,.webp" 
+            accept=".jpeg,.jpg,.png,.svg,.webp,.gif" 
             className="hidden" 
             onChange={handleFileChange} 
           />
@@ -112,7 +112,7 @@ export function WallpaperUploadModal({
               <div className="flex-1 space-y-4">
                 <div>
                   <p className="text-sm font-bold text-white">Click to select asset</p>
-                  <p className="mt-1.5 text-xs text-slate-500 leading-relaxed font-medium">Supports JPEG, JPG, PNG, SVG, and WebP up to 5MB.</p>
+                  <p className="mt-1.5 text-xs text-slate-500 leading-relaxed font-medium">Supports JPEG, JPG, PNG, SVG, WebP, and GIF up to 1MB.</p>
                 </div>
 
                 <div className="rounded-xl border border-white/5 bg-black/40 px-4 py-3 text-[11px] font-bold tracking-tight">
