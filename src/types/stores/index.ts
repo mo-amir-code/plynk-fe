@@ -3,6 +3,7 @@ export interface AuthUser {
   email: string;
   username?: string | null;
   fullName?: string;
+  profileImage?: string;
 }
 
 export interface AuthState {

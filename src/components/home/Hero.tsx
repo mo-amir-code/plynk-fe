@@ -29,7 +29,7 @@ export function Hero() {
 
           <div className="animate-fade-up delay-400 flex items-center gap-3">
             <div className="flex items-center justify-center size-8 rounded-full bg-primary/10 text-primary">
-              <span className="material-symbols-outlined text-lg">auto_awesome</span>
+              <span className="material-symbols-outlined text-lg">bolt</span>
             </div>
             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium">
               Design your digital space in <span className="text-slate-900 dark:text-slate-100 font-bold">under 2 minutes.</span>

@@ -2,6 +2,7 @@ export interface PublicPageClientPageData {
   username?: string;
   slug?: string;
   title?: string;
+  profileImage?: string;
   theme?: {
     styleConfig?: Record<string, unknown>;
   };
