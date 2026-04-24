@@ -40,3 +40,45 @@ export const useUpdateProfile = () => {
     },
   });
 };
+
+/**
+ * Hook: useUpdateAvatar
+ * Mutation hook to update user profile image
+ */
+export const useUpdateAvatar = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return await api.patch<User>(API_ENDPOINTS.USERS.AVATAR, formData);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.AUTH.ALL }),
+      ]);
+    },
+  });
+};
+
+/**
+ * Hook: useRemoveAvatar
+ * Mutation hook to remove user profile image
+ */
+export const useRemoveAvatar = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      return await api.delete<User>(API_ENDPOINTS.USERS.AVATAR);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS.ALL }),
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.AUTH.ALL }),
+      ]);
+    },
+  });
+};

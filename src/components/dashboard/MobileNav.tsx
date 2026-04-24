@@ -120,8 +120,12 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
             </button>
           )}
           <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800">
-            <div className="size-9 rounded-full bg-linear-to-tr from-primary to-orange-400 flex items-center justify-center text-white font-bold text-sm shadow-md">
-              {initials}
+            <div className="size-9 rounded-full bg-linear-to-tr from-primary to-orange-400 flex items-center justify-center text-white font-bold text-sm shadow-md overflow-hidden">
+              {user?.profileImage ? (
+                <img src={user.profileImage} alt={user.fullName || "User"} className="w-full h-full object-cover" />
+              ) : (
+                initials
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{user?.fullName || "User"}</p>

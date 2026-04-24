@@ -269,11 +269,15 @@ export function PublicPageClient({ pageData }: PublicPageClientProps) {
         {/* Centered Profile Bar */}
         <div className="mb-10 flex justify-center sm:mb-12">
           <div className="flex w-fit min-w-52 items-center gap-3 rounded-full border border-white/20 bg-white/10 px-3 py-2 shadow-md shadow-black/20 backdrop-blur-md transition-all duration-300 ease-out hover:scale-[1.01] hover:shadow-lg hover:shadow-black/25 sm:min-w-72 sm:px-5 sm:py-3 lg:min-w-80">
-            <div className="flex size-10 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-blue-600 text-sm font-black text-white shadow-md ring-2 ring-white/20 transition-all duration-300 ease-out hover:scale-105 sm:size-12 sm:text-base">
-              {profileInitial}
+            <div className="flex size-10 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-blue-600 text-sm font-black text-white shadow-md ring-2 ring-white/20 transition-all duration-300 ease-out hover:scale-105 sm:size-12 sm:text-base overflow-hidden">
+              {pageData.profileImage ? (
+                <img src={pageData.profileImage} alt={pageTitle} className="w-full h-full object-cover" />
+              ) : (
+                profileInitial
+              )}
             </div>
             <div className="min-w-0 pr-1 leading-tight">
-              <p className="truncate text-base font-semibold text-white sm:text-lg">{pageTitle}</p>
+              <p className="truncate text-base font-semibold text-white sm:text-lg capitalize">{pageTitle}</p>
               <p className="truncate text-xs text-white/60 sm:text-sm">{profileHandle}</p>
             </div>
           </div>

@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
   USERS: {
     ME: "/users/me",
     PROFILE: "/users/me",
+    AVATAR: "/users/me/avatar",
   },
   PAGE: {
     ME: "/page/me",

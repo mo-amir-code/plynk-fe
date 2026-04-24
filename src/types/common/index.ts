@@ -16,6 +16,7 @@ export interface User {
 	username: string | null;
 	role: UserRole;
 	isVerified: boolean;
+	profileImage?: string;
 	tnc: boolean;
 	createdAt: string;
 	updatedAt: string;
