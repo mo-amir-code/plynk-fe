@@ -2105,11 +2105,28 @@ export function YourIdentityClient() {
       let widgetStylesForSync = widgetStyles;
 
       const tempWidgets = widgets.filter((widget) => isTemporaryWidgetId(widget.id));
+      
+      let candidatePageId = (getMyPageQuery.data as any)?.id;
+
+      if (!candidatePageId) {
+        console.log("No page found. Creating page via initial sync...");
+        const initialSyncRes = await syncPageMutation.mutateAsync({
+          themeId: selectedDefaultThemeId || selectedCustomThemeId || undefined,
+          themeConfig: {
+            frostIntensity,
+            surfaceTint,
+            fontStyle: activeFont,
+            wallpaper: activeWallpaper,
+            roundness: activeRoundness,
+            widgets: widgetStylesForSync,
+          },
+          isPublished: false, // Create as draft first
+          widgets: [],
+        });
+        candidatePageId = (initialSyncRes as any)?.id;
+      }
 
       if (tempWidgets.length > 0) {
-        const pageData = getMyPageQuery.data as any;
-
-        const candidatePageId = pageData?.id;
 
         if (!candidatePageId) {
           throw new Error("Missing valid page id for widget creation");
@@ -2175,7 +2192,7 @@ export function YourIdentityClient() {
         isPublished: true, // Crucial: Explicitly publish on Submit
         widgets: widgetsForSync
       };
-
+      
       await syncPageMutation.mutateAsync(syncData);
 
       setSyncStatus("saved");
