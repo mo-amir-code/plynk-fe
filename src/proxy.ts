@@ -23,7 +23,26 @@ function isTokenExpired(payload: any) {
 }
 
 export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
+
+  const host = request.headers
+    .get("host")
+    ?.split(":")[0]
+    .toLowerCase();
+
+  // Redirect non-www → www
+  // Ignore localhost during development
+  if (
+    host &&
+    host !== "localhost" &&
+    !host.startsWith("www.")
+  ) {
+    return NextResponse.redirect(
+      `https://www.${host}${pathname}${search}`,
+      301
+    );
+  }
+
   const token = request.cookies.get(COOKIE_NAME)?.value;
   const payload = token ? getPayload(token) : null;
   // console.log("Payload from token:", payload);
